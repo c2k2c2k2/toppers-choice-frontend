@@ -37,6 +37,10 @@ export function StudentShell({
 
   const shellTitle = pathname.startsWith("/student/catalog")
     ? "Catalog workspace"
+    : pathname.startsWith("/student/practice")
+      ? "Practice workspace"
+      : pathname.startsWith("/student/tests")
+        ? "Timed test workspace"
     : pathname.startsWith("/student/guidance") ||
         pathname.startsWith("/student/english-speaking") ||
         pathname.startsWith("/student/current-affairs") ||
@@ -48,6 +52,10 @@ export function StudentShell({
 
   const shellDescription = pathname.startsWith("/student/notes")
     ? "Secure note discovery, preview handling, watermark sessions, and progress tracking live in this student surface."
+    : pathname.startsWith("/student/practice")
+      ? "Focused practice sessions with weak-area entry points, saved drafts, reveal-aware review, and completion summaries."
+      : pathname.startsWith("/student/tests")
+        ? "Timed test listings, instruction-led starts, autosaved attempts, countdown safety, and result review now live in the student app."
     : pathname.startsWith("/student/guidance") ||
         pathname.startsWith("/student/english-speaking") ||
         pathname.startsWith("/student/current-affairs") ||

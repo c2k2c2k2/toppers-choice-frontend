@@ -490,10 +490,12 @@ export function StructuredContentRenderer({
   bodyJson,
   fallbackFontHint = null,
   preferredLocaleKeys = [],
+  showLocaleBadge = true,
 }: Readonly<{
   bodyJson: StructuredContentDocument;
   fallbackFontHint?: MarathiEncodedFontKey | null;
   preferredLocaleKeys?: string[];
+  showLocaleBadge?: boolean;
 }>) {
   const resolvedVariant = resolveDocumentVariant(bodyJson, preferredLocaleKeys);
   const blocks = normalizeBlocks(resolvedVariant.document);
@@ -504,7 +506,7 @@ export function StructuredContentRenderer({
 
   return (
     <div className="tc-rich-content">
-      {resolvedVariant.locale ? (
+      {showLocaleBadge && resolvedVariant.locale ? (
         <div className="flex flex-wrap items-center gap-2">
           <span className="tc-code-chip">Locale</span>
           <span className="tc-code-chip">{resolvedVariant.locale}</span>

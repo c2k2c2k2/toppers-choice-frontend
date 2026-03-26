@@ -42,16 +42,18 @@ const STUDENT_NAV_ITEMS: StudentNavItem[] = [
     status: "live",
   },
   {
+    href: "/student/practice",
     label: "Practice",
     shortLabel: "Practice",
     description: "Weak-area practice and progress review.",
-    status: "soon",
+    status: "live",
   },
   {
+    href: "/student/tests",
     label: "Tests",
     shortLabel: "Tests",
     description: "Timed assessments and attempt history.",
-    status: "soon",
+    status: "live",
   },
   {
     label: "Plans",
@@ -139,8 +141,11 @@ export function StudentShellNavigation({
 export function StudentBottomNavigation() {
   const pathname = usePathname();
   const isVisible = useStudentShellStore((state) => state.bottomNavVisible);
+  const isImmersiveAssessmentRoute =
+    pathname.startsWith("/student/practice/session/") ||
+    pathname.startsWith("/student/tests/attempts/");
 
-  if (!isVisible) {
+  if (!isVisible || isImmersiveAssessmentRoute) {
     return null;
   }
 

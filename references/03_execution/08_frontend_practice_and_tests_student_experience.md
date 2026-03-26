@@ -40,3 +40,29 @@ Done when:
 ## Out Of Scope
 - Payments and checkout
 - Admin authoring
+
+## Implementation Notes
+- Student assessment routes now live at:
+  - `/student/practice`
+  - `/student/practice/session/[sessionId]`
+  - `/student/tests`
+  - `/student/tests/[testId]`
+  - `/student/tests/attempts/[attemptId]`
+- Shared assessment foundations now live under:
+  - `src/lib/assessment` for normalized student question rendering, locale preference, draft normalization, and review helpers
+  - `src/lib/practice` for practice-session contracts and progress analytics
+  - `src/lib/tests` for published-test, attempt-history, save, and submit contracts
+  - `src/components/assessment` for reusable question, review, and result UI
+- Zustand now persists focused interactive state for:
+  - practice session drafts, current question selection, and revealed review payloads
+  - timed-test attempt drafts, synced answers, and resume-safe current question state
+- Practice and tests stay intentionally distinct:
+  - practice gives immediate submit correctness plus explicit reveal controls
+  - timed tests keep correctness hidden until submission and rely on saved drafts plus timer-driven attempt state
+- Practice session routes now auto-request the first batch of questions when the backend returns an `ACTIVE` session with zero served questions.
+- The student mobile bottom navigation is intentionally hidden on immersive assessment routes so the fixed shell chrome does not block save, submit, or question navigation controls.
+- Timed test attempt history is wired against the backend's dedicated `/tests/attempts/history` contract instead of overloading the published-test detail route.
+- Verified assessment seed data now includes:
+  - published free and premium student tests
+  - four representative backend questions spanning the assessment renderer
+  - a disposable student verification account with a real `PRACTICE_PREMIUM` admin grant so the end-to-end browser smoke can exercise fresh practice and test flows safely

@@ -43,7 +43,7 @@
 - [x] `references/03_execution/05_frontend_student_shell_dashboard_and_catalog.md`
 - [x] `references/03_execution/06_frontend_notes_library_preview_and_secure_reader.md`
 - [x] `references/03_execution/07_frontend_guidance_english_speaking_current_affairs.md`
-- [ ] `references/03_execution/08_frontend_practice_and_tests_student_experience.md`
+- [x] `references/03_execution/08_frontend_practice_and_tests_student_experience.md`
 - [ ] `references/03_execution/09_frontend_plans_payments_entitlements_and_preview_ux.md`
 - [ ] `references/03_execution/10_frontend_admin_shell_shared_crud_and_cms.md`
 - [ ] `references/03_execution/11_frontend_admin_content_assessment_users_and_ops.md`

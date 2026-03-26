@@ -82,6 +82,11 @@ The frontend must stay contract-driven against the backend, use CMS-driven conte
 - The backend `examTrackId` and `mediumId` filters are exact-match filters, so the frontend keeps selected track and medium filtering client-side for structured content lists in order to preserve globally applicable content that has no linked track or medium.
 - Locked premium structured content may appear in authenticated lists, but the detail route should respect backend access by showing entitlement messaging instead of assuming previewable content.
 
+## Assessment Experience Rules
+- Practice session detail routes should treat `ACTIVE` sessions with zero served questions as a first-batch loading state and automatically request the initial `/practice/sessions/:id/next` batch instead of rendering a dead empty screen.
+- Timed test attempt history should be read from the backend's dedicated `/tests/attempts/history` contract, and active attempts should resume instead of spawning duplicate starts for the same student and test.
+- Immersive assessment routes such as `/student/practice/session/[sessionId]` and `/student/tests/attempts/[attemptId]` should suppress the mobile bottom navigation so fixed chrome does not overlap save, submit, or navigation controls.
+
 ## Planned Zustand Scope
 - Student shell UI state such as sidebar, bottom-nav behavior, active exam-track context, and lightweight preferences
 - Student shell currently persists the active exam-track code, active medium code, and last-opened catalog subject slug so later notes, guidance, practice, and tests can reuse discovery context

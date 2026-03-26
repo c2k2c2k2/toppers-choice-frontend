@@ -430,6 +430,62 @@ export function StudentDashboardScreen() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
+              Assessment launchpad
+            </p>
+            <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
+              Move from revision mode to pressure mode deliberately.
+            </h2>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/student/practice" className="tc-button-secondary">
+              Open practice
+            </Link>
+            <Link href="/student/tests" className="tc-button-primary">
+              Open timed tests
+            </Link>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-4 xl:grid-cols-3">
+          <article className="tc-card rounded-[24px] p-5">
+            <p className="tc-overline">Practice mode</p>
+            <h3 className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
+              Immediate correctness and reveal
+            </h3>
+            <p className="tc-muted mt-3 text-sm leading-6">
+              Use practice when you want smaller recovery loops, topic repair,
+              and answer-by-answer feedback.
+            </p>
+          </article>
+
+          <article className="tc-card rounded-[24px] p-5">
+            <p className="tc-overline">Timed mode</p>
+            <h3 className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
+              Instructions first, results later
+            </h3>
+            <p className="tc-muted mt-3 text-sm leading-6">
+              Timed tests keep correctness hidden until submission so the
+              experience stays closer to real assessment pressure.
+            </p>
+          </article>
+
+          <article className="tc-card rounded-[24px] p-5">
+            <p className="tc-overline">Shared scope</p>
+            <h3 className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
+              Track and medium stay in sync
+            </h3>
+            <p className="tc-muted mt-3 text-sm leading-6">
+              The same selected study context now flows through catalog, notes,
+              guidance, practice, and timed tests.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section className="tc-panel rounded-[28px] p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
               Structured learning
             </p>
             <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">

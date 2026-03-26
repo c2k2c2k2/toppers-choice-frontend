@@ -28,6 +28,112 @@ export const queryKeys = {
         },
       ] as const,
     note: (noteId: string) => ["student", "notes", "detail", noteId] as const,
+    practiceSessions: (filters: {
+      limit?: number | null;
+      status?: string | null;
+    }) =>
+      [
+        "student",
+        "practice",
+        "sessions",
+        {
+          limit: filters.limit ?? null,
+          status: filters.status ?? null,
+        },
+      ] as const,
+    practiceSession: (sessionId: string) =>
+      ["student", "practice", "session", sessionId] as const,
+    practiceSubjectProgress: (filters: {
+      examTrackId?: string | null;
+    }) =>
+      [
+        "student",
+        "practice",
+        "progress",
+        "subjects",
+        {
+          examTrackId: filters.examTrackId ?? null,
+        },
+      ] as const,
+    practiceTopicProgress: (filters: {
+      examTrackId?: string | null;
+      subjectId?: string | null;
+    }) =>
+      [
+        "student",
+        "practice",
+        "progress",
+        "topics",
+        {
+          examTrackId: filters.examTrackId ?? null,
+          subjectId: filters.subjectId ?? null,
+        },
+      ] as const,
+    practiceWeakQuestions: (filters: {
+      limit?: number | null;
+      subjectId?: string | null;
+      topicId?: string | null;
+    }) =>
+      [
+        "student",
+        "practice",
+        "progress",
+        "weak-questions",
+        {
+          limit: filters.limit ?? null,
+          subjectId: filters.subjectId ?? null,
+          topicId: filters.topicId ?? null,
+        },
+      ] as const,
+    practiceTrends: (filters: {
+      days?: number | null;
+    }) =>
+      [
+        "student",
+        "practice",
+        "progress",
+        "trends",
+        {
+          days: filters.days ?? null,
+        },
+      ] as const,
+    tests: (filters: {
+      accessType?: string | null;
+      examTrackId?: string | null;
+      family?: string | null;
+      mediumId?: string | null;
+      subjectId?: string | null;
+    }) =>
+      [
+        "student",
+        "tests",
+        "list",
+        {
+          accessType: filters.accessType ?? null,
+          examTrackId: filters.examTrackId ?? null,
+          family: filters.family ?? null,
+          mediumId: filters.mediumId ?? null,
+          subjectId: filters.subjectId ?? null,
+        },
+      ] as const,
+    testDetail: (testId: string) => ["student", "tests", "detail", testId] as const,
+    testAttempts: (filters: {
+      limit?: number | null;
+      status?: string | null;
+      testId?: string | null;
+    }) =>
+      [
+        "student",
+        "tests",
+        "attempts",
+        {
+          limit: filters.limit ?? null,
+          status: filters.status ?? null,
+          testId: filters.testId ?? null,
+        },
+      ] as const,
+    testAttempt: (attemptId: string) =>
+      ["student", "tests", "attempt", attemptId] as const,
     contentList: (filters: {
       family?: string | null;
       featuredOnly?: boolean | null;

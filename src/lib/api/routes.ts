@@ -31,6 +31,40 @@ export const apiRoutes = {
     content: (noteViewSessionId: string) =>
       `/notes/view-sessions/${encodeURIComponent(noteViewSessionId)}/content`,
   },
+  practice: {
+    sessions: "/practice/sessions",
+    session: (sessionId: string) =>
+      `/practice/sessions/${encodeURIComponent(sessionId)}`,
+    next: (sessionId: string) =>
+      `/practice/sessions/${encodeURIComponent(sessionId)}/next`,
+    save: (sessionId: string) =>
+      `/practice/sessions/${encodeURIComponent(sessionId)}/save`,
+    answer: (sessionId: string) =>
+      `/practice/sessions/${encodeURIComponent(sessionId)}/answer`,
+    reveal: (sessionId: string) =>
+      `/practice/sessions/${encodeURIComponent(sessionId)}/reveal`,
+    end: (sessionId: string) =>
+      `/practice/sessions/${encodeURIComponent(sessionId)}/end`,
+    progress: {
+      subjects: "/practice/progress/subjects",
+      topics: "/practice/progress/topics",
+      weakQuestions: "/practice/progress/weak-questions",
+      trends: "/practice/progress/trends",
+    },
+  },
+  tests: {
+    list: "/tests",
+    detail: (testId: string) => `/tests/${encodeURIComponent(testId)}`,
+    startAttempt: (testId: string) =>
+      `/tests/${encodeURIComponent(testId)}/attempts`,
+    attemptHistory: "/tests/attempts/history",
+    attempt: (attemptId: string) =>
+      `/tests/attempts/${encodeURIComponent(attemptId)}`,
+    save: (attemptId: string) =>
+      `/tests/attempts/${encodeURIComponent(attemptId)}/save`,
+    submit: (attemptId: string) =>
+      `/tests/attempts/${encodeURIComponent(attemptId)}/submit`,
+  },
   content: {
     list: "/content",
     detail: (slug: string) => `/content/${encodeURIComponent(slug)}`,
