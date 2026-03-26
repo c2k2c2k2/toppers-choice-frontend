@@ -40,8 +40,8 @@
 - [x] `references/03_execution/02_frontend_design_system_pwa_and_legacy_marathi_fonts.md`
 - [x] `references/03_execution/03_frontend_public_landing_and_cms_surface.md`
 - [x] `references/03_execution/04_frontend_auth_session_bootstrap_and_guards.md`
-- [ ] `references/03_execution/05_frontend_student_shell_dashboard_and_catalog.md`
-- [ ] `references/03_execution/06_frontend_notes_library_preview_and_secure_reader.md`
+- [x] `references/03_execution/05_frontend_student_shell_dashboard_and_catalog.md`
+- [x] `references/03_execution/06_frontend_notes_library_preview_and_secure_reader.md`
 - [ ] `references/03_execution/07_frontend_guidance_english_speaking_current_affairs.md`
 - [ ] `references/03_execution/08_frontend_practice_and_tests_student_experience.md`
 - [ ] `references/03_execution/09_frontend_plans_payments_entitlements_and_preview_ux.md`

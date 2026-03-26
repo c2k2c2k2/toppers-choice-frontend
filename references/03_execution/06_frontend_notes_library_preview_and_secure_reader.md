@@ -41,3 +41,13 @@ Done when:
 
 ## Out Of Scope
 - Practice and test flows
+
+## Implementation Notes
+- Added live student notes routes at `/student/notes` and `/student/notes/[noteId]` with the notes nav entry promoted from "soon" to "live".
+- The notes library combines `GET /catalog`, `GET /notes/tree`, and filtered `GET /notes` responses so it can respect the active student track while keeping medium-agnostic notes visible through client-side medium filtering.
+- Note detail pages now show free, preview, and locked premium states from the backend access summary without hardcoded entitlement logic in the frontend.
+- Secure reading uses `POST /notes/:noteId/view-session`, `GET /notes/view-sessions/:id/watermark`, streamed PDF content through `pdfjs-dist`, and debounced `POST /notes/:noteId/progress` updates.
+- Protected reader state follows the tightened rule set:
+  - note view tokens and watermark payloads stay in component memory only
+  - service-worker caching still excludes `/api` traffic
+  - resume position comes from backend `note.progress`, not from offline note snapshots

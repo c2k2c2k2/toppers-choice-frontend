@@ -15,6 +15,7 @@ The frontend must stay contract-driven against the backend, use CMS-driven conte
 
 ## Shared Frontend Foundations
 - Shared API client generated or aligned from OpenAPI
+- Generated contract types live under `src/lib/api/generated/`, with small frontend normalization helpers at the UI edge where Swagger optional fields are looser than the runtime payloads
 - Shared auth provider and permission guards
 - Shared query layer and error normalization
 - Shared Zustand stores for client-side cross-route state
@@ -67,6 +68,7 @@ The frontend must stay contract-driven against the backend, use CMS-driven conte
 - The student surface remains the primary install target, but manifest and provider wiring live at the shared app root so public and admin surfaces boot consistently inside the same installable shell.
 - Service-worker caching must stay conservative: cache static shell assets, manifest, icons, and bundled fonts only.
 - Do not cache `/api` responses, route documents, or protected student/admin payloads offline by default.
+- Protected note sessions must remain explicitly non-persistent: note view tokens and watermark payloads stay in memory only, and note resume should come from backend progress rather than from offline reader snapshots.
 
 ## Shared Marathi Rendering Rules
 - Unicode Marathi must render through the shared Devanagari-safe fallback stack.
@@ -75,7 +77,9 @@ The frontend must stay contract-driven against the backend, use CMS-driven conte
 
 ## Planned Zustand Scope
 - Student shell UI state such as sidebar, bottom-nav behavior, active exam-track context, and lightweight preferences
-- Note reader UI state such as zoom, current page, fullscreen or focus mode, and session-local reader controls
+- Student shell currently persists the active exam-track code, active medium code, and last-opened catalog subject slug so later notes, guidance, practice, and tests can reuse discovery context
+- Note reader UI state such as zoom, focus mode, and session-local reader controls
+- Protected note view tokens, watermark payloads, and canonical resume position should not be persisted in Zustand; the backend note progress endpoint remains the source of truth for resume
 - Practice and test session client state such as in-progress answers, timer snapshot, local draft persistence, and resume-safe interaction state
 - Admin panel UI state such as table preferences, filter drawer state, and non-server draft UI controls
 - Keep canonical backend-backed entities out of Zustand; fetch them through API hooks and query cache instead

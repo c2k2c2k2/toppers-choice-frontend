@@ -39,3 +39,9 @@ Done when:
 ## Out Of Scope
 - Note reader
 - Practice and tests
+
+## Implementation Notes
+- The student shell now has desktop rail plus mobile sheet and bottom-nav behavior, driven by shared Zustand state in `src/stores/student-shell.store.ts`.
+- The student dashboard bootstrap is backed by authenticated TanStack Query calls to `/catalog`, `/cms/student/resolve`, `/notifications/me`, and `/analytics/me/summary`.
+- Catalog navigation now includes `/student/catalog` and `/student/catalog/[subjectSlug]`, with track and medium state shared across routes instead of hardcoded sample data.
+- Local verification used backend-owned seed data created through admin APIs for taxonomy and one authenticated student announcement so the student routes could be exercised against real contracts.

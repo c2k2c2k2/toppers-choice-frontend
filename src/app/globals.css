@@ -365,6 +365,10 @@ button {
   box-shadow: var(--shadow-soft);
 }
 
+.tc-rail-link[data-disabled="true"] {
+  opacity: 0.78;
+}
+
 .tc-stat-chip {
   display: inline-flex;
   align-items: center;
@@ -406,6 +410,123 @@ button {
   width: 0.65rem;
   border-radius: 999px;
   background: currentColor;
+}
+
+.tc-filter-chip {
+  display: inline-flex;
+  min-height: var(--touch-target);
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 30, 64, 0.12);
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--brand);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.tc-filter-chip:hover {
+  transform: translateY(-1px);
+  background: #ffffff;
+}
+
+.tc-filter-chip[data-active="true"] {
+  border-color: rgba(0, 51, 102, 0.24);
+  background: rgba(0, 51, 102, 0.08);
+}
+
+.tc-nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.32rem 0.7rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tc-nav-badge[data-status="live"] {
+  background: rgba(0, 51, 102, 0.12);
+  color: var(--accent-student);
+}
+
+.tc-nav-badge[data-status="soon"] {
+  background: rgba(225, 134, 0, 0.12);
+  color: var(--accent-public);
+}
+
+.tc-mobile-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+.tc-bottom-nav {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 1rem;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+  padding-inline: 1rem;
+}
+
+.tc-bottom-nav-shell {
+  display: grid;
+  width: min(100%, 28rem);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 0.55rem;
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(12px);
+}
+
+.tc-bottom-nav-link {
+  display: inline-flex;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-align: center;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.tc-bottom-nav-link[data-active="true"] {
+  background: var(--brand);
+  color: #f8f9fa;
+}
+
+.tc-bottom-nav-link[data-disabled="true"] {
+  background: rgba(0, 30, 64, 0.05);
+  color: var(--muted);
+}
+
+.tc-topic-branch {
+  position: relative;
+}
+
+.tc-topic-branch::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: -0.65rem;
+  width: 1px;
+  background: rgba(0, 30, 64, 0.08);
 }
 
 .font-marathi-unicode {
