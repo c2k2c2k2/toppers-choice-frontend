@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useAuthenticatedQuery, useAuthSession } from "@/lib/auth";
-import { queryKeys } from "@/lib/api/query-keys";
+import { adminQueryKeys } from "@/lib/api/query-keys";
 import {
   getAdminOpsDashboard,
   listAdminPermissions,
@@ -22,19 +22,19 @@ export function AdminDashboardScreen() {
   const dashboardQuery = useAuthenticatedQuery({
     enabled: canReadOps,
     queryFn: getAdminOpsDashboard,
-    queryKey: queryKeys.admin.dashboard(),
+    queryKey: adminQueryKeys.dashboard(),
     staleTime: 30_000,
   });
   const permissionsQuery = useAuthenticatedQuery({
     enabled: canReadRoles,
     queryFn: listAdminPermissions,
-    queryKey: queryKeys.admin.permissions(),
+    queryKey: adminQueryKeys.permissions(),
     staleTime: 60_000,
   });
   const rolesQuery = useAuthenticatedQuery({
     enabled: canReadRoles,
     queryFn: listAdminRoles,
-    queryKey: queryKeys.admin.roles(),
+    queryKey: adminQueryKeys.roles(),
     staleTime: 60_000,
   });
 

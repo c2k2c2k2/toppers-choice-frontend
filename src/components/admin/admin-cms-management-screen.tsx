@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/lib/api/query-keys";
+import { adminQueryKeys } from "@/lib/api/query-keys";
 import { useAuthenticatedMutation, useAuthenticatedQuery, useAuthSession } from "@/lib/auth";
 import {
   createAdminCmsAnnouncement,
@@ -388,7 +388,7 @@ export function AdminCmsManagementScreen({
           return listAdminCmsSections(accessToken, filters);
       }
     },
-    queryKey: queryKeys.admin.cms(collection, filters),
+    queryKey: adminQueryKeys.cms(collection, filters),
     staleTime: 15_000,
   });
 
@@ -438,7 +438,7 @@ export function AdminCmsManagementScreen({
 
   async function invalidateCollection() {
     await queryClient.invalidateQueries({
-      queryKey: queryKeys.admin.cms(collection, filters),
+      queryKey: adminQueryKeys.cms(collection, filters),
     });
   }
 

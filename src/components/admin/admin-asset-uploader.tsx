@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/lib/api/query-keys";
+import { adminQueryKeys } from "@/lib/api/query-keys";
 import { useAuthenticatedMutation, useAuthenticatedQuery, useAuthSession } from "@/lib/auth";
 import {
   getApiErrorMessage,
@@ -59,7 +59,7 @@ export function AdminAssetUploader({
         purpose,
         status: "READY",
       }),
-    queryKey: queryKeys.admin.assets({
+    queryKey: adminQueryKeys.assets({
       accessLevel,
       purpose,
       status: "READY",
@@ -81,7 +81,7 @@ export function AdminAssetUploader({
       setMessage(`Uploaded ${asset.originalFileName} and linked it to this record.`);
       onAssetChange(asset);
       await queryClient.invalidateQueries({
-        queryKey: queryKeys.admin.assets({
+        queryKey: adminQueryKeys.assets({
           accessLevel,
           purpose,
           status: "READY",
