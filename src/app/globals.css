@@ -398,6 +398,19 @@ button {
   padding: 0.35rem 0.7rem;
 }
 
+.tc-admin-pill {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .tc-swatch {
   height: 3.5rem;
   border-radius: 1.25rem;

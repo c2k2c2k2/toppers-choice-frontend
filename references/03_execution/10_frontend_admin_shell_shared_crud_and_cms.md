@@ -39,3 +39,9 @@ Done when:
 ## Out Of Scope
 - Full question/test authoring UX
 - Detailed analytics dashboards
+
+## Implementation Notes
+- The admin shell should expose permission-aware navigation for the live F10 surfaces now and show later F11 domains as staged, non-clickable placeholders instead of pretending unfinished routes already exist.
+- CMS pages, banners, announcements, and sections should share one reusable management experience rather than four disconnected CRUD screens. Reuse one filter/table/editor pattern and vary only collection-specific fields and endpoint wiring.
+- CMS JSON fields such as `bodyJson`, `seoJson`, `metaJson`, and `configJson` should stay editable as raw JSON text for now so the frontend remains aligned to the backend contract without jumping ahead into bespoke block editors.
+- Upload integration should be real, not mocked: use the admin file init-upload and confirm-upload flow, and let the editor continue working even when the current admin session lacks `content.files.read` or `content.files.manage`.

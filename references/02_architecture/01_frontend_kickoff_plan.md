@@ -65,6 +65,12 @@ The frontend must stay contract-driven against the backend, use CMS-driven conte
 - Server-side data fetching should continue using `NEXT_PUBLIC_API_BASE_URL` as the explicit backend base URL.
 - Student and admin access entry points are `/student/login` and `/admin/login`, with `/student/forbidden` and `/admin/forbidden` reserved for access failures.
 
+## Admin Foundation Rules
+- The admin surface should boot from the shared auth session plus lightweight admin bootstrap queries such as `/admin/ops/dashboard`, `/admin/access/permissions`, and `/admin/access/roles`, rather than inventing a separate admin-only session model.
+- Route-level admin protection should layer relevant permission checks on top of the shared admin shell; the shell itself enforces the authenticated admin user type, while specific modules such as `/admin/cms/*` add permission-aware guards and action-level gating.
+- CMS management should stay on one reusable client-heavy CRUD foundation: shared filter bar, shared data table, shared form fields, shared JSON text areas, shared inline notices, and collection-specific field configuration on top.
+- Admin file uploads should follow the backend contract sequence `/admin/files/init-upload` -> provider upload URL -> `/admin/files/{assetId}/confirm-upload`, and the uploader UI should degrade gracefully when a session can manage CMS records but lacks file permissions.
+
 ## PWA Baseline Rules
 - The student surface remains the primary install target, but manifest and provider wiring live at the shared app root so public and admin surfaces boot consistently inside the same installable shell.
 - Service-worker caching must stay conservative: cache static shell assets, manifest, icons, and bundled fonts only.

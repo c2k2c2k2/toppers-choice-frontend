@@ -165,4 +165,42 @@ export const queryKeys = {
     resolve: () => ["cms", "public", "resolve"] as const,
     page: (slug: string) => ["cms", "public", "page", slug] as const,
   },
+  admin: {
+    dashboard: () => ["admin", "dashboard"] as const,
+    permissions: () => ["admin", "permissions"] as const,
+    roles: () => ["admin", "roles"] as const,
+    assets: (filters: {
+      accessLevel?: string | null;
+      purpose?: string | null;
+      status?: string | null;
+    }) =>
+      [
+        "admin",
+        "assets",
+        {
+          accessLevel: filters.accessLevel ?? null,
+          purpose: filters.purpose ?? null,
+          status: filters.status ?? null,
+        },
+      ] as const,
+    cms: (collection: string, filters: {
+      placement?: string | null;
+      q?: string | null;
+      status?: string | null;
+      surface?: string | null;
+      visibility?: string | null;
+    }) =>
+      [
+        "admin",
+        "cms",
+        collection,
+        {
+          placement: filters.placement ?? null,
+          q: filters.q ?? null,
+          status: filters.status ?? null,
+          surface: filters.surface ?? null,
+          visibility: filters.visibility ?? null,
+        },
+      ] as const,
+  },
 } as const;

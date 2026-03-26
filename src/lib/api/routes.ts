@@ -87,6 +87,55 @@ export const apiRoutes = {
     studentPage: (slug: string) =>
       `/cms/student/pages/${encodeURIComponent(slug)}`,
   },
+  admin: {
+    access: {
+      permissions: "/admin/access/permissions",
+      roles: "/admin/access/roles",
+    },
+    ops: {
+      dashboard: "/admin/ops/dashboard",
+    },
+    files: {
+      list: "/admin/files",
+      detail: (assetId: string) => `/admin/files/${encodeURIComponent(assetId)}`,
+      initUpload: "/admin/files/init-upload",
+      confirmUpload: (assetId: string) =>
+        `/admin/files/${encodeURIComponent(assetId)}/confirm-upload`,
+    },
+    cms: {
+      pages: "/admin/cms/pages",
+      page: (pageId: string) => `/admin/cms/pages/${encodeURIComponent(pageId)}`,
+      publishPage: (pageId: string) =>
+        `/admin/cms/pages/${encodeURIComponent(pageId)}/publish`,
+      unpublishPage: (pageId: string) =>
+        `/admin/cms/pages/${encodeURIComponent(pageId)}/unpublish`,
+      reorderPages: "/admin/cms/pages/reorder",
+      banners: "/admin/cms/banners",
+      banner: (bannerId: string) =>
+        `/admin/cms/banners/${encodeURIComponent(bannerId)}`,
+      publishBanner: (bannerId: string) =>
+        `/admin/cms/banners/${encodeURIComponent(bannerId)}/publish`,
+      unpublishBanner: (bannerId: string) =>
+        `/admin/cms/banners/${encodeURIComponent(bannerId)}/unpublish`,
+      reorderBanners: "/admin/cms/banners/reorder",
+      announcements: "/admin/cms/announcements",
+      announcement: (announcementId: string) =>
+        `/admin/cms/announcements/${encodeURIComponent(announcementId)}`,
+      publishAnnouncement: (announcementId: string) =>
+        `/admin/cms/announcements/${encodeURIComponent(announcementId)}/publish`,
+      unpublishAnnouncement: (announcementId: string) =>
+        `/admin/cms/announcements/${encodeURIComponent(announcementId)}/unpublish`,
+      reorderAnnouncements: "/admin/cms/announcements/reorder",
+      sections: "/admin/cms/sections",
+      section: (sectionId: string) =>
+        `/admin/cms/sections/${encodeURIComponent(sectionId)}`,
+      publishSection: (sectionId: string) =>
+        `/admin/cms/sections/${encodeURIComponent(sectionId)}/publish`,
+      unpublishSection: (sectionId: string) =>
+        `/admin/cms/sections/${encodeURIComponent(sectionId)}/unpublish`,
+      reorderSections: "/admin/cms/sections/reorder",
+    },
+  },
   analytics: {
     meSummary: "/analytics/me/summary",
   },
