@@ -87,6 +87,13 @@ The frontend must stay contract-driven against the backend, use CMS-driven conte
 - Timed test attempt history should be read from the backend's dedicated `/tests/attempts/history` contract, and active attempts should resume instead of spawning duplicate starts for the same student and test.
 - Immersive assessment routes such as `/student/practice/session/[sessionId]` and `/student/tests/attempts/[attemptId]` should suppress the mobile bottom navigation so fixed chrome does not overlap save, submit, or navigation controls.
 
+## Payments And Entitlement Rules
+- Public pricing stays on `/pricing`, but authenticated purchase intent should hand off into `/student/plans` so checkout creation, entitlement refresh, and manual-access summaries stay student-aware.
+- Payment return and polling live on `/payments/result` in the public shell; the route itself is public so provider redirects can land safely, but final order-status checks still require the student session.
+- The shared checkout store should persist only lightweight routing state such as order id, plan id, intent, source, and return target in `sessionStorage`; protected payment or entitlement data should always be refetched from the backend.
+- Student plans should suppress the mobile bottom navigation because the route is CTA-heavy and the floating nav can overlap checkout controls near the end of long plan grids.
+- Checkout launch should use explicit idempotency keys and no automatic mutation retries so repeated UI events do not create misleading duplicate-order states.
+
 ## Planned Zustand Scope
 - Student shell UI state such as sidebar, bottom-nav behavior, active exam-track context, and lightweight preferences
 - Student shell currently persists the active exam-track code, active medium code, and last-opened catalog subject slug so later notes, guidance, practice, and tests can reuse discovery context

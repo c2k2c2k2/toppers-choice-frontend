@@ -9,6 +9,7 @@ export const queryKeys = {
     cms: () => ["student", "cms"] as const,
     notifications: () => ["student", "notifications"] as const,
     analytics: () => ["student", "analytics"] as const,
+    entitlements: () => ["student", "entitlements"] as const,
     notesTree: () => ["student", "notes", "tree"] as const,
     notesList: (filters: {
       mediumId?: string | null;
@@ -153,7 +154,11 @@ export const queryKeys = {
       ] as const,
     contentDetail: (slug: string) =>
       ["student", "content", "detail", slug] as const,
+    paymentOrder: (orderId: string) =>
+      ["student", "payments", "order", orderId] as const,
   },
+  publicPlans: () => ["public", "plans"] as const,
+  publicPlan: (planId: string) => ["public", "plans", planId] as const,
   publicBootstrap: (siteCode?: string | null) =>
     ["public-bootstrap", siteCode ?? "default"] as const,
   cms: {

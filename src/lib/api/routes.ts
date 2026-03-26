@@ -15,6 +15,14 @@ export const apiRoutes = {
     plans: "/public/plans",
     plan: (planId: string) => `/public/plans/${encodeURIComponent(planId)}`,
   },
+  entitlements: {
+    me: "/entitlements/me",
+  },
+  payments: {
+    checkout: "/payments/checkout",
+    orderStatus: (orderId: string) =>
+      `/payments/orders/${encodeURIComponent(orderId)}/status`,
+  },
   catalog: {
     authenticated: "/catalog",
   },

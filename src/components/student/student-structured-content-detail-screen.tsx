@@ -26,6 +26,7 @@ import {
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
 import { LoadingState } from "@/components/primitives/loading-state";
+import { PremiumAccessCard } from "@/components/payments/premium-access-card";
 
 export function StudentStructuredContentDetailScreen({
   family,
@@ -267,30 +268,21 @@ export function StudentStructuredContentDetailScreen({
             </div>
           </section>
         ) : (
-          <section className="tc-panel rounded-[28px] p-6 md:p-7">
-            <p className="tc-kicker" style={{ color: "var(--accent-public)" }}>
-              Locked lesson
-            </p>
-            <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-              This structured lesson is published, but the full body is protected.
-            </h2>
-            <p className="tc-muted mt-3 text-base leading-7">
-              {accessDescriptor.description}
-            </p>
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              <span className="tc-stat-chip">{content.accessType}</span>
-              <span className="tc-stat-chip">{content.format}</span>
-              <span className="tc-stat-chip">{familyDefinition.label}</span>
-            </div>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link href="/pricing" className="tc-button-primary">
-                See plans
-              </Link>
-              <Link href={familyDefinition.collectionHref} className="tc-button-secondary">
-                Back to list
-              </Link>
-            </div>
-          </section>
+          <PremiumAccessCard
+            badgeLabel="Locked lesson"
+            description={accessDescriptor.description}
+            hints={[
+              "Structured lesson bodies stay hidden until the backend entitlement check returns access.",
+              "Mixed-language and Marathi rendering still use the same shared renderer after unlock.",
+            ]}
+            intent="content"
+            primaryLabel="Unlock this lesson"
+            returnTo={familyDefinition.detailHref(content.slug)}
+            secondaryHref={familyDefinition.collectionHref}
+            secondaryLabel="Back to list"
+            source="content-detail-locked"
+            title="This structured lesson is published, but the full body is protected."
+          />
         )}
       </section>
     </div>

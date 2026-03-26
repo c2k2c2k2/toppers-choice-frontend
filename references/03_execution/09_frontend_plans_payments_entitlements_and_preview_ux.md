@@ -37,3 +37,10 @@ Done when:
 
 ## Out Of Scope
 - Admin payment operations
+
+## Implementation Notes
+- Public pricing now renders live backend plans and hands purchase intent into `/student/plans` instead of keeping checkout copy as future-only placeholder text.
+- Student payments and entitlements are implemented through a shared `src/lib/payments` layer, a focused checkout Zustand store, the new `/student/plans` route, and the public `/payments/result` return route.
+- Locked notes, structured content, practice access-denied states, and locked tests now use shared paywall/upgrade messaging that routes into the student plans surface with `intent`, `source`, and `returnTo` context.
+- Successful payment polling invalidates entitlement-backed student queries so notes, content, practice, tests, and dashboard surfaces can refresh without a full reload.
+- Local verification was performed against a backend with public plans seeded through existing admin APIs and an unconfigured PhonePe provider. Direct backend checkout calls returned `PAYMENT_PROVIDER_NOT_CONFIGURED`, while repeated browser attempts can surface the backend's duplicate-idempotency follow-up error; the frontend treats both as recoverable checkout failures and keeps the student inside the plans flow.

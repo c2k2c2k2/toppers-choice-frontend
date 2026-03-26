@@ -1,5 +1,12 @@
 import Link from "next/link";
-import type { PublicPlan } from "@/lib/payments";
+import {
+  buildStudentPlansHref,
+  formatPlanDuration,
+  formatPlanPrice,
+  getPlanFeatureLabels,
+  inferPlanIntent,
+  type PublicPlan,
+} from "@/lib/payments";
 import type { PublicPlanPreview } from "@/lib/public";
 
 export interface PublicPlanCardData {
@@ -13,36 +20,23 @@ export interface PublicPlanCardData {
   title: string;
 }
 
-function formatPrice(plan: PublicPlan) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: plan.currencyCode,
-    maximumFractionDigits: 0,
-  }).format(plan.pricePaise / 100);
-}
-
 export function mapPlanToCardData(plan: PublicPlan): PublicPlanCardData {
   return {
     title: plan.name,
     description:
       plan.shortDescription ??
       plan.description ??
-      "Admin-managed public plan ready for future checkout and entitlement wiring.",
-    priceLabel: formatPrice(plan),
-    durationLabel: `${plan.durationDays} day access window`,
-    features:
-      plan.entitlements.length > 0
-        ? plan.entitlements
-            .slice(0, 4)
-            .map((entitlement) =>
-              entitlement.entitlementKind
-                .toLowerCase()
-                .replace(/_/g, " ")
-                .replace(/\b\w/g, (character) => character.toUpperCase()),
-            )
-        : ["Entitlements are configured from backend plan metadata."],
-    ctaLabel: "Talk to support",
-    ctaHref: "/contact",
+      "Admin-managed public plan ready for student checkout and entitlement refresh.",
+    priceLabel: formatPlanPrice(plan),
+    durationLabel: `${formatPlanDuration(plan.durationDays)} access`,
+    features: getPlanFeatureLabels(plan).slice(0, 4),
+    ctaLabel: "Continue in student app",
+    ctaHref: buildStudentPlansHref({
+      intent: inferPlanIntent(plan),
+      planId: plan.id,
+      returnTo: "/pricing",
+      source: "public-pricing",
+    }),
   };
 }
 

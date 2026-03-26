@@ -56,10 +56,11 @@ const STUDENT_NAV_ITEMS: StudentNavItem[] = [
     status: "live",
   },
   {
+    href: "/student/plans",
     label: "Plans",
     shortLabel: "Plans",
     description: "Entitlements, checkout, and access refresh.",
-    status: "soon",
+    status: "live",
   },
 ];
 
@@ -144,8 +145,10 @@ export function StudentBottomNavigation() {
   const isImmersiveAssessmentRoute =
     pathname.startsWith("/student/practice/session/") ||
     pathname.startsWith("/student/tests/attempts/");
+  const hideBottomNavOnRoute =
+    isImmersiveAssessmentRoute || pathname.startsWith("/student/plans");
 
-  if (!isVisible || isImmersiveAssessmentRoute) {
+  if (!isVisible || hideBottomNavOnRoute) {
     return null;
   }
 

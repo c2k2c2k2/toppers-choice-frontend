@@ -117,12 +117,12 @@ export function getContentAccessDescriptor(access: ContentAccessSummary) {
   const accessReason = normalizeText(access.reason);
 
   if (access.mode === "LOCKED") {
-    return {
-      badgeLabel: "Premium locked",
-      ctaHref: "/pricing",
-      ctaLabel: "See plans",
-      description:
-        accessReason ??
+      return {
+        badgeLabel: "Premium locked",
+        ctaHref: "/student/plans?intent=content",
+        ctaLabel: "See plans",
+        description:
+          accessReason ??
         "This lesson is published, but it requires an active premium entitlement to open the full content.",
     };
   }

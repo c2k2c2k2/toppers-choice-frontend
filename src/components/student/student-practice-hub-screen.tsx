@@ -29,6 +29,7 @@ import {
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
 import { LoadingState } from "@/components/primitives/loading-state";
+import { buildStudentPlansHref } from "@/lib/payments";
 import { useStudentShellStore } from "@/stores";
 
 const QUESTION_COUNT_OPTIONS = [10, 15, 20, 25, 30];
@@ -488,7 +489,14 @@ export function StudentPracticeHubScreen() {
                 {isApiError(startMutation.error) &&
                 startMutation.error.code === "PRACTICE_ACCESS_DENIED" ? (
                   <div className="mt-4">
-                    <Link href="/pricing" className="tc-button-primary">
+                    <Link
+                      href={buildStudentPlansHref({
+                        intent: "practice",
+                        returnTo: "/student/practice",
+                        source: "practice-start",
+                      })}
+                      className="tc-button-primary"
+                    >
                       View plans
                     </Link>
                   </div>

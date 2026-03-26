@@ -22,6 +22,8 @@ import {
 } from "@/lib/notes";
 import { ErrorState } from "@/components/primitives/error-state";
 import { LoadingState } from "@/components/primitives/loading-state";
+import { PremiumAccessCard } from "@/components/payments/premium-access-card";
+import { buildStudentPlansHref } from "@/lib/payments";
 import { PdfCanvasViewer } from "@/components/student/pdf-canvas-viewer";
 import { useNoteReaderStore, useStudentShellStore } from "@/stores";
 
@@ -261,6 +263,11 @@ export function SecureNoteReader({
   );
   const canResume = initialStartPage > 1;
   const isLocked = note.access.mode === "LOCKED";
+  const plansHref = buildStudentPlansHref({
+    intent: "notes",
+    returnTo: `/student/notes/${note.id}`,
+    source: isLocked ? "note-reader-locked" : "note-reader",
+  });
 
   return (
     <section
@@ -312,7 +319,7 @@ export function SecureNoteReader({
                 </button>
               </>
             ) : null}
-            <Link href="/pricing" className="tc-button-secondary">
+            <Link href={plansHref} className="tc-button-secondary">
               View plans
             </Link>
           </div>
@@ -320,21 +327,27 @@ export function SecureNoteReader({
 
         {isLocked ? (
           <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-            <div className="rounded-[28px] bg-[rgba(255,255,255,0.82)] p-5">
-              <p className="tc-overline">Premium note</p>
-              <h3 className="mt-3 text-xl font-semibold text-[color:var(--brand)]">
-                This note is published, but the reader is entitlement-gated.
-              </h3>
-              <p className="tc-muted mt-3 text-sm leading-6">
-                {accessDescriptor.description}
-              </p>
-            </div>
+            <PremiumAccessCard
+              badgeLabel="Premium note"
+              description={accessDescriptor.description}
+              hints={[
+                "Secure note sessions only start after the backend confirms active note access.",
+                "Preview limits, if any, still stay enforced by the published note access summary.",
+              ]}
+              intent="notes"
+              primaryLabel="Unlock note access"
+              returnTo={`/student/notes/${note.id}`}
+              secondaryHref="/student/notes"
+              secondaryLabel="Back to notes"
+              source="note-reader-locked"
+              title="This note is published, but the reader is entitlement-gated."
+            />
             <div className="rounded-[28px] bg-[rgba(0,30,64,0.05)] p-5">
               <p className="tc-overline">What unlocks next</p>
               <p className="mt-3 text-sm leading-6 text-[color:var(--brand)]">
-                Plans and entitlement UX land in F09. For now, the note detail
-                page clearly communicates that the session cannot start until an
-                active premium entitlement exists.
+                Note access is now routed through the shared student plans and
+                payment result flow so the reader can wait for a real
+                entitlement refresh instead of assuming offline purchase state.
               </p>
             </div>
           </div>

@@ -18,6 +18,8 @@ import { StructuredContentRenderer } from "@/components/content/structured-conte
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
 import { LoadingState } from "@/components/primitives/loading-state";
+import { PremiumAccessCard } from "@/components/payments/premium-access-card";
+import { buildStudentPlansHref } from "@/lib/payments";
 
 function formatTimestamp(value: string | null) {
   if (!value) {
@@ -167,7 +169,15 @@ export function StudentTestDetailScreen({
                   {startMutation.isPending ? "Starting attempt..." : "Start test"}
                 </button>
               ) : (
-                <Link href="/pricing" className="tc-button-primary">
+                <Link
+                  href={buildStudentPlansHref({
+                    intent: "tests",
+                    planId: null,
+                    returnTo: `/student/tests/${test.id}`,
+                    source: "test-detail",
+                  })}
+                  className="tc-button-primary"
+                >
                   View plans
                 </Link>
               )}
@@ -217,20 +227,24 @@ export function StudentTestDetailScreen({
       ) : null}
 
       {test.access.mode === "LOCKED" ? (
-        <section className="tc-panel rounded-[28px] p-6">
-          <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-            Access
-          </p>
-          <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-            This test is currently locked.
-          </h2>
-          <p className="tc-muted mt-3 text-sm leading-6">
-            {test.access.reason ?? "A premium entitlement is required before the attempt can begin."}
-          </p>
-          <Link href="/pricing" className="tc-button-primary mt-5">
-            View plans
-          </Link>
-        </section>
+        <PremiumAccessCard
+          badgeLabel="Access"
+          description={
+            test.access.reason ??
+            "A premium entitlement is required before the attempt can begin."
+          }
+          hints={[
+            "Timed attempts only start after the student entitlement state is rechecked from the backend.",
+            "The shared payment result route can refresh this test surface after success.",
+          ]}
+          intent="tests"
+          primaryLabel="Unlock test access"
+          returnTo={`/student/tests/${test.id}`}
+          secondaryHref="/student/tests"
+          secondaryLabel="Back to tests"
+          source="test-detail-locked"
+          title="This test is currently locked."
+        />
       ) : null}
 
       <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">

@@ -35,33 +35,38 @@ export function StudentShell({
     router.replace("/student/login");
   }
 
-  const shellTitle = pathname.startsWith("/student/catalog")
-    ? "Catalog workspace"
-    : pathname.startsWith("/student/practice")
-      ? "Practice workspace"
-      : pathname.startsWith("/student/tests")
-        ? "Timed test workspace"
-    : pathname.startsWith("/student/guidance") ||
-        pathname.startsWith("/student/english-speaking") ||
-        pathname.startsWith("/student/current-affairs") ||
-        pathname.startsWith("/student/monthly-updates")
-      ? "Structured learning"
-    : pathname.startsWith("/student/notes")
-      ? "Notes workspace"
-      : authSession.user?.fullName ?? "Student workspace";
+  let shellTitle = authSession.user?.fullName ?? "Student workspace";
+  let shellDescription =
+    "Protected app chrome with cross-route track and medium state, ready for the full student product.";
 
-  const shellDescription = pathname.startsWith("/student/notes")
-    ? "Secure note discovery, preview handling, watermark sessions, and progress tracking live in this student surface."
-    : pathname.startsWith("/student/practice")
-      ? "Focused practice sessions with weak-area entry points, saved drafts, reveal-aware review, and completion summaries."
-      : pathname.startsWith("/student/tests")
-        ? "Timed test listings, instruction-led starts, autosaved attempts, countdown safety, and result review now live in the student app."
-    : pathname.startsWith("/student/guidance") ||
-        pathname.startsWith("/student/english-speaking") ||
-        pathname.startsWith("/student/current-affairs") ||
-        pathname.startsWith("/student/monthly-updates")
-      ? "Reusable structured content lists and detail flows for guidance, English speaking, current affairs, and monthly updates."
-    : "Protected app chrome with cross-route track and medium state, ready for the full student product.";
+  if (pathname.startsWith("/student/catalog")) {
+    shellTitle = "Catalog workspace";
+  } else if (pathname.startsWith("/student/practice")) {
+    shellTitle = "Practice workspace";
+    shellDescription =
+      "Focused practice sessions with weak-area entry points, saved drafts, reveal-aware review, and completion summaries.";
+  } else if (pathname.startsWith("/student/tests")) {
+    shellTitle = "Timed test workspace";
+    shellDescription =
+      "Timed test listings, instruction-led starts, autosaved attempts, countdown safety, and result review now live in the student app.";
+  } else if (pathname.startsWith("/student/plans")) {
+    shellTitle = "Plans and access";
+    shellDescription =
+      "Backend-managed public plans, authenticated entitlements, checkout handoff, and payment-status refresh live in one student route.";
+  } else if (
+    pathname.startsWith("/student/guidance") ||
+    pathname.startsWith("/student/english-speaking") ||
+    pathname.startsWith("/student/current-affairs") ||
+    pathname.startsWith("/student/monthly-updates")
+  ) {
+    shellTitle = "Structured learning";
+    shellDescription =
+      "Reusable structured content lists and detail flows for guidance, English speaking, current affairs, and monthly updates.";
+  } else if (pathname.startsWith("/student/notes")) {
+    shellTitle = "Notes workspace";
+    shellDescription =
+      "Secure note discovery, preview handling, watermark sessions, and progress tracking live in this student surface.";
+  }
 
   return (
     <div className="min-h-dvh bg-[color:var(--surface-student)]">
@@ -183,7 +188,7 @@ export function StudentShell({
             </div>
           </header>
 
-          <main className="flex-1 pb-24 lg:pb-0">{children}</main>
+          <main className="flex-1 pb-36 lg:pb-0">{children}</main>
         </div>
       </div>
 

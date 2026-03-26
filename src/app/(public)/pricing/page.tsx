@@ -10,7 +10,7 @@ export async function generateMetadata() {
   return buildPublicMetadata({
     title: "Pricing",
     description:
-      "View the public pricing foundation for Topper's Choice, designed for backend-managed plans and future checkout flows.",
+      "View the public pricing foundation for Topper's Choice, with backend-managed plans that now bridge into the live student checkout flow.",
     path: "/pricing",
   });
 }
@@ -26,10 +26,10 @@ export default async function PricingPage() {
     <div className="flex flex-col gap-8">
       <PublicPageHero
         eyebrow="Pricing route"
-        title="Public pricing is structured for backend-managed plans."
-        description="This page is server-first, linked into the public shell, and ready to render active plans from `/public/plans` whenever they are available."
+        title="Public pricing now hands off into the live student plans flow."
+        description="This page stays server-first, renders backend-managed plans from `/public/plans`, and routes purchase intent into the authenticated student checkout surface."
         actions={[
-          { label: "Contact support", href: "/contact", tone: "primary" },
+          { label: "Open student plans", href: "/student/plans?intent=all&source=public-pricing&returnTo=%2Fpricing", tone: "primary" },
           { label: "Browse preparation tracks", href: "/tracks/mpsc-allied", tone: "secondary" },
         ]}
         stats={[
@@ -39,7 +39,7 @@ export default async function PricingPage() {
           },
           {
             label: "Checkout readiness",
-            value: "Future-safe",
+            value: "Student handoff live",
           },
           {
             label: "Route strategy",
@@ -62,20 +62,20 @@ export default async function PricingPage() {
           </h2>
           <ul className="tc-muted mt-5 list-disc space-y-3 pl-5 text-sm leading-6">
             <li>Plan ordering, duration, and copy come from the public plans API.</li>
-            <li>Entitlement hints can be surfaced without hardcoding premium rules into the landing page.</li>
-            <li>Later checkout prompts can reuse the same pricing cards instead of redesigning this route.</li>
+            <li>Plan cards can hand off intent into the protected student plans route without redesigning public pricing.</li>
+            <li>Payment result polling and entitlement refresh stay in the shared frontend foundation after checkout returns.</li>
           </ul>
         </article>
 
         <article className="tc-card rounded-[30px] p-6">
-          <p className="tc-overline">Current F03 boundary</p>
+          <p className="tc-overline">Current F09 shape</p>
           <h2 className="tc-display mt-3 text-3xl font-semibold tracking-tight text-[color:var(--brand)]">
-            Checkout is intentionally held back.
+            Public discovery stays public. Checkout still becomes student-aware.
           </h2>
           <p className="tc-muted mt-4 text-sm leading-7">
-            This prompt establishes the public pricing surface only. Auth-aware
-            purchase flows and entitlement checks will layer on in later frontend
-            payment prompts after the student app and auth work arrive.
+            The public route does not create orders directly. It hands the user
+            into the protected student shell so checkout, payment status, and
+            entitlement refresh all stay tied to the authenticated account.
           </p>
         </article>
       </section>
