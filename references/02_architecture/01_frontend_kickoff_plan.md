@@ -18,6 +18,7 @@ The frontend must stay contract-driven against the backend, use CMS-driven conte
 - Generated contract types live under `src/lib/api/generated/`, with small frontend normalization helpers at the UI edge where Swagger optional fields are looser than the runtime payloads
 - Shared auth provider and permission guards
 - Shared query layer and error normalization
+- Shared structured-content domain with reusable list/detail helpers for career guidance, interview guidance, English speaking, current affairs, and monthly updates
 - Shared Zustand stores for client-side cross-route state
 - Shared design tokens and brand system
 - Shared PWA install/provider baseline with static-shell-only caching
@@ -74,6 +75,12 @@ The frontend must stay contract-driven against the backend, use CMS-driven conte
 - Unicode Marathi must render through the shared Devanagari-safe fallback stack.
 - Legacy encoded Marathi must use centralized helpers and shared font assets rather than ad hoc per-feature font loading.
 - Support explicit hints for Shree-Dev/Shreelipi-style and Surekh/Sulekha-style encoded content, with glyph-based fallback detection only when metadata is missing.
+- Structured content bodies must render through one shared rich-content renderer that can handle block arrays, localized body variants such as `mr-IN` / `en-IN`, HTML segments, and mixed-language lesson content.
+
+## Structured Content Rules
+- Student structured-content routes should use one family-driven list/detail implementation instead of separate bespoke apps for guidance, English speaking, and current affairs.
+- The backend `examTrackId` and `mediumId` filters are exact-match filters, so the frontend keeps selected track and medium filtering client-side for structured content lists in order to preserve globally applicable content that has no linked track or medium.
+- Locked premium structured content may appear in authenticated lists, but the detail route should respect backend access by showing entitlement messaging instead of assuming previewable content.
 
 ## Planned Zustand Scope
 - Student shell UI state such as sidebar, bottom-nav behavior, active exam-track context, and lightweight preferences

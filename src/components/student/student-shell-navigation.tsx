@@ -28,6 +28,13 @@ const STUDENT_NAV_ITEMS: StudentNavItem[] = [
     status: "live",
   },
   {
+    href: "/student/guidance",
+    label: "Guidance",
+    shortLabel: "Guidance",
+    description: "Career guidance, interviews, English speaking, and current affairs.",
+    status: "live",
+  },
+  {
     href: "/student/notes",
     label: "Notes",
     shortLabel: "Notes",
@@ -137,11 +144,16 @@ export function StudentBottomNavigation() {
     return null;
   }
 
-  const liveItems = STUDENT_NAV_ITEMS.filter((item) => item.href).slice(0, 3);
+  const liveItems = STUDENT_NAV_ITEMS.filter((item) => item.href).slice(0, 4);
 
   return (
     <div className="tc-bottom-nav lg:hidden">
-      <div className="tc-bottom-nav-shell">
+      <div
+        className="tc-bottom-nav-shell"
+        style={{
+          gridTemplateColumns: `repeat(${liveItems.length}, minmax(0, 1fr))`,
+        }}
+      >
         {liveItems.map((item) => (
           <Link
             key={item.label}

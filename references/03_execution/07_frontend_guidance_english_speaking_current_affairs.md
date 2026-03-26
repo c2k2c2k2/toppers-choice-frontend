@@ -38,3 +38,21 @@ Done when:
 ## Out Of Scope
 - Question authoring
 - Admin CRUD
+
+## Implementation Notes
+- Student routes now live at:
+  - `/student/guidance`
+  - `/student/guidance/career`
+  - `/student/guidance/interview`
+  - `/student/english-speaking`
+  - `/student/current-affairs`
+  - `/student/monthly-updates`
+- Shared content plumbing lives under `src/lib/content` with:
+  - contract-driven list/detail API helpers for authenticated and public content
+  - family configuration for route metadata and discovery cards
+  - normalization helpers for loose OpenAPI fields
+- Shared rendering uses one reusable structured-content renderer in `src/components/content/structured-content-renderer.tsx` so the same body rendering strategy can later be reused in admin preview flows.
+- Marathi and mixed-language support are handled through the existing shared Marathi helpers plus localized content-body variant support such as `mr-IN` and `en-IN`.
+- Student dashboard and navigation now expose structured-learning discovery entry points instead of leaving these modules hidden behind direct URLs.
+- Frontend filtering keeps “global” content visible even when a student has an active track and medium selected, because backend `examTrackId` / `mediumId` filters only return exact linked matches.
+- Verified backend-facing seed data now covers all five structured-content families with a mix of free and premium entries so the frontend can exercise both `FULL` and `LOCKED` access states.

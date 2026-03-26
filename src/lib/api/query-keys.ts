@@ -28,6 +28,25 @@ export const queryKeys = {
         },
       ] as const,
     note: (noteId: string) => ["student", "notes", "detail", noteId] as const,
+    contentList: (filters: {
+      family?: string | null;
+      featuredOnly?: boolean | null;
+      format?: string | null;
+      search?: string | null;
+    }) =>
+      [
+        "student",
+        "content",
+        "list",
+        {
+          family: filters.family ?? null,
+          featuredOnly: filters.featuredOnly ?? null,
+          format: filters.format ?? null,
+          search: filters.search ?? null,
+        },
+      ] as const,
+    contentDetail: (slug: string) =>
+      ["student", "content", "detail", slug] as const,
   },
   publicBootstrap: (siteCode?: string | null) =>
     ["public-bootstrap", siteCode ?? "default"] as const,

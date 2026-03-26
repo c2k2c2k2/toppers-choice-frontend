@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { queryKeys } from "@/lib/api/query-keys";
 import { useAuthenticatedQuery } from "@/lib/auth";
+import { STUDENT_STRUCTURED_SURFACE_LINKS } from "@/lib/content";
 import {
   buildStudentCatalogSnapshot,
   buildSubjectCatalogHref,
@@ -422,6 +423,40 @@ export function StudentDashboardScreen() {
               </div>
             )}
           </div>
+        </div>
+      </section>
+
+      <section className="tc-panel rounded-[28px] p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
+              Structured learning
+            </p>
+            <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
+              Launch the guidance and lesson modules from the main dashboard.
+            </h2>
+          </div>
+          <Link href="/student/guidance" className="tc-button-secondary">
+            Open learning hub
+          </Link>
+        </div>
+
+        <div className="mt-5 grid gap-4 xl:grid-cols-4">
+          {STUDENT_STRUCTURED_SURFACE_LINKS.map((surface) => (
+            <Link
+              key={surface.href}
+              href={surface.href}
+              className="tc-card rounded-[24px] p-5 transition-transform duration-200 hover:-translate-y-1"
+            >
+              <p className="tc-overline">Student route</p>
+              <h3 className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
+                {surface.label}
+              </h3>
+              <p className="tc-muted mt-3 text-sm leading-6">
+                {surface.description}
+              </p>
+            </Link>
+          ))}
         </div>
       </section>
 

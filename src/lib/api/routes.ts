@@ -31,6 +31,13 @@ export const apiRoutes = {
     content: (noteViewSessionId: string) =>
       `/notes/view-sessions/${encodeURIComponent(noteViewSessionId)}/content`,
   },
+  content: {
+    list: "/content",
+    detail: (slug: string) => `/content/${encodeURIComponent(slug)}`,
+    publicList: "/public/content",
+    publicDetail: (slug: string) =>
+      `/public/content/${encodeURIComponent(slug)}`,
+  },
   cms: {
     resolve: "/cms/public/resolve",
     page: (slug: string) => `/cms/public/pages/${encodeURIComponent(slug)}`,

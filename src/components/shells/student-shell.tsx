@@ -37,12 +37,22 @@ export function StudentShell({
 
   const shellTitle = pathname.startsWith("/student/catalog")
     ? "Catalog workspace"
+    : pathname.startsWith("/student/guidance") ||
+        pathname.startsWith("/student/english-speaking") ||
+        pathname.startsWith("/student/current-affairs") ||
+        pathname.startsWith("/student/monthly-updates")
+      ? "Structured learning"
     : pathname.startsWith("/student/notes")
       ? "Notes workspace"
       : authSession.user?.fullName ?? "Student workspace";
 
   const shellDescription = pathname.startsWith("/student/notes")
     ? "Secure note discovery, preview handling, watermark sessions, and progress tracking live in this student surface."
+    : pathname.startsWith("/student/guidance") ||
+        pathname.startsWith("/student/english-speaking") ||
+        pathname.startsWith("/student/current-affairs") ||
+        pathname.startsWith("/student/monthly-updates")
+      ? "Reusable structured content lists and detail flows for guidance, English speaking, current affairs, and monthly updates."
     : "Protected app chrome with cross-route track and medium state, ready for the full student product.";
 
   return (

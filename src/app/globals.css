@@ -482,7 +482,6 @@ button {
 .tc-bottom-nav-shell {
   display: grid;
   width: min(100%, 28rem);
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.92);
@@ -514,6 +513,59 @@ button {
 .tc-bottom-nav-link[data-disabled="true"] {
   background: rgba(0, 30, 64, 0.05);
   color: var(--muted);
+}
+
+.tc-rich-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.tc-rich-html {
+  color: var(--brand);
+}
+
+.tc-rich-html :where(h1, h2, h3, h4) {
+  font-family: var(--font-display), var(--font-body), sans-serif;
+  letter-spacing: -0.02em;
+  color: var(--brand);
+  margin: 0 0 0.8rem;
+}
+
+.tc-rich-html :where(h1) {
+  font-size: 2rem;
+}
+
+.tc-rich-html :where(h2) {
+  font-size: 1.6rem;
+}
+
+.tc-rich-html :where(h3, h4) {
+  font-size: 1.25rem;
+}
+
+.tc-rich-html :where(p, ul, ol, blockquote) {
+  margin: 0;
+}
+
+.tc-rich-html :where(ul, ol) {
+  padding-left: 1.25rem;
+}
+
+.tc-rich-html :where(a) {
+  color: var(--accent-student);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.tc-rich-html :where(strong) {
+  color: var(--brand);
+}
+
+.tc-rich-html :where(img) {
+  border-radius: 1.5rem;
+  max-width: 100%;
+  height: auto;
 }
 
 .tc-topic-branch {
