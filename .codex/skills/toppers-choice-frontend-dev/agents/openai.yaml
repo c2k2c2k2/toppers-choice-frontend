@@ -1,0 +1,4 @@
+interface:
+  display_name: "Toppers Choice Frontend"
+  short_description: "Frontend workflow and step tracker"
+  default_prompt: "Use $toppers-choice-frontend-dev to implement or update the current Topper's Choice frontend step."

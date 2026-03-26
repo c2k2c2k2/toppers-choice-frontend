@@ -1,26 +1,435 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "TC Marathi Shree Dev";
+  src:
+    url("/fonts/S0708892-nohint.woff") format("woff"),
+    url("/fonts/S0708892-nohint.ttf") format("truetype"),
+    url("/fonts/S0708892-webfix.woff") format("woff"),
+    url("/fonts/S0708892-webfix.ttf") format("truetype"),
+    url("/fonts/S0708892.woff") format("woff"),
+    url("/fonts/S0708892.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "TC Marathi Surekh";
+  src: url("/fonts/sulekha/DVBWSR3N.TTF") format("truetype");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "TC Marathi Surekh";
+  src: url("/fonts/sulekha/DVBWSR3I.TTF") format("truetype");
+  font-display: swap;
+  font-style: italic;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "TC Marathi Surekh";
+  src: url("/fonts/sulekha/DVBWSR3B.TTF") format("truetype");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 700;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8f9fa;
+  --foreground: #191c1d;
+  --surface: #f3f4f5;
+  --surface-strong: #ffffff;
+  --surface-high: #edeeef;
+  --surface-highest: #e1e3e4;
+  --surface-student: #f2f5f8;
+  --surface-admin: #f1f4f7;
+  --line: rgba(0, 30, 64, 0.08);
+  --ghost-line: rgba(0, 30, 64, 0.15);
+  --muted: #5d6a79;
+  --brand: #001e40;
+  --brand-strong: #003366;
+  --accent-public: #e18600;
+  --accent-student: #003366;
+  --accent-admin: #001e40;
+  --accent-glow: #ffb86f;
+  --accent-soft: #ffdcbd;
+  --cta-surface: #4e2b00;
+  --cta-text: #fff6ec;
+  --glass: rgba(255, 255, 255, 0.8);
+  --shadow-soft: 0px 10px 40px rgba(0, 30, 64, 0.08);
+  --grid-line: rgba(0, 30, 64, 0.04);
+  --radius-section: 2rem;
+  --radius-card: 1.75rem;
+  --radius-chip: 999px;
+  --touch-target: 3rem;
+  --font-marathi-unicode:
+    var(--font-devanagari), var(--font-body), "Noto Sans Devanagari",
+    sans-serif;
+  --font-marathi-shree-dev:
+    "TC Marathi Shree Dev", var(--font-devanagari), serif;
+  --font-marathi-surekh:
+    "TC Marathi Surekh", var(--font-devanagari), serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-body);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
 }
 
 body {
+  margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), sans-serif;
+  background-image:
+    radial-gradient(circle at top left, rgba(255, 184, 111, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(0, 51, 102, 0.08), transparent 26%),
+    linear-gradient(180deg, #fcfcfd 0%, #f6f7f8 46%, #f3f4f5 100%);
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(circle at center, black, transparent 88%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(225, 134, 0, 0.2);
+}
+
+:where(h1, h2, h3, h4, .tc-display) {
+  font-family: var(--font-display), var(--font-body), sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.tc-muted {
+  color: var(--muted);
+}
+
+.tc-overline {
+  color: rgba(0, 30, 64, 0.56);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.tc-kicker {
+  color: var(--accent-public);
+  font-family: var(--font-display), var(--font-body), sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.tc-glass {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.32),
+    var(--shadow-soft);
+}
+
+.tc-panel {
+  background: var(--surface);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.56),
+    var(--shadow-soft);
+}
+
+.tc-card {
+  background: var(--surface-strong);
+  box-shadow: var(--shadow-soft);
+}
+
+.tc-glass,
+.tc-panel,
+.tc-card {
+  border: 1px solid rgba(0, 30, 64, 0.06);
+}
+
+.tc-hero {
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-strong) 100%);
+  color: #f8f9fa;
+  box-shadow: var(--shadow-soft);
+}
+
+.tc-hero .tc-muted {
+  color: rgba(248, 249, 250, 0.8);
+}
+
+.tc-nav-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.72);
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+  min-height: var(--touch-target);
+}
+
+.tc-nav-chip:hover {
+  transform: translateY(-1px);
+  background: #ffffff;
+}
+
+.tc-nav-chip[data-active="true"] {
+  background: var(--surface);
+  border-color: var(--ghost-line);
+  color: var(--brand);
+}
+
+.tc-button-primary,
+.tc-button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.75rem 1.1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+  min-height: var(--touch-target);
+}
+
+.tc-button-primary {
+  background: var(--cta-surface);
+  color: var(--cta-text);
+  border: 1px solid rgba(255, 184, 111, 0.18);
+}
+
+.tc-button-primary:hover {
+  transform: translateY(-1px);
+  background: var(--accent-public);
+  color: var(--brand);
+}
+
+.tc-button-secondary {
+  background: transparent;
+  color: var(--brand);
+  border: 1px solid var(--ghost-line);
+}
+
+.tc-button-secondary:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.tc-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.tc-form-label {
+  color: var(--brand);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tc-input {
+  min-height: 3.25rem;
+  width: 100%;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(0, 30, 64, 0.12);
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--foreground);
+  padding: 0.9rem 1rem;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.42),
+    var(--shadow-soft);
+}
+
+.tc-input:focus {
+  border-color: rgba(0, 51, 102, 0.28);
+  box-shadow:
+    0 0 0 4px rgba(255, 184, 111, 0.18),
+    var(--shadow-soft);
+  outline: none;
+}
+
+.tc-input::placeholder {
+  color: rgba(93, 106, 121, 0.88);
+}
+
+@keyframes tc-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tc-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.tc-motion-rise {
+  animation: tc-rise-in 0.55s ease both;
+}
+
+.tc-motion-float {
+  animation: tc-float 6s ease-in-out infinite;
+}
+
+.tc-shell-rail {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.74) 0%, rgba(243, 244, 245, 0.92) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5),
+    var(--shadow-soft);
+}
+
+.tc-rail-link {
+  display: flex;
+  min-height: var(--touch-target);
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 1rem;
+  color: var(--muted);
+  padding: 0.875rem 1rem;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.tc-rail-link:hover {
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--brand);
+  transform: translateX(2px);
+}
+
+.tc-rail-link[data-active="true"] {
+  background: var(--surface-strong);
+  color: var(--brand);
+  box-shadow: var(--shadow-soft);
+}
+
+.tc-stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  border-radius: var(--radius-chip);
+  background: rgba(255, 255, 255, 0.72);
+  padding: 0.5rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--brand);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.44),
+    var(--shadow-soft);
+}
+
+.tc-code-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: rgba(0, 30, 64, 0.06);
+  color: var(--brand);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  padding: 0.35rem 0.7rem;
+}
+
+.tc-swatch {
+  height: 3.5rem;
+  border-radius: 1.25rem;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.44),
+    var(--shadow-soft);
+}
+
+.tc-dot {
+  height: 0.65rem;
+  width: 0.65rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.font-marathi-unicode {
+  font-family: var(--font-marathi-unicode);
+}
+
+.font-marathi-encoded {
+  font-kerning: none;
+  line-height: 1.7;
+  text-rendering: optimizeLegibility;
+}
+
+.font-marathi-shree-dev,
+.font-legacy-marathi,
+[data-marathi-font="shree-dev"],
+[data-question-font="shree-dev"] {
+  font-family: var(--font-marathi-shree-dev);
+}
+
+.font-marathi-surekh,
+.font-marathi-sulekha,
+[data-marathi-font="surekh"],
+[data-marathi-font="sulekha"],
+[data-question-font="surekh"],
+[data-question-font="sulekha"] {
+  font-family: var(--font-marathi-surekh);
 }
