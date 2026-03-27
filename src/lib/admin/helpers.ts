@@ -139,12 +139,61 @@ export function safeJsonParse(
   }
 }
 
+export function safeJsonParseArray(
+  input: string,
+  options: {
+    allowEmpty?: boolean;
+    label: string;
+  },
+) {
+  const parsed = safeJsonParse(input, options);
+
+  if (parsed === null) {
+    return null;
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new Error(`${options.label} must be a JSON array.`);
+  }
+
+  return parsed as unknown[];
+}
+
 export function stringifyJsonInput(value: unknown) {
   if (!value) {
     return "";
   }
 
   return JSON.stringify(value, null, 2);
+}
+
+export function parseIdListInput(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+export function stringifyIdListInput(values: string[] | null | undefined) {
+  return values?.join(", ") ?? "";
+}
+
+export function parseOptionalInteger(value: string) {
+  if (!value.trim()) {
+    return undefined;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+export function parseOptionalFloat(value: string) {
+  if (!value.trim()) {
+    return undefined;
+  }
+
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 export function getApiErrorMessage(error: unknown, fallback: string) {
@@ -165,4 +214,12 @@ export function isCmsRecordPublished(record: CmsRecord) {
 
 export function buildAssetDeliveryPath(asset: Pick<FileAsset, "publicDeliveryPath">) {
   return asset.publicDeliveryPath;
+}
+
+export function formatPricePaise(pricePaise: number, currencyCode = "INR") {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: currencyCode,
+    maximumFractionDigits: 2,
+  }).format(pricePaise / 100);
 }

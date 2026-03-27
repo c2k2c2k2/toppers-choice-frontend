@@ -36,6 +36,7 @@ export function AdminDataTable<Row>({
                     "px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--muted)]",
                     column.className ?? "",
                   ].join(" ")}
+                  scope="col"
                 >
                   {column.header}
                 </th>
@@ -49,21 +50,34 @@ export function AdminDataTable<Row>({
               return (
                 <tr
                   key={rowId}
-                  className="border-t border-[rgba(0,30,64,0.06)] align-top transition-colors hover:bg-[rgba(255,255,255,0.86)]"
+                  aria-selected={selectedRowId === rowId}
+                  className={[
+                    "border-t border-[rgba(0,30,64,0.06)] align-top transition-colors hover:bg-[rgba(255,255,255,0.86)]",
+                    onRowClick ? "cursor-pointer focus-within:bg-[rgba(0,51,102,0.06)]" : "",
+                  ].join(" ")}
                   data-selected={selectedRowId === rowId}
+                  onClick={onRowClick ? () => onRowClick(row) : undefined}
+                  onKeyDown={
+                    onRowClick
+                      ? (event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            onRowClick(row);
+                          }
+                        }
+                      : undefined
+                  }
+                  tabIndex={onRowClick ? 0 : undefined}
                 >
                   {columns.map((column, index) => (
                     <td
                       key={`${rowId}-${column.header}`}
                       className={[
                         "px-4 py-4 text-sm text-[color:var(--foreground)]",
-                        onRowClick && index === 0 ? "cursor-pointer" : "",
+                        onRowClick && index === 0 ? "font-medium" : "",
                         selectedRowId === rowId ? "bg-[rgba(0,51,102,0.04)]" : "",
                         column.className ?? "",
                       ].join(" ")}
-                      onClick={
-                        onRowClick && index === 0 ? () => onRowClick(row) : undefined
-                      }
                     >
                       {column.render(row)}
                     </td>

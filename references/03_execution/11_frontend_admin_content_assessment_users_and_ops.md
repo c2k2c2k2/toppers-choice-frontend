@@ -44,3 +44,14 @@ Done when:
 
 ## Out Of Scope
 - Final polishing and release hardening
+
+## Implementation Notes
+- F11 now includes the main admin product workspaces for taxonomy, notes, structured content, questions, tests, plans/payments, users/access, audit, notifications, analytics, and ops, all mounted under the shared admin shell and gated by backend permissions.
+- Shared admin contracts were expanded under `src/lib/admin` so the feature screens stay contract-driven instead of embedding ad hoc fetch logic in route files.
+- Notification template and broadcast editors now use selection-scoped draft state rather than effect-synced form resets, which keeps the admin editor behavior lint-clean and more predictable.
+- During verification, the backend Swagger contract for taxonomy topic `parentId` was found to be incorrectly emitted as an empty object. The source DTO was corrected in the backend, and the frontend `src/lib/api/generated/backend-schema.d.ts` file was regenerated from the live `/docs-json` document.
+
+## Verification Notes
+- Verified with `pnpm lint` and `pnpm build` in the frontend repo after the schema regeneration.
+- Verified production route boot on `next start --port 3111` for `/admin`, `/admin/taxonomy`, `/admin/notes`, `/admin/content`, `/admin/questions`, `/admin/tests`, `/admin/plans`, `/admin/payments`, `/admin/users`, `/admin/audit`, `/admin/notifications`, `/admin/analytics`, `/admin/ops`, `/admin/cms/pages`, and `/admin/login`.
+- Verified live admin backend contracts with an authenticated admin token across access, taxonomy, notes, content, questions, tests, plans, payments, users, audit, notifications, analytics, search, and ops endpoints.

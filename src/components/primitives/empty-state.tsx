@@ -16,7 +16,11 @@ export function EmptyState({
   ctaLabel,
 }: Readonly<EmptyStateProps>) {
   return (
-    <section className="tc-panel rounded-[28px] p-6">
+    <section
+      aria-live="polite"
+      className="tc-panel rounded-[28px] p-6"
+      role="status"
+    >
       <p className="tc-kicker" style={{ color: "var(--muted)" }}>
         {eyebrow}
       </p>
@@ -28,6 +32,7 @@ export function EmptyState({
       </p>
       {ctaHref && ctaLabel ? (
         <Link
+          aria-label={ctaLabel}
           href={ctaHref}
           className="tc-button-secondary mt-5"
         >

@@ -8,10 +8,18 @@ export function LoadingState({
   description = "Shared providers, route groups, and placeholder surfaces are loading.",
 }: Readonly<LoadingStateProps>) {
   return (
-    <section className="tc-glass rounded-[28px] p-6">
+    <section
+      aria-busy="true"
+      aria-live="polite"
+      className="tc-glass rounded-[28px] p-6"
+      role="status"
+    >
       <div className="flex items-start gap-4">
         <div className="tc-panel flex h-12 w-12 items-center justify-center rounded-2xl">
-          <span className="h-5 w-5 animate-pulse rounded-full bg-[color:var(--brand)]" />
+          <span
+            aria-hidden="true"
+            className="h-5 w-5 animate-pulse rounded-full bg-[color:var(--brand)]"
+          />
         </div>
         <div className="space-y-2">
           <p className="tc-kicker" style={{ color: "var(--brand)" }}>

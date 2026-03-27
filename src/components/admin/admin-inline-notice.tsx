@@ -13,7 +13,11 @@ export function AdminInlineNotice({
         : "border-[rgba(0,30,64,0.08)] bg-[rgba(255,255,255,0.8)] text-[color:var(--muted)]";
 
   return (
-    <div className={["rounded-[20px] border px-4 py-3 text-sm leading-6", palette].join(" ")}>
+    <div
+      aria-live={tone === "warning" ? "assertive" : "polite"}
+      className={["rounded-[20px] border px-4 py-3 text-sm leading-6", palette].join(" ")}
+      role={tone === "warning" ? "alert" : "status"}
+    >
       {children}
     </div>
   );

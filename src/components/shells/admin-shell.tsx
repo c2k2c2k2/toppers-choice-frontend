@@ -23,7 +23,50 @@ const ADMIN_NAV_GROUPS: Array<{
       {
         href: "/admin",
         label: "Overview",
-        description: "Bootstrap metrics, session roles, and the shared admin foundation.",
+        description: "Bootstrap metrics, permissions, and the full admin operating surface.",
+      },
+    ],
+  },
+  {
+    title: "Catalog and Content",
+    items: [
+      {
+        href: "/admin/taxonomy",
+        label: "Taxonomy",
+        description: "Exam tracks, mediums, subjects, topics, and tags.",
+        permissions: ["academics.taxonomy.read", "academics.taxonomy.manage"],
+      },
+      {
+        href: "/admin/notes",
+        label: "Notes",
+        description: "Premium note catalog, preview handling, and publishing.",
+        permissions: ["content.notes.read", "content.notes.manage", "content.notes.publish"],
+      },
+      {
+        href: "/admin/content",
+        label: "Structured content",
+        description: "Guidance, English speaking, current affairs, and monthly updates.",
+        permissions: [
+          "content.structured.read",
+          "content.structured.manage",
+          "content.structured.publish",
+        ],
+      },
+      {
+        href: "/admin/questions",
+        label: "Questions",
+        description: "Question bank authoring with contract-ready JSON content.",
+        permissions: [
+          "academics.questions.read",
+          "academics.questions.manage",
+          "academics.questions.publish",
+        ],
+      },
+      {
+        href: "/admin/tests",
+        label: "Tests",
+        description: "Timed assessments, question mixes, and publish controls.",
+        permissions: ["academics.tests.read", "academics.tests.manage", "academics.tests.publish"],
       },
       {
         href: "/admin/cms/pages",
@@ -52,22 +95,72 @@ const ADMIN_NAV_GROUPS: Array<{
     ],
   },
   {
-    title: "Next Up",
+    title: "Commerce",
     items: [
       {
-        label: "Content authoring",
-        description: "Structured content, notes, and media-heavy flows arrive in F11.",
-        badge: "F11",
+        href: "/admin/plans",
+        label: "Plans",
+        description: "Plan catalog, entitlement bundles, and pricing data.",
+        permissions: ["payments.read", "payments.manage"],
       },
       {
-        label: "Assessments",
-        description: "Question bank, practice, and tests will reuse this CRUD shell next.",
-        badge: "F11",
+        href: "/admin/payments",
+        label: "Payments",
+        description: "Orders, reconcile actions, and checkout support visibility.",
+        permissions: ["payments.read", "payments.manage"],
+      },
+    ],
+  },
+  {
+    title: "People and Reach",
+    items: [
+      {
+        href: "/admin/users",
+        label: "Users and access",
+        description: "Students, admins, access grants, roles, and entitlements.",
+        permissions: [
+          "admin.users.read",
+          "admin.users.manage",
+          "admin.users.roles.read",
+          "admin.users.roles.manage",
+          "admin.roles.read",
+          "admin.roles.manage",
+        ],
       },
       {
-        label: "Users and ops",
-        description: "People management, exports, analytics, and operational tools follow.",
-        badge: "F11",
+        href: "/admin/audit",
+        label: "Audit",
+        description: "Action history across publishing, access, and admin support work.",
+        permissions: ["admin.audit.read"],
+      },
+      {
+        href: "/admin/notifications",
+        label: "Notifications",
+        description: "Templates, broadcasts, dispatch, and delivery visibility.",
+        permissions: ["notifications.read", "notifications.manage", "notifications.send"],
+      },
+    ],
+  },
+  {
+    title: "Intelligence and Ops",
+    items: [
+      {
+        href: "/admin/analytics",
+        label: "Analytics",
+        description: "User, content, revenue, and activity rollups from backend analytics.",
+        permissions: ["analytics.read"],
+      },
+      {
+        href: "/admin/ops",
+        label: "Operations",
+        description: "Search, content health, security signals, exports, and support actions.",
+        permissions: [
+          "admin.search.read",
+          "admin.ops.read",
+          "admin.ops.export",
+          "admin.ops.support",
+          "admin.security.read",
+        ],
       },
     ],
   },

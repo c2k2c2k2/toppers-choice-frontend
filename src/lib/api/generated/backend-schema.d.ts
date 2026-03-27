@@ -3113,7 +3113,7 @@ export interface components {
             /** @example cmag4b4ph0000x5r7snyza123 */
             subjectId: string;
             /** @example cmag4b4ph0000x5r7snyza999 */
-            parentId?: Record<string, never>;
+            parentId?: string | null;
         };
         UpdateTopicDto: {
             /** @example MPSC */
@@ -3139,7 +3139,7 @@ export interface components {
             /** @example cmag4b4ph0000x5r7snyza123 */
             subjectId?: string;
             /** @example cmag4b4ph0000x5r7snyza999 */
-            parentId?: Record<string, never>;
+            parentId?: string | null;
         };
         CreateTagDto: {
             /** @example MPSC */

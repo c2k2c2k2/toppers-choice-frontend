@@ -13,7 +13,9 @@ export function ErrorState({
 }: Readonly<ErrorStateProps>) {
   return (
     <section
+      aria-live="assertive"
       className="rounded-[28px] p-6 shadow-[var(--shadow-soft)]"
+      role="alert"
       style={{
         background:
           "linear-gradient(180deg, rgba(255, 245, 240, 0.96) 0%, rgba(255, 250, 246, 0.98) 100%)",
@@ -32,6 +34,7 @@ export function ErrorState({
       {onRetry ? (
         <button
           type="button"
+          aria-label={retryLabel}
           onClick={onRetry}
           className="tc-button-primary mt-5"
         >

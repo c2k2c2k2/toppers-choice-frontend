@@ -88,12 +88,61 @@ export const apiRoutes = {
       `/cms/student/pages/${encodeURIComponent(slug)}`,
   },
   admin: {
+    users: {
+      students: "/admin/users/students",
+      list: "/admin/users",
+      admins: "/admin/users/admins",
+      status: (userId: string) =>
+        `/admin/users/${encodeURIComponent(userId)}/status`,
+    },
     access: {
       permissions: "/admin/access/permissions",
       roles: "/admin/access/roles",
+      role: (roleId: string) => `/admin/access/roles/${encodeURIComponent(roleId)}`,
+      userAccess: (userId: string) =>
+        `/admin/users/${encodeURIComponent(userId)}/access`,
+    },
+    audit: {
+      logs: "/admin/audit-logs",
+    },
+    taxonomy: {
+      examTracks: "/admin/taxonomy/exam-tracks",
+      examTrack: (examTrackId: string) =>
+        `/admin/taxonomy/exam-tracks/${encodeURIComponent(examTrackId)}`,
+      reorderExamTracks: "/admin/taxonomy/exam-tracks/reorder",
+      mediums: "/admin/taxonomy/mediums",
+      medium: (mediumId: string) =>
+        `/admin/taxonomy/mediums/${encodeURIComponent(mediumId)}`,
+      reorderMediums: "/admin/taxonomy/mediums/reorder",
+      subjects: "/admin/taxonomy/subjects",
+      subject: (subjectId: string) =>
+        `/admin/taxonomy/subjects/${encodeURIComponent(subjectId)}`,
+      reorderSubjects: "/admin/taxonomy/subjects/reorder",
+      topics: "/admin/taxonomy/topics",
+      topic: (topicId: string) =>
+        `/admin/taxonomy/topics/${encodeURIComponent(topicId)}`,
+      reorderTopics: "/admin/taxonomy/topics/reorder",
+      tags: "/admin/taxonomy/tags",
+      tag: (tagId: string) => `/admin/taxonomy/tags/${encodeURIComponent(tagId)}`,
+      reorderTags: "/admin/taxonomy/tags/reorder",
     },
     ops: {
       dashboard: "/admin/ops/dashboard",
+      contentHealth: "/admin/ops/content-health",
+      securitySignals: "/admin/ops/note-security-signals",
+      exportUsers: "/admin/ops/export/users",
+      exportSubscriptions: "/admin/ops/export/subscriptions",
+      exportPayments: "/admin/ops/export/payments",
+      revokeUserSessions: (userId: string) =>
+        `/admin/ops/users/${encodeURIComponent(userId)}/revoke-sessions`,
+      revokeNoteViewSession: (noteViewSessionId: string) =>
+        `/admin/ops/note-view-sessions/${encodeURIComponent(noteViewSessionId)}/revoke`,
+    },
+    analytics: {
+      overview: "/admin/analytics/overview",
+    },
+    search: {
+      list: "/admin/search",
     },
     files: {
       list: "/admin/files",
@@ -134,6 +183,76 @@ export const apiRoutes = {
       unpublishSection: (sectionId: string) =>
         `/admin/cms/sections/${encodeURIComponent(sectionId)}/unpublish`,
       reorderSections: "/admin/cms/sections/reorder",
+    },
+    content: {
+      list: "/admin/content",
+      detail: (contentEntryId: string) =>
+        `/admin/content/${encodeURIComponent(contentEntryId)}`,
+      publish: (contentEntryId: string) =>
+        `/admin/content/${encodeURIComponent(contentEntryId)}/publish`,
+      unpublish: (contentEntryId: string) =>
+        `/admin/content/${encodeURIComponent(contentEntryId)}/unpublish`,
+      feature: (contentEntryId: string) =>
+        `/admin/content/${encodeURIComponent(contentEntryId)}/feature`,
+      unfeature: (contentEntryId: string) =>
+        `/admin/content/${encodeURIComponent(contentEntryId)}/unfeature`,
+      reorder: "/admin/content/reorder",
+    },
+    entitlements: {
+      byUser: (userId: string) =>
+        `/admin/users/${encodeURIComponent(userId)}/entitlements`,
+      grant: "/admin/entitlements/grants",
+      revoke: (entitlementId: string) =>
+        `/admin/entitlements/${encodeURIComponent(entitlementId)}/revoke`,
+    },
+    plans: {
+      list: "/admin/plans",
+      detail: (planId: string) => `/admin/plans/${encodeURIComponent(planId)}`,
+    },
+    payments: {
+      list: "/admin/payments/orders",
+      detail: (orderId: string) =>
+        `/admin/payments/orders/${encodeURIComponent(orderId)}`,
+      reconcile: (orderId: string) =>
+        `/admin/payments/orders/${encodeURIComponent(orderId)}/reconcile`,
+    },
+    notes: {
+      list: "/admin/notes",
+      detail: (noteId: string) => `/admin/notes/${encodeURIComponent(noteId)}`,
+      publish: (noteId: string) =>
+        `/admin/notes/${encodeURIComponent(noteId)}/publish`,
+      unpublish: (noteId: string) =>
+        `/admin/notes/${encodeURIComponent(noteId)}/unpublish`,
+    },
+    questions: {
+      list: "/admin/questions",
+      detail: (questionId: string) =>
+        `/admin/questions/${encodeURIComponent(questionId)}`,
+      publish: (questionId: string) =>
+        `/admin/questions/${encodeURIComponent(questionId)}/publish`,
+      unpublish: (questionId: string) =>
+        `/admin/questions/${encodeURIComponent(questionId)}/unpublish`,
+    },
+    tests: {
+      list: "/admin/tests",
+      detail: (testId: string) => `/admin/tests/${encodeURIComponent(testId)}`,
+      publish: (testId: string) =>
+        `/admin/tests/${encodeURIComponent(testId)}/publish`,
+      unpublish: (testId: string) =>
+        `/admin/tests/${encodeURIComponent(testId)}/unpublish`,
+    },
+    notifications: {
+      templates: "/admin/notifications/templates",
+      template: (templateId: string) =>
+        `/admin/notifications/templates/${encodeURIComponent(templateId)}`,
+      broadcasts: "/admin/notifications/broadcasts",
+      broadcast: (broadcastId: string) =>
+        `/admin/notifications/broadcasts/${encodeURIComponent(broadcastId)}`,
+      dispatch: (broadcastId: string) =>
+        `/admin/notifications/broadcasts/${encodeURIComponent(broadcastId)}/dispatch`,
+      cancel: (broadcastId: string) =>
+        `/admin/notifications/broadcasts/${encodeURIComponent(broadcastId)}/cancel`,
+      messages: "/admin/notifications/messages",
     },
   },
   analytics: {

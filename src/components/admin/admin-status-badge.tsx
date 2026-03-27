@@ -24,6 +24,16 @@ function getToneClass(tone: "neutral" | "live" | "warning" | "danger" | "info") 
   }
 }
 
+export function AdminToneBadge({
+  label,
+  tone = "neutral",
+}: Readonly<{
+  label: string;
+  tone?: "neutral" | "live" | "warning" | "danger" | "info";
+}>) {
+  return <span className={getToneClass(tone)}>{label}</span>;
+}
+
 export function AdminStatusBadge({
   status,
 }: Readonly<{
@@ -36,7 +46,7 @@ export function AdminStatusBadge({
         ? "danger"
         : "warning";
 
-  return <span className={getToneClass(tone)}>{getCmsStatusLabel(status)}</span>;
+  return <AdminToneBadge tone={tone} label={getCmsStatusLabel(status)} />;
 }
 
 export function AdminVisibilityBadge({
@@ -46,9 +56,7 @@ export function AdminVisibilityBadge({
 }>) {
   const tone = visibility === "PUBLIC" ? "live" : visibility === "INTERNAL" ? "danger" : "info";
   return (
-    <span className={getToneClass(tone)}>
-      {getCmsVisibilityLabel(visibility)}
-    </span>
+    <AdminToneBadge tone={tone} label={getCmsVisibilityLabel(visibility)} />
   );
 }
 
@@ -67,8 +75,6 @@ export function AdminAnnouncementLevelBadge({
           : "info";
 
   return (
-    <span className={getToneClass(tone)}>
-      {getAnnouncementLevelLabel(level)}
-    </span>
+    <AdminToneBadge tone={tone} label={getAnnouncementLevelLabel(level)} />
   );
 }
