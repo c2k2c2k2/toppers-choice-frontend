@@ -144,7 +144,7 @@ export function StudentDashboardScreen() {
     return (
       <ErrorState
         title="The student dashboard could not load."
-        description="We couldn't finish loading the student catalog foundation from the backend contracts."
+        description="We couldn't load your latest study summary right now."
         onRetry={() => void dashboardQuery.refetch()}
       />
     );
@@ -153,8 +153,8 @@ export function StudentDashboardScreen() {
   if (dashboardQuery.isLoading || !dashboardData || !snapshot) {
     return (
       <LoadingState
-        title="Preparing the student dashboard"
-        description="Loading the catalog, announcements, notifications, and student progress summaries."
+        title="Loading dashboard"
+        description="Getting your subjects, updates, notifications, and progress."
       />
     );
   }
@@ -176,12 +176,10 @@ export function StudentDashboardScreen() {
               Student dashboard
             </p>
             <h1 className="tc-display mt-4 text-3xl font-semibold tracking-tight md:text-4xl">
-              Learn from the right track before you open a single note.
+              Choose your track and continue your preparation.
             </h1>
             <p className="tc-muted mt-4 max-w-3xl text-base leading-7">
-              The protected student surface now loads the real catalog,
-              analytics, CMS announcements, and personal notification feed in
-              one mobile-first dashboard.
+              Select your exam track and medium once, then move to notes, practice, tests, and updates without repeating the same setup on every page.
             </p>
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -224,12 +222,12 @@ export function StudentDashboardScreen() {
             <StudentMetricCard
               label="Notes progress"
               value={String(dashboardData.analytics.notes.startedCount)}
-              detail={`${dashboardData.analytics.notes.completedCount} completed notes`}
+              detail={`${dashboardData.analytics.notes.completedCount} notes completed`}
             />
             <StudentMetricCard
               label="Practice accuracy"
               value={`${dashboardData.analytics.practice.accuracyPercent}%`}
-              detail={`${dashboardData.analytics.practice.completedSessions} completed practice sessions`}
+              detail={`${dashboardData.analytics.practice.completedSessions} practice sessions finished`}
             />
           </div>
         </div>
@@ -241,7 +239,7 @@ export function StudentDashboardScreen() {
             Catalog focus
           </p>
           <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-            Pick your exam track and study medium once for the whole student app.
+            Pick your exam track and study medium once for the whole app.
           </h2>
           <div className="mt-5 flex flex-col gap-5">
             <div className="space-y-3">
@@ -282,7 +280,7 @@ export function StudentDashboardScreen() {
                 {dashboardData.analytics.unreadNotifications}
               </p>
               <p className="tc-muted mt-2 text-sm">
-                Personal message feed is ready for mark-read behavior next.
+                Academy announcements and personal messages appear here.
               </p>
             </div>
             <div className="tc-card rounded-[22px] p-4">
@@ -291,7 +289,7 @@ export function StudentDashboardScreen() {
                 {dashboardData.analytics.activeEntitlements}
               </p>
               <p className="tc-muted mt-2 text-sm">
-                Subscription ends {formatSubscriptionDate(
+                Current plan ends {formatSubscriptionDate(
                   dashboardData.analytics.currentSubscription.endsAt,
                 )}
               </p>
@@ -308,11 +306,10 @@ export function StudentDashboardScreen() {
             <div className="tc-card rounded-[22px] p-4">
               <p className="tc-overline">Quick action path</p>
               <p className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
-                Catalog first
+                Open catalog
               </p>
               <p className="tc-muted mt-2 text-sm">
-                Notes, practice, tests, and plans will reuse this selected track
-                and medium context.
+                Your selected track and medium will be reused in notes, practice, tests, and plans.
               </p>
             </div>
           </div>
@@ -327,7 +324,7 @@ export function StudentDashboardScreen() {
                 Academy announcements
               </p>
               <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-                CMS-driven updates for the student surface
+                Latest updates from the academy
               </h2>
             </div>
             <span className="tc-code-chip">
@@ -371,9 +368,7 @@ export function StudentDashboardScreen() {
                   No student announcements are published yet.
                 </p>
                 <p className="tc-muted mt-2 text-sm leading-6">
-                  The dashboard is already wired to `GET /cms/student/resolve`,
-                  so any future announcement or banner will appear here without
-                  changing the route structure.
+                  New announcements will appear here as soon as they are published.
                 </p>
               </div>
             )}
@@ -416,9 +411,7 @@ export function StudentDashboardScreen() {
                   Your notification inbox is clear for now.
                 </p>
                 <p className="tc-muted mt-2 text-sm leading-6">
-                  Backend delivery and read tracking are already connected, so
-                  future broadcasts and account messages will flow into this
-                  panel automatically.
+                  New broadcasts and account messages will show up here automatically.
                 </p>
               </div>
             )}
@@ -433,7 +426,7 @@ export function StudentDashboardScreen() {
               Assessment launchpad
             </p>
             <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-              Move from revision mode to pressure mode deliberately.
+              Move from revision to testing when you&apos;re ready.
             </h2>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -450,33 +443,30 @@ export function StudentDashboardScreen() {
           <article className="tc-card rounded-[24px] p-5">
             <p className="tc-overline">Practice mode</p>
             <h3 className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
-              Immediate correctness and reveal
+              Practice mode
             </h3>
             <p className="tc-muted mt-3 text-sm leading-6">
-              Use practice when you want smaller recovery loops, topic repair,
-              and answer-by-answer feedback.
+              Use practice when you want quick topic revision and answer-by-answer feedback.
             </p>
           </article>
 
           <article className="tc-card rounded-[24px] p-5">
             <p className="tc-overline">Timed mode</p>
             <h3 className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
-              Instructions first, results later
+              Timed tests
             </h3>
             <p className="tc-muted mt-3 text-sm leading-6">
-              Timed tests keep correctness hidden until submission so the
-              experience stays closer to real assessment pressure.
+              Timed tests keep the experience closer to a real exam and show results after submission.
             </p>
           </article>
 
           <article className="tc-card rounded-[24px] p-5">
             <p className="tc-overline">Shared scope</p>
             <h3 className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
-              Track and medium stay in sync
+              One study setup
             </h3>
             <p className="tc-muted mt-3 text-sm leading-6">
-              The same selected study context now flows through catalog, notes,
-              guidance, practice, and timed tests.
+              Your selected track and medium stay in sync across the main student sections.
             </p>
           </article>
         </div>
@@ -489,7 +479,7 @@ export function StudentDashboardScreen() {
               Structured learning
             </p>
             <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-              Launch the guidance and lesson modules from the main dashboard.
+              Open extra guidance and skill-building modules.
             </h2>
           </div>
           <Link href="/student/guidance" className="tc-button-secondary">
@@ -523,7 +513,7 @@ export function StudentDashboardScreen() {
               Subject launchpad
             </p>
             <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-              Start navigating the catalog before feature modules open.
+              Start with a subject.
             </h2>
           </div>
           <Link
@@ -556,7 +546,7 @@ export function StudentDashboardScreen() {
                 </div>
                 <p className="tc-muted mt-3 text-sm leading-6">
                   {getOptionalText(subject.description) ??
-                    "Catalog navigation is ready for notes, structured content, practice, and tests."}
+                    "Open this subject to continue with notes, practice, and tests."}
                 </p>
                 <div className="mt-4 flex flex-wrap gap-3 text-sm text-[color:var(--muted)]">
                   <span>{countTopics(subject.topics)} topics</span>
@@ -572,9 +562,7 @@ export function StudentDashboardScreen() {
               No subjects are published for the current selection yet.
             </p>
             <p className="tc-muted mt-2 text-sm leading-6">
-              Once taxonomy data lands, the same dashboard panel will become the
-              launchpad for notes, practice, and test modules without changing
-              the student route layout.
+              New subjects will appear here as soon as they are published for your selected track and medium.
             </p>
           </div>
         )}

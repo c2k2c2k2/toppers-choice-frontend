@@ -12,12 +12,12 @@ export default function PublicError({
   return (
     <div className="mx-auto w-full max-w-6xl">
       <ErrorState
-        title="The public surface hit an error."
+        title="The website hit an error."
         description={
           error.message ||
-          "The public landing route could not complete its current server-side content request."
+          "We couldn't load the website content right now."
         }
-        retryLabel="Retry public surface"
+        retryLabel="Try website again"
         onRetry={reset}
       />
     </div>

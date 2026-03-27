@@ -51,11 +51,11 @@ export default async function PublicStandalonePage({
   return (
     <div className="flex flex-col gap-8">
       <PublicPageHero
-        eyebrow={pageResult.isPlaceholder ? "Public placeholder" : "CMS page"}
+        eyebrow="Information"
         title={pageResult.page.title}
         description={
           pageResult.page.summary ??
-          "This public route is ready for authored CMS content."
+          "Important information from Topper's Choice."
         }
         actions={[
           { label: "Return home", href: "/", tone: "secondary" },
@@ -67,7 +67,7 @@ export default async function PublicStandalonePage({
         bodyJson={pageResult.page.bodyJson}
         fallbackSummary={
           pageResult.page.summary ??
-          "This route will render richer public CMS content as it gets authored."
+          "This page will be updated with more details soon."
         }
       />
     </div>

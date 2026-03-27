@@ -584,17 +584,17 @@ export function AdminInsightsScreen({
         eyebrow="Reach and intelligence"
         title={
           initialTab === "notifications"
-            ? "Notifications now have an operational frontend surface."
+            ? "Notifications"
             : initialTab === "analytics"
-              ? "Analytics overview is now visible."
-              : "Operational tools are now visible."
+              ? "Analytics"
+              : "Operations"
         }
         description={
           initialTab === "notifications"
-            ? "Templates, broadcasts, and delivery messages now flow through one admin messaging workspace."
+            ? "Create templates, send broadcasts, and review delivery status."
             : initialTab === "analytics"
-              ? "The analytics route now surfaces backend user, content, revenue, and activity metrics for internal review."
-              : "Search, exports, content health, and security signals now have a live admin surface for support and operations."
+              ? "Review students, content, revenue, and activity reports."
+              : "Use search, exports, content health, and security checks."
         }
       />
 

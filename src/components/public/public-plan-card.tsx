@@ -26,7 +26,7 @@ export function mapPlanToCardData(plan: PublicPlan): PublicPlanCardData {
     description:
       plan.shortDescription ??
       plan.description ??
-      "Admin-managed public plan ready for student checkout and entitlement refresh.",
+      "Choose this plan to continue in the student app.",
     priceLabel: formatPlanPrice(plan),
     durationLabel: `${formatPlanDuration(plan.durationDays)} access`,
     features: getPlanFeatureLabels(plan).slice(0, 4),

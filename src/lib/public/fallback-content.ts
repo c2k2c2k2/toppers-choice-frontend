@@ -123,7 +123,7 @@ export const FALLBACK_PUBLIC_BOOTSTRAP: PublicBootstrapResponse = {
         tagline: "One stop solution for all by M.D. madam",
         motto: "आपल्या सूचना, आमची बांधिलकी",
         description:
-          "35+ years of notes, guidance, mock practice, and academic clarity in one admin-driven platform.",
+          "Trusted notes, tests, guidance, and study support for competitive exam preparation.",
         proprietorName: "Madhuri Anil Deulkar",
         address: "Near Motibag, Motinagar, Amravati",
         supportWhatsapp: "9822229998",
@@ -156,7 +156,7 @@ export const PUBLIC_TRACK_DEFINITIONS: PublicTrackDefinition[] = [
     eyebrow: "Track 01",
     title: "MPSC & allied exam preparation",
     summary:
-      "Subject-wise notes, mix-format mocks, and disciplined study flow for Marathi and English medium aspirants.",
+      "Topic-wise notes, tests, and guidance for Marathi and English medium students preparing for MPSC and related exams.",
     audience: "Students preparing for MPSC state services and closely related exams.",
     modules: [
       "25+ core subjects with topic-wise note structure",
@@ -184,7 +184,7 @@ export const PUBLIC_TRACK_DEFINITIONS: PublicTrackDefinition[] = [
     eyebrow: "Track 02",
     title: "Bank, staff, and railway exam support",
     summary:
-      "Focused aptitude, reasoning, and grammar preparation built for fast-moving, practice-heavy exam cycles.",
+      "Practice-focused preparation for bank, staff, railway, and other aptitude-heavy exams.",
     audience: "Students targeting bank, staff, railway, and adjacent aptitude-led exams.",
     modules: [
       "Quantitative aptitude and number-system coverage",
@@ -212,13 +212,13 @@ export const PUBLIC_TRACK_DEFINITIONS: PublicTrackDefinition[] = [
     eyebrow: "Track 03",
     title: "Career and interview guidance",
     summary:
-      "A public-facing path for advertisement updates, interview readiness, and clearer decision-making beyond notes alone.",
+      "Career updates, interview guidance, and next-step support beyond classroom notes.",
     audience: "Students who need exam updates, decision support, and interview-oriented preparation.",
     modules: [
       "Career guidance linked to current openings and opportunity signals",
       "Interview preparation for post-specific readiness",
       "Guided next-step framing instead of generic motivational content",
-      "Expandable CMS-authored update blocks for timely communication",
+      "Regular updates and communication for important next steps",
     ],
     outcomes: [
       "See the opportunity path, not just the study path.",
@@ -240,7 +240,7 @@ export const PUBLIC_TRACK_DEFINITIONS: PublicTrackDefinition[] = [
     eyebrow: "Track 04",
     title: "English speaking support",
     summary:
-      "Practical Hindi-English and Marathi-English speaking modules for everyday confidence, scenarios, and vocabulary growth.",
+      "Practical Marathi-English and Hindi-English speaking support for confidence in daily communication and interviews.",
     audience: "Learners building speaking confidence alongside exam preparation.",
     modules: [
       "Scenario-led vocabulary and speaking drills",
@@ -267,46 +267,46 @@ export const PUBLIC_TRACK_DEFINITIONS: PublicTrackDefinition[] = [
 
 export const FALLBACK_PLAN_PREVIEWS: PublicPlanPreview[] = [
   {
-    name: "Foundation access",
+    name: "Foundation plan",
     summary:
-      "A starter plan card shape for when the public plans API has not published live plan rows yet.",
-    priceLabel: "Admin-managed pricing",
-    durationLabel: "Duration comes from backend",
+      "A good fit for students who want organized notes and steady daily study support.",
+    priceLabel: "Contact for fees",
+    durationLabel: "Flexible duration",
     features: [
-      "Plan copy and entitlements stay backend-driven",
-      "Pricing page structure is ready for live records",
-      "CTA flow can point students toward checkout later",
+      "Organized notes for core subjects",
+      "Daily study support",
+      "Best for steady foundation building",
     ],
     ctaLabel: "Talk to support",
     ctaHref: "/contact",
-    badge: "Preview structure",
+    badge: "Starter",
   },
   {
-    name: "Guided preparation",
+    name: "Practice and test plan",
     summary:
-      "A mid-tier card shape for notes, guidance, and practice-heavy flows once public plans are active.",
-    priceLabel: "Public plans sync here",
-    durationLabel: "Order and duration stay dynamic",
+      "Designed for students who want regular practice, mock tests, and stronger exam rhythm.",
+    priceLabel: "Contact for fees",
+    durationLabel: "Flexible duration",
     features: [
-      "Supports rich short descriptions and detailed copy",
-      "Can reflect entitlement combinations from backend",
-      "Designed to slot into later checkout flows",
+      "Practice sessions and mock tests",
+      "Useful for revision and score tracking",
+      "Good for students closer to exam mode",
     ],
     ctaLabel: "View preparation tracks",
     ctaHref: "/tracks/mpsc-allied",
   },
   {
-    name: "Full premium access",
+    name: "Complete guidance plan",
     summary:
-      "A premium-tier preview card for broad access without baking final business numbers into the frontend.",
-    priceLabel: "Configured in admin",
-    durationLabel: "Future checkout-ready",
+      "For students who want broader access across notes, tests, guidance, and support.",
+    priceLabel: "Contact for fees",
+    durationLabel: "Flexible duration",
     features: [
-      "Later checkout and entitlement prompts can reuse this card",
-      "Preview keeps the route production-shaped without fake pricing",
-      "Works for MPSC, practice, tests, and guidance combinations",
+      "Broad access across main learning areas",
+      "Useful for long-term preparation",
+      "Support for notes, tests, and guidance together",
     ],
-    ctaLabel: "Open pricing route",
+    ctaLabel: "Talk to support",
     ctaHref: "/pricing",
   },
 ];
@@ -319,45 +319,45 @@ export const FALLBACK_STANDALONE_PAGES: Record<
     slug: "about",
     title: "About Topper's Choice",
     summary:
-      "An academic platform shaped around clarity, disciplined preparation, and admin-managed learning content.",
+      "Learn about Topper's Choice, the academy's approach, and how students use the platform.",
     description:
-      "Learn what Topper's Choice stands for, how the platform helps students, and why the public landing is built to stay dynamic.",
+      "Learn what Topper's Choice stands for and how the platform supports students.",
     bodyJson: {
       blocks: [
         {
           type: "prose",
-          title: "Why this platform exists",
+          title: "Why students choose Topper's Choice",
           paragraphs: [
-            "Topper's Choice is designed to reduce scattered preparation across books, coaching classes, notes, and practice sources into one clear academic system.",
-            "The platform centers structured notes, practice papers, guidance modules, and communication-building content so students can move through preparation with fewer disconnected tools.",
+            "Topper's Choice is built to reduce the confusion of scattered books, mixed notes, and disconnected test material.",
+            "The goal is to keep notes, practice, tests, and guidance together so students can follow a clearer preparation path.",
           ],
         },
         {
           type: "feature-grid",
-          title: "What the public surface promises",
+          title: "What students get",
           items: [
             {
-              title: "Admin-managed content",
+              title: "Organized study material",
               description:
-                "Landing copy, public pages, and pricing are meant to evolve from backend-managed content instead of hardcoded page rewrites.",
+                "Notes, updates, and learning material are arranged so students can find the right topic quickly.",
             },
             {
-              title: "Student-first structure",
+              title: "Practice and testing",
               description:
-                "The same frontend foundation later powers notes, practice, tests, guidance, and payments inside the student shell.",
+                "Students can move from learning to practice and mock tests without changing platforms.",
             },
             {
-              title: "Academic tone",
+              title: "Guidance beyond notes",
               description:
-                "The experience follows the stitch-led editorial direction instead of defaulting to a generic SaaS dashboard look.",
+                "Career guidance, interview support, and communication skills can live alongside the main exam material.",
             },
           ],
         },
         {
           type: "cta",
-          title: "See how the public routes are taking shape",
+          title: "Explore the main sections",
           description:
-            "Pricing, track highlights, contact, and legal placeholders are already mounted so later CMS and backend data can slot in cleanly.",
+            "Start with the preparation path, compare plans, or message the academy for help.",
           ctas: [
             { label: "Open pricing", href: "/pricing", tone: "primary" },
             { label: "Browse tracks", href: "/tracks/mpsc-allied", tone: "secondary" },
@@ -374,14 +374,14 @@ export const FALLBACK_STANDALONE_PAGES: Record<
     slug: "contact",
     title: "Contact & support",
     summary:
-      "Support details, WhatsApp-first contact guidance, and public contact placeholders ready for CMS authorship.",
+      "Get in touch for batch details, fees, and general support.",
     description:
-      "Reach Topper's Choice support, view contact expectations, and use the current public support channels.",
+      "Reach Topper's Choice support through the current contact channels.",
     bodyJson: {
       blocks: [
         {
           type: "contact",
-          title: "Current public contact route",
+          title: "Contact details",
           items: [
             {
               label: "WhatsApp",
@@ -392,21 +392,21 @@ export const FALLBACK_STANDALONE_PAGES: Record<
             {
               label: "Address",
               value: "Near Motibag, Motinagar, Amravati",
-              description: "Public-facing location placeholder until richer CMS contact content is authored.",
+              description: "Visit or message the academy for batch and admission details.",
             },
             {
               label: "Proprietor",
               value: "Madhuri Anil Deulkar",
-              description: "Brand ownership reference from the provided PRD.",
+              description: "Topper's Choice",
             },
           ],
         },
         {
           type: "prose",
-          title: "Why this page is placeholder-ready",
+          title: "Before you contact us",
           paragraphs: [
-            "The contact route is already mounted so support details, timings, FAQ copy, and additional communication channels can later come from the CMS without changing route structure.",
-            "This keeps the public surface realistic now while preserving the backend-driven content strategy for later prompts.",
+            "Message the academy on WhatsApp for batch details, fees, and access questions.",
+            "If you are already a student, keep your student login ready so support can help you faster.",
           ],
         },
       ],
@@ -418,26 +418,26 @@ export const FALLBACK_STANDALONE_PAGES: Record<
   },
   privacy: {
     slug: "privacy",
-    title: "Privacy policy placeholder",
+    title: "Privacy policy",
     summary:
-      "A clean legal placeholder that keeps route structure stable while final policy copy remains to be authored.",
+      "The full privacy policy will be updated here. Please contact support if you need clarification before enrollment.",
     description:
-      "Review the current privacy placeholder for Topper's Choice while final legal copy is prepared for CMS publication.",
+      "Read the current privacy notes for Topper's Choice.",
     bodyJson: {
       blocks: [
         {
           type: "note",
-          title: "Policy drafting still pending",
+          title: "Policy update in progress",
           description:
-            "Final legal copy is intentionally not hardcoded into the app. This route is here so future CMS-authored privacy content can publish without route changes.",
+            "The full privacy policy text is being prepared. If you have questions before purchase, please contact support first.",
         },
         {
           type: "list",
-          title: "What this placeholder already communicates",
+          title: "Current privacy points",
           items: [
-            "Public and student routes are separated from protected content handling.",
-            "Premium content remains outside unsafe offline caching assumptions.",
-            "Future policy updates should flow from admin-managed public pages.",
+            "Student and admin areas are separated by login.",
+            "Account access and study material stay tied to the signed-in user.",
+            "Support can help with privacy-related questions before enrollment.",
           ],
         },
       ],
@@ -448,31 +448,31 @@ export const FALLBACK_STANDALONE_PAGES: Record<
         follow: true,
       },
       description:
-        "Privacy policy placeholder for Topper's Choice while final legal content is being prepared.",
+        "Privacy information for Topper's Choice.",
     } as Metadata,
   },
   terms: {
     slug: "terms",
-    title: "Terms & conditions placeholder",
+    title: "Terms & conditions",
     summary:
-      "A stable legal route for future authored terms, available now so navigation and SEO structure do not have to change later.",
+      "The full terms will be updated here. Please contact support if you need clarification before enrollment.",
     description:
-      "Read the current Topper's Choice terms placeholder while the final authored legal page is pending.",
+      "Read the current terms notes for Topper's Choice.",
     bodyJson: {
       blocks: [
         {
           type: "note",
-          title: "Final legal copy is still pending",
+          title: "Terms update in progress",
           description:
-            "This route exists now to avoid future routing churn. The long-form terms page should be published through the CMS when approved content is ready.",
+            "The detailed terms are being prepared. If you need clarification before purchase, please contact support first.",
         },
         {
           type: "list",
-          title: "Current public assumptions",
+          title: "Current terms notes",
           items: [
-            "Plans, pricing, and featured public content are expected to be admin-managed.",
-            "Student and admin access rules remain backend-driven.",
-            "Protected study content will continue following safe access-control rules.",
+            "Plans and access are linked to the student's account.",
+            "Student and admin access remain separate.",
+            "Published study material and paid access may change based on the selected plan.",
           ],
         },
       ],
@@ -483,7 +483,7 @@ export const FALLBACK_STANDALONE_PAGES: Record<
         follow: true,
       },
       description:
-        "Terms and conditions placeholder for Topper's Choice while final legal content is being prepared.",
+        "Terms and conditions information for Topper's Choice.",
     } as Metadata,
   },
 };
@@ -509,38 +509,38 @@ export const FALLBACK_PUBLIC_CMS_RESOLVE: CmsResolveResponse = {
   })),
   banners: [
     buildFallbackBanner({
-      title: "Achieve your exam goals with 35+ years of academic clarity.",
+      title: "Trusted notes, tests, and guidance for competitive exam preparation.",
       subtitle: "One stop solution for all by M.D. madam",
       body:
-        "Get subject-wise notes, practice papers, guidance, interview support, and speaking pathways from one admin-managed public surface.",
+        "Study with organized notes, regular practice, mock tests, and focused guidance from Topper's Choice.",
       ctaLabel: "Explore preparation tracks",
       ctaHref: "/tracks/mpsc-allied",
       metaJson: {
-        secondaryCtaLabel: "View pricing structure",
+        secondaryCtaLabel: "View plans",
         secondaryCtaHref: "/pricing",
         stats: [
-          { value: "35+", label: "Years of expertise" },
-          { value: "4", label: "Preparation pathways highlighted" },
-          { value: "1", label: "Shared public surface" },
+          { value: "35+", label: "Years of guidance" },
+          { value: "Marathi + English", label: "Study mediums" },
+          { value: "Notes + tests + guidance", label: "Learning support" },
         ],
       },
     }),
   ],
   announcements: [
     buildFallbackAnnouncement({
-      title: "Monthly updates stay part of the public promise",
+      title: "Need fee or batch details?",
       body:
-        "The landing foundation is ready for CMS-authored updates, announcements, and campaign copy without route rewrites.",
-      linkLabel: "See contact route",
+        "Message the academy on WhatsApp for fee details, batch information, and general support.",
+      linkLabel: "Contact support",
       linkHref: "/contact",
       level: "SUCCESS",
       isPinned: true,
     }),
     buildFallbackAnnouncement({
-      title: "Student installability is already in place",
+      title: "Stay updated",
       body:
-        "Public pages stay server-first while the shared shell continues to support the later student PWA experience.",
-      linkLabel: "Open pricing route",
+        "New notes, tests, and announcements will be updated here regularly.",
+      linkLabel: "Open plans",
       linkHref: "/pricing",
       level: "INFO",
       isPinned: false,
@@ -550,70 +550,72 @@ export const FALLBACK_PUBLIC_CMS_RESOLVE: CmsResolveResponse = {
   sections: [
     buildFallbackSection({
       code: "landing-editorial-intro",
-      title: "A disciplined preparation system, not a content dump.",
+      title: "Study with a clear plan.",
       subtitle:
-        "The landing surface now speaks in the same editorial voice as the stitch references while staying ready for CMS-authored changes.",
+        "Topper's Choice brings notes, practice, tests, and guidance together in one focused learning experience.",
       type: "RICH_TEXT",
       orderIndex: 0,
       bodyJson: {
         paragraphs: [
-          "Topper's Choice is built to remove the usual friction of scattered notes, disconnected coaching inputs, and ad hoc mock-practice sources.",
-          "The public foundation is intentionally modular: brand copy, banners, sections, pricing, and legal content can all move toward backend-managed publishing without changing the route structure again.",
+          "Students often lose time jumping between notes, coaching material, and random test sources. Topper's Choice keeps the important parts together.",
+          "The goal is simple: learn the topic, revise with the right notes, and test yourself regularly.",
         ],
         stats: [
-          { value: "Server-first", label: "Public rendering" },
-          { value: "CMS-ready", label: "Section architecture" },
-          { value: "Mobile-considered", label: "CTA density" },
+          { value: "35+", label: "Years of guidance" },
+          { value: "Marathi + English", label: "Study mediums" },
+          { value: "Notes + tests + guidance", label: "Main support" },
         ],
       },
       configJson: {
+        eyebrow: "Why Topper's Choice",
         variant: "editorial",
       },
     }),
     buildFallbackSection({
       code: "landing-core-offerings",
-      title: "Comprehensive learning ecosystem",
+      title: "What students can use",
       subtitle:
-        "The same platform foundation is meant to support notes, guidance, practice, tests, and communication skills without visual drift.",
+        "Each section is built to help students move from learning to testing.",
       type: "CONTENT_FEED",
       orderIndex: 1,
       bodyJson: {
         items: [
           {
             label: "Notes",
-            title: "Structured learning",
+            title: "Organized notes",
             description:
-              "Subject-wise and topic-wise notes organized for focused preparation and strong basic concepts.",
+              "Topic-wise notes arranged for easier study and revision.",
           },
           {
             label: "Practice",
-            title: "Smart assessment",
+            title: "Practice questions",
             description:
-              "Subject-wise and mixed-format practice papers to test readiness, retention, and exam rhythm.",
+              "Practice sets that help students improve speed and accuracy.",
+          },
+          {
+            label: "Tests",
+            title: "Mock tests",
+            description:
+              "Timed tests that help students move from revision to exam pressure.",
           },
           {
             label: "Guidance",
-            title: "Career and interview support",
+            title: "Guidance and support",
             description:
-              "Guidance modules that extend the platform beyond static reading into clearer next-step preparation.",
-          },
-          {
-            label: "Speaking",
-            title: "English speaking pathways",
-            description:
-              "Practical scenario-based modules for Marathi-English and Hindi-English speaking improvement.",
+              "Career guidance, interview support, and communication-building help.",
           },
         ],
       },
       configJson: {
         columns: 2,
+        eyebrow: "Main features",
       },
     }),
     buildFallbackSection({
       code: "landing-track-highlights",
       title: "Choose your preparation path",
       subtitle:
-        "Track pages are mounted now so later taxonomy and CMS work can enrich them without changing navigation.",
+        "Explore the exam path that matches your goal.",
       type: "CONTENT_FEED",
       orderIndex: 2,
       bodyJson: {
@@ -621,50 +623,51 @@ export const FALLBACK_PUBLIC_CMS_RESOLVE: CmsResolveResponse = {
       },
       configJson: {
         columns: 2,
+        eyebrow: "Preparation paths",
         emphasis: "track-grid",
       },
     }),
     buildFallbackSection({
       code: "landing-plan-highlights",
-      title: "Pricing structure is ready for public plan data",
+      title: "Choose the plan that fits your preparation",
       subtitle:
-        "The route and cards are real now, while final plan pricing and entitlement bundles continue to stay backend-managed.",
+        "Contact support if you need help selecting the right option.",
       type: "PLAN_HIGHLIGHTS",
       orderIndex: 3,
       configJson: {
         eyebrow: "Plans",
-        note: "Public plans sync into this section when backend data is available.",
+        note: "Plan details and fees are shown here.",
       },
     }),
     buildFallbackSection({
       code: "landing-call-to-action",
-      title: "Start from the public surface, move toward the student app.",
+      title: "Need help before you begin?",
       subtitle:
-        "This keeps public discovery, pricing, and support aligned before auth, guards, and student flows land in later prompts.",
+        "Compare plans, explore tracks, or talk to the academy.",
       type: "CTA_GROUP",
       orderIndex: 4,
       bodyJson: {
         items: [
           {
-            title: "Open pricing route",
+            title: "Compare plans",
             description:
-              "See the plan card architecture that is ready for backend-managed public plans.",
+              "See the available plan options and continue when you are ready to enroll.",
             href: "/pricing",
             label: "Pricing",
             tone: "primary",
           },
           {
-            title: "Read about the platform",
+            title: "Explore preparation paths",
             description:
-              "Understand the academic positioning and why the public surface is built around CMS-driven content.",
-            href: "/about",
-            label: "About",
+              "Open the main preparation tracks and choose the one that matches your goal.",
+            href: "/tracks/mpsc-allied",
+            label: "Tracks",
             tone: "secondary",
           },
           {
-            title: "Message support",
+            title: "Talk to support",
             description:
-              "Use the contact route while richer public contact content remains to be authored.",
+              "Message the academy for fees, batches, and support.",
             href: "/contact",
             label: "Contact",
             tone: "secondary",

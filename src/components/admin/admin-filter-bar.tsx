@@ -34,7 +34,7 @@ export function AdminFilterBar({
 
       <div className="mt-4 flex flex-col gap-3 border-t border-[rgba(0,30,64,0.08)] pt-4 md:flex-row md:items-center md:justify-between">
         <p className="text-sm text-[color:var(--muted)]">
-          {resultSummary ?? "Filter the current CMS collection."}
+          {resultSummary ?? "Use the filters to narrow the list."}
         </p>
         {actions ? (
           <div className="flex flex-wrap items-center gap-3">{actions}</div>

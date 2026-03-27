@@ -44,6 +44,7 @@ function isEditableTarget(target: EventTarget | null) {
 }
 
 export function PdfCanvasViewer({
+  gestureDirection = "horizontal",
   initialPage = 1,
   initialZoom = 1,
   noteViewSessionId,
@@ -52,8 +53,12 @@ export function PdfCanvasViewer({
   onPageChange,
   onReady,
   onZoomChange,
+  requestedPage,
+  shellClassName,
+  showToolbar = true,
   watermarkPayload,
 }: Readonly<{
+  gestureDirection?: "horizontal" | "vertical";
   initialPage?: number;
   initialZoom?: number;
   noteViewSessionId: string;
@@ -62,6 +67,9 @@ export function PdfCanvasViewer({
   onPageChange?: (page: number, totalPages: number) => void;
   onReady?: (totalPages: number) => void;
   onZoomChange?: (zoom: number) => void;
+  requestedPage?: number;
+  shellClassName?: string;
+  showToolbar?: boolean;
   watermarkPayload?: NoteWatermarkResponse | null;
 }>) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -163,6 +171,17 @@ export function PdfCanvasViewer({
   useEffect(() => {
     setPageInput(String(pageNumber));
   }, [pageNumber]);
+
+  useEffect(() => {
+    if (!Number.isFinite(requestedPage)) {
+      return;
+    }
+
+    setPageNumber((currentPage) => {
+      const nextPage = clampPage(requestedPage ?? currentPage, pageCount);
+      return nextPage === currentPage ? currentPage : nextPage;
+    });
+  }, [pageCount, requestedPage]);
 
   useEffect(() => {
     onZoomChange?.(zoom);
@@ -293,102 +312,122 @@ export function PdfCanvasViewer({
     const deltaX = touch.clientX - touchStart.x;
     const deltaY = touch.clientY - touchStart.y;
 
-    if (Math.abs(deltaX) < 60 || Math.abs(deltaY) > 90) {
+    if (gestureDirection === "vertical") {
+      if (Math.abs(deltaY) < 60 || Math.abs(deltaX) > 90) {
+        return;
+      }
+
+      if (deltaY < 0) {
+        goToPage(pageNumber + 1);
+      } else {
+        goToPage(pageNumber - 1);
+      }
       return;
     }
 
-    if (deltaX < 0) {
-      goToPage(pageNumber + 1);
-    } else {
-      goToPage(pageNumber - 1);
+    if (Math.abs(deltaX) >= 60 && Math.abs(deltaY) <= 90) {
+      if (deltaX < 0) {
+        goToPage(pageNumber + 1);
+      } else {
+        goToPage(pageNumber - 1);
+      }
     }
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="tc-panel rounded-[24px] p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => goToPage(1)}
-              className="tc-button-secondary"
-              disabled={pageNumber <= 1}
-            >
-              First
-            </button>
-            <button
-              type="button"
-              onClick={() => goToPage(pageNumber - 1)}
-              className="tc-button-secondary"
-              disabled={pageNumber <= 1}
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              onClick={() => goToPage(pageNumber + 1)}
-              className="tc-button-secondary"
-              disabled={pageNumber >= pageCount}
-            >
-              Next
-            </button>
-            <button
-              type="button"
-              onClick={() => goToPage(pageCount)}
-              className="tc-button-secondary"
-              disabled={pageNumber >= pageCount}
-            >
-              Last
-            </button>
-          </div>
+      {showToolbar ? (
+        <div className="tc-panel rounded-[24px] p-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => goToPage(1)}
+                className="tc-button-secondary"
+                disabled={pageNumber <= 1}
+              >
+                First
+              </button>
+              <button
+                type="button"
+                onClick={() => goToPage(pageNumber - 1)}
+                className="tc-button-secondary"
+                disabled={pageNumber <= 1}
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                onClick={() => goToPage(pageNumber + 1)}
+                className="tc-button-secondary"
+                disabled={pageNumber >= pageCount}
+              >
+                Next
+              </button>
+              <button
+                type="button"
+                onClick={() => goToPage(pageCount)}
+                className="tc-button-secondary"
+                disabled={pageNumber >= pageCount}
+              >
+                Last
+              </button>
+            </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <label className="flex items-center gap-2 rounded-full bg-[rgba(255,255,255,0.78)] px-4 py-2">
-              <span className="text-sm font-semibold text-[color:var(--brand)]">
-                Page
-              </span>
-              <input
-                inputMode="numeric"
-                value={pageInput}
-                onBlur={() => goToPage(Number(pageInput))}
-                onChange={(event) => setPageInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    goToPage(Number(pageInput));
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-2 rounded-full bg-[rgba(255,255,255,0.78)] px-4 py-2">
+                <span className="text-sm font-semibold text-[color:var(--brand)]">
+                  Page
+                </span>
+                <input
+                  inputMode="numeric"
+                  value={pageInput}
+                  onBlur={() => goToPage(Number(pageInput))}
+                  onChange={(event) => setPageInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      goToPage(Number(pageInput));
+                    }
+                  }}
+                  className="w-14 border-none bg-transparent text-center text-sm font-semibold text-[color:var(--brand)] outline-none"
+                />
+                <span className="text-sm text-[color:var(--muted)]">/ {pageCount}</span>
+              </label>
+
+              <div className="flex items-center gap-2 rounded-full bg-[rgba(255,255,255,0.78)] px-3 py-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setZoom((currentZoom) => clampZoom(currentZoom - ZOOM_STEP))
                   }
-                }}
-                className="w-14 border-none bg-transparent text-center text-sm font-semibold text-[color:var(--brand)] outline-none"
-              />
-              <span className="text-sm text-[color:var(--muted)]">/ {pageCount}</span>
-            </label>
-
-            <div className="flex items-center gap-2 rounded-full bg-[rgba(255,255,255,0.78)] px-3 py-2">
-              <button
-                type="button"
-                onClick={() => setZoom((currentZoom) => clampZoom(currentZoom - ZOOM_STEP))}
-                className="tc-button-secondary px-4 py-2"
-              >
-                -
-              </button>
-              <span className="min-w-14 text-center text-sm font-semibold text-[color:var(--brand)]">
-                {Math.round(zoom * 100)}%
-              </span>
-              <button
-                type="button"
-                onClick={() => setZoom((currentZoom) => clampZoom(currentZoom + ZOOM_STEP))}
-                className="tc-button-secondary px-4 py-2"
-              >
-                +
-              </button>
+                  className="tc-button-secondary px-4 py-2"
+                >
+                  -
+                </button>
+                <span className="min-w-14 text-center text-sm font-semibold text-[color:var(--brand)]">
+                  {Math.round(zoom * 100)}%
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setZoom((currentZoom) => clampZoom(currentZoom + ZOOM_STEP))
+                  }
+                  className="tc-button-secondary px-4 py-2"
+                >
+                  +
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : null}
 
       <div
         ref={containerRef}
-        className="tc-panel overflow-hidden rounded-[28px] bg-[linear-gradient(180deg,#11233d_0%,#0b182a_100%)] p-3 sm:p-5"
+        className={[
+          "tc-panel overflow-hidden rounded-[28px] bg-[linear-gradient(180deg,#11233d_0%,#0b182a_100%)] p-3 sm:p-5",
+          shellClassName ?? "",
+        ].join(" ")}
         onTouchEnd={handleTouchEnd}
         onTouchStart={handleTouchStart}
       >

@@ -7,7 +7,7 @@ interface ErrorStateProps {
 
 export function ErrorState({
   title = "Something went wrong.",
-  description = "The shared surface could not complete its current request.",
+  description = "We couldn't load this page right now.",
   retryLabel = "Try again",
   onRetry,
 }: Readonly<ErrorStateProps>) {
@@ -23,7 +23,7 @@ export function ErrorState({
       }}
     >
       <p className="tc-kicker" style={{ color: "var(--accent-public)" }}>
-        Error state
+        Something went wrong
       </p>
       <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight text-[color:var(--brand)]">
         {title}

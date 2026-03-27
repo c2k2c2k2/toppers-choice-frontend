@@ -383,8 +383,8 @@ export function AdminTaxonomyScreen() {
     return (
       <EmptyState
         eyebrow="Access"
-        title="Taxonomy visibility is locked for this session."
-        description="This admin account does not currently expose taxonomy read permissions, so the catalog mapping workspace cannot be loaded."
+        title="This section is not available for this login."
+        description="Ask an admin with taxonomy access to open this section or update your role."
       />
     );
   }
@@ -399,7 +399,7 @@ export function AdminTaxonomyScreen() {
     return (
       <LoadingState
         title="Loading taxonomy workspace"
-        description="Pulling exam tracks, mediums, subjects, topics, and tags from the backend taxonomy contracts."
+        description="Fetching tracks, mediums, subjects, topics, and tags."
       />
     );
   }
@@ -408,7 +408,7 @@ export function AdminTaxonomyScreen() {
     return (
       <ErrorState
         title="The taxonomy workspace could not be loaded."
-        description="One or more catalog reference queries failed, so the editor cannot safely render."
+        description="We couldn't load the latest taxonomy data right now."
         onRetry={() => {
           void examTracksQuery.refetch();
           void mediumsQuery.refetch();
@@ -424,8 +424,8 @@ export function AdminTaxonomyScreen() {
     <div className="flex flex-col gap-6">
       <AdminPageHeader
         eyebrow="Catalog control"
-        title="Taxonomy now runs through one shared admin workspace."
-        description="Exam tracks, mediums, subjects, topics, and tags all stay on top of the same permission-aware CRUD patterns so later notes, content, and assessment authoring can trust these reference records."
+        title="Taxonomy"
+        description="Manage tracks, mediums, subjects, topics, and tags used across the app."
         actions={
           <>
             {canManage ? (

@@ -23,23 +23,23 @@ const ADMIN_NAV_GROUPS: Array<{
       {
         href: "/admin",
         label: "Overview",
-        description: "Bootstrap metrics, permissions, and the full admin operating surface.",
+        description: "Quick summary, launch checks, and shortcuts into the main admin sections.",
       },
     ],
   },
   {
-    title: "Catalog and Content",
+    title: "Website and Content",
     items: [
       {
         href: "/admin/taxonomy",
         label: "Taxonomy",
-        description: "Exam tracks, mediums, subjects, topics, and tags.",
+        description: "Tracks, mediums, subjects, topics, and tags.",
         permissions: ["academics.taxonomy.read", "academics.taxonomy.manage"],
       },
       {
         href: "/admin/notes",
         label: "Notes",
-        description: "Premium note catalog, preview handling, and publishing.",
+        description: "Create, update, and publish note records.",
         permissions: ["content.notes.read", "content.notes.manage", "content.notes.publish"],
       },
       {
@@ -55,7 +55,7 @@ const ADMIN_NAV_GROUPS: Array<{
       {
         href: "/admin/questions",
         label: "Questions",
-        description: "Question bank authoring with contract-ready JSON content.",
+        description: "Question bank, options, answers, and media.",
         permissions: [
           "academics.questions.read",
           "academics.questions.manage",
@@ -65,31 +65,31 @@ const ADMIN_NAV_GROUPS: Array<{
       {
         href: "/admin/tests",
         label: "Tests",
-        description: "Timed assessments, question mixes, and publish controls.",
+        description: "Create mock tests and manage publish status.",
         permissions: ["academics.tests.read", "academics.tests.manage", "academics.tests.publish"],
       },
       {
         href: "/admin/cms/pages",
         label: "Pages",
-        description: "Public and internal page records for stitched routes.",
+        description: "About, contact, policy, and other website pages.",
         permissions: ["content.cms.read", "content.cms.manage", "content.cms.publish"],
       },
       {
         href: "/admin/cms/banners",
         label: "Banners",
-        description: "Hero and promotion banners for landing and student surfaces.",
+        description: "Homepage and promotional banners.",
         permissions: ["content.cms.read", "content.cms.manage", "content.cms.publish"],
       },
       {
         href: "/admin/cms/announcements",
         label: "Announcements",
-        description: "Pinned alerts, campaign notices, and timed messaging.",
+        description: "Short notices for the website and student app.",
         permissions: ["content.cms.read", "content.cms.manage", "content.cms.publish"],
       },
       {
         href: "/admin/cms/sections",
-        label: "Sections",
-        description: "Home-page section compositions aligned to stitch-led surfaces.",
+        label: "Home sections",
+        description: "Homepage blocks and their display order.",
         permissions: ["content.cms.read", "content.cms.manage", "content.cms.publish"],
       },
     ],
@@ -100,13 +100,13 @@ const ADMIN_NAV_GROUPS: Array<{
       {
         href: "/admin/plans",
         label: "Plans",
-        description: "Plan catalog, entitlement bundles, and pricing data.",
+        description: "Plan names, pricing, duration, and included access.",
         permissions: ["payments.read", "payments.manage"],
       },
       {
         href: "/admin/payments",
         label: "Payments",
-        description: "Orders, reconcile actions, and checkout support visibility.",
+        description: "Orders, payment status, and manual checks.",
         permissions: ["payments.read", "payments.manage"],
       },
     ],
@@ -117,7 +117,7 @@ const ADMIN_NAV_GROUPS: Array<{
       {
         href: "/admin/users",
         label: "Users and access",
-        description: "Students, admins, access grants, roles, and entitlements.",
+        description: "Students, admins, roles, permissions, and entitlements.",
         permissions: [
           "admin.users.read",
           "admin.users.manage",
@@ -130,30 +130,30 @@ const ADMIN_NAV_GROUPS: Array<{
       {
         href: "/admin/audit",
         label: "Audit",
-        description: "Action history across publishing, access, and admin support work.",
+        description: "See who changed what and when.",
         permissions: ["admin.audit.read"],
       },
       {
         href: "/admin/notifications",
         label: "Notifications",
-        description: "Templates, broadcasts, dispatch, and delivery visibility.",
+        description: "Templates, broadcasts, and delivery status.",
         permissions: ["notifications.read", "notifications.manage", "notifications.send"],
       },
     ],
   },
   {
-    title: "Intelligence and Ops",
+    title: "Reports and Ops",
     items: [
       {
         href: "/admin/analytics",
         label: "Analytics",
-        description: "User, content, revenue, and activity rollups from backend analytics.",
+        description: "Student, content, revenue, and activity reports.",
         permissions: ["analytics.read"],
       },
       {
         href: "/admin/ops",
         label: "Operations",
-        description: "Search, content health, security signals, exports, and support actions.",
+        description: "Search, content health, exports, and security checks.",
         permissions: [
           "admin.search.read",
           "admin.ops.read",
@@ -172,6 +172,37 @@ function isActive(pathname: string, href?: string) {
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function getRouteCopy(
+  pathname: string,
+  navGroups: Array<{
+    items: AdminNavItem[];
+    title: string;
+  }>,
+) {
+  if (pathname === "/admin") {
+    return {
+      title: "Admin dashboard",
+      description: "Review important counts, check launch items, and open the right workspace quickly.",
+    };
+  }
+
+  for (const group of navGroups) {
+    for (const item of group.items) {
+      if (item.href && isActive(pathname, item.href)) {
+        return {
+          title: item.label,
+          description: item.description,
+        };
+      }
+    }
+  }
+
+  return {
+    title: "Admin panel",
+    description: "Manage the application from the sections available to this account.",
+  };
 }
 
 export function AdminShell({
@@ -195,6 +226,7 @@ export function AdminShell({
       }),
     })).filter((group) => group.items.length > 0);
   }, [authSession]);
+  const currentRoute = getRouteCopy(pathname, navGroups);
 
   async function handleLogout() {
     await authSession.logout();
@@ -206,13 +238,13 @@ export function AdminShell({
       <div className="mx-auto flex min-h-dvh w-full max-w-[96rem] flex-col gap-4 px-4 py-4 xl:flex-row">
         <aside className="tc-shell-rail w-full rounded-[32px] p-5 xl:sticky xl:top-4 xl:h-[calc(100dvh-2rem)] xl:w-[22rem] xl:shrink-0 xl:overflow-y-auto">
           <p className="tc-kicker" style={{ color: "var(--accent-admin)" }}>
-            Topper&apos;s Choice admin
+            Topper&apos;s Choice
           </p>
           <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-            Shared internal workspace
+            Admin panel
           </h2>
           <p className="tc-muted mt-3 text-sm leading-6">
-            Permission-aware navigation, shared CRUD foundations, and backend-driven publish flows now anchor the admin surface.
+            Use this panel to manage website content, learning material, students, plans, and day-to-day operations.
           </p>
 
           <div className="mt-5 grid gap-3 md:grid-cols-3 xl:grid-cols-1">
@@ -235,7 +267,7 @@ export function AdminShell({
                 {authSession.access?.roles.length ?? 0}
               </p>
               <p className="mt-1 text-sm text-[color:var(--muted)]">
-                {authSession.access?.roles.map((role) => role.name).join(", ") || "No roles"}
+                {authSession.access?.roles.map((role) => role.name).join(", ") || "No roles assigned"}
               </p>
             </div>
             <div className="tc-panel rounded-[22px] p-4">
@@ -246,7 +278,7 @@ export function AdminShell({
                 {authSession.access?.effectivePermissionKeys.length ?? 0}
               </p>
               <p className="mt-1 text-sm text-[color:var(--muted)]">
-                Frontend gates mirror the backend access graph.
+                Menu items change based on these permissions.
               </p>
             </div>
           </div>
@@ -309,19 +341,19 @@ export function AdminShell({
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p className="tc-kicker" style={{ color: "var(--accent-admin)" }}>
-                  Current route
+                  Current section
                 </p>
                 <h1 className="tc-display mt-2 text-2xl font-semibold tracking-tight">
-                  {pathname === "/admin" ? "Admin overview" : pathname.replace(/^\/admin\//, "Admin / ")}
+                  {currentRoute.title}
                 </h1>
                 <p className="tc-muted mt-2 text-sm leading-6">
-                  Protected by shared auth bootstrap, with route-level permission guards layered on top for CMS and later admin modules.
+                  {currentRoute.description}
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
                 <Link href="/" className="tc-button-secondary">
-                  Public site
+                  Website
                 </Link>
                 <Link href="/student" className="tc-button-secondary">
                   Student app

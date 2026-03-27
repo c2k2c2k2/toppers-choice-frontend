@@ -529,13 +529,13 @@ export function AdminAssessmentsScreen({
         eyebrow="Assessments"
         title={
           initialTab === "questions"
-            ? "Question bank authoring is live."
-            : "Test authoring and publish flows are live."
+            ? "Question bank"
+            : "Tests"
         }
         description={
           initialTab === "questions"
-            ? "This editor writes directly to the backend question DTOs, including statement blocks, option arrays, correct-answer JSON, and media references."
-            : "This editor now owns test metadata, timing, question composition, and publication state through the backend test contracts."
+            ? "Create and manage questions, options, answers, and difficulty level."
+            : "Create mock tests, choose questions, and publish them for students."
         }
       />
 
@@ -545,12 +545,12 @@ export function AdminAssessmentsScreen({
           {
             href: "/admin/questions",
             label: "Questions",
-            description: "Question bank, difficulty, options, answers, and media references.",
+            description: "Question statements, options, answers, and media.",
           },
           {
             href: "/admin/tests",
             label: "Tests",
-            description: "Timed test definitions, question mixes, and publish lifecycle.",
+            description: "Timed tests, question mixes, and publish status.",
           },
         ]}
       />

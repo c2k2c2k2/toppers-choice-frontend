@@ -33,6 +33,7 @@ export async function generateMetadata() {
 
 export default async function PublicHomePage() {
   const content = await getPublicHomeContent();
+  const supportHref = `https://wa.me/91${content.branding.supportWhatsapp.replace(/\D/g, "")}`;
   const heroStats = readRecordArray(content.banner?.metaJson?.stats).map((stat) => ({
     label: readString(stat.label, "Public metric"),
     value: readString(stat.value, "Live"),
@@ -53,10 +54,10 @@ export default async function PublicHomePage() {
   return (
     <div className="flex flex-col gap-8">
       <PublicPageHero
-        eyebrow={content.banner?.subtitle ?? "Public landing"}
+        eyebrow={content.banner?.subtitle ?? content.branding.displayName}
         title={
           content.banner?.title ??
-          "Structured preparation, guidance, and public discovery on one surface."
+          "Prepare with clear notes, practice, tests, and guidance."
         }
         description={
           content.banner?.body ??
@@ -68,25 +69,31 @@ export default async function PublicHomePage() {
         aside={
           <div className="tc-glass tc-motion-float rounded-[30px] p-5">
             <p className="tc-overline" style={{ color: "rgba(248,249,250,0.72)" }}>
-              Public surface status
+              Admissions and support
             </p>
             <div className="mt-4 grid gap-3">
               <div className="tc-panel rounded-[24px] p-4">
                 <p className="text-sm font-semibold text-[color:var(--brand)]">
-                  {content.hasLiveCms ? "Live CMS resolve connected" : "Fallback CMS content active"}
+                  Talk to the academy
                 </p>
                 <p className="tc-muted mt-2 text-sm">
-                  Sections, pages, and banners already flow through the shared
-                  CMS-ready renderer instead of hardcoded page branches.
+                  {content.branding.supportNote}
                 </p>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <Link href={supportHref} className="tc-button-primary">
+                    WhatsApp support
+                  </Link>
+                  <Link href="/pricing" className="tc-button-secondary">
+                    View plans
+                  </Link>
+                </div>
               </div>
               <div className="tc-panel rounded-[24px] p-4">
                 <p className="text-sm font-semibold text-[color:var(--brand)]">
-                  {content.hasLivePlans ? "Public plans available" : "Pricing grid in preview mode"}
+                  Academy address
                 </p>
                 <p className="tc-muted mt-2 text-sm">
-                  The pricing route and home plan section are ready for backend
-                  plan rows without structural rewrites.
+                  {content.branding.address}
                 </p>
               </div>
             </div>
@@ -100,31 +107,31 @@ export default async function PublicHomePage() {
         {[
           {
             href: "/pricing",
-            label: "Pricing",
-            title: "Plans and CTA architecture",
+            label: "Plans",
+            title: "Choose a plan",
             description:
-              "Public plans render here when backend data is available, with a polished fallback when it is not.",
+              "Compare plan options and continue to the student app when you are ready to enroll.",
           },
           {
             href: "/about",
             label: "About",
-            title: "CMS-backed public pages",
+            title: "About the academy",
             description:
-              "Static routes are mounted now, but they can resolve authored CMS pages later without route changes.",
+              "Learn about Topper's Choice, the teaching approach, and the main learning areas.",
           },
           {
             href: "/contact",
-            label: "Contact",
-            title: "Support path is already public",
+            label: "Support",
+            title: "Contact the team",
             description:
-              "Contact expectations, support channels, and future FAQs can all grow from this foundation.",
+              "Message the academy for fee details, batches, and general support.",
           },
           {
             href: "/tracks/mpsc-allied",
             label: "Tracks",
-            title: "Preparation highlights",
+            title: "Explore preparation paths",
             description:
-              "Track pages are present early so future taxonomy and CMS enrichment land on stable public routes.",
+              "See the main exam paths, learning focus, and who each path is meant for.",
           },
         ].map((item) => (
           <Link

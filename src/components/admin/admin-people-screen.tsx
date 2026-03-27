@@ -450,8 +450,8 @@ export function AdminPeopleScreen({
     return (
       <EmptyState
         eyebrow="Access"
-        title="This people workspace is locked."
-        description="The current admin session does not expose the permission needed for this route."
+        title="This section is not available for this login."
+        description="Ask an admin with access to open this section or update your role."
       />
     );
   }
@@ -469,7 +469,7 @@ export function AdminPeopleScreen({
     return (
       <LoadingState
         title={`Loading ${initialTab} workspace`}
-        description="Pulling user, access, entitlement, role, and audit data from the backend admin contracts."
+        description="Fetching the latest user, access, and audit information."
       />
     );
   }
@@ -487,7 +487,7 @@ export function AdminPeopleScreen({
     return (
       <ErrorState
         title="The people workspace could not be loaded."
-        description="One or more admin support queries failed."
+        description="We couldn't load users or audit information right now."
         onRetry={() => {
           if (initialTab === "users") {
             void usersQuery.refetch();
@@ -509,11 +509,11 @@ export function AdminPeopleScreen({
     <div className="flex flex-col gap-6">
       <AdminPageHeader
         eyebrow="People and access"
-        title={initialTab === "users" ? "Users, roles, and entitlements are now manageable." : "Audit visibility is now available."}
+        title={initialTab === "users" ? "Users and access" : "Audit log"}
         description={
           initialTab === "users"
-            ? "This workspace now ties user status, role assignments, permission overrides, entitlement support actions, and session revocation into one contract-driven admin surface."
-            : "Audit visibility stays read-only and backend-authored, but admins can now filter and inspect operational changes directly from the frontend."
+            ? "Manage students, admins, roles, permissions, entitlements, and session support actions."
+            : "Review important changes and support actions in one place."
         }
       />
 

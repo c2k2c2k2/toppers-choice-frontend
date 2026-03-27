@@ -631,7 +631,7 @@ export function AdminCmsManagementScreen({
     return (
       <LoadingState
         title={`Loading ${getCmsCollectionLabel(collection).toLowerCase()}`}
-        description="Fetching the current CMS records, filters, and editor context for the admin workspace."
+        description="Fetching the latest records for this section."
       />
     );
   }
@@ -640,7 +640,7 @@ export function AdminCmsManagementScreen({
     return (
       <ErrorState
         title={`The ${getCmsCollectionLabel(collection).toLowerCase()} workspace could not be loaded.`}
-        description="The shared admin shell is up, but the CMS collection request failed."
+        description="We couldn't load this CMS section right now."
         onRetry={() => void listQuery.refetch()}
       />
     );
@@ -650,8 +650,8 @@ export function AdminCmsManagementScreen({
     <div className="flex flex-col gap-6">
       <AdminPageHeader
         eyebrow={`${getCmsCollectionLabel(collection)} management`}
-        title={`${getCmsCollectionLabel(collection)} now run through a shared CRUD foundation.`}
-        description="Search, filter, reorder, edit, upload assets, and publish CMS records from the same admin workflow that later domains will reuse."
+        title={getCmsCollectionLabel(collection)}
+        description="Search, filter, reorder, edit, upload assets, and publish records for this website section."
         actions={
           <>
             <button
@@ -677,7 +677,7 @@ export function AdminCmsManagementScreen({
               }
               onClick={() => reorderMutation.mutate(undefined)}
             >
-              {reorderMutation.isPending ? "Saving order..." : "Sync order"}
+              {reorderMutation.isPending ? "Saving order..." : "Save order"}
             </button>
           </>
         }
@@ -699,14 +699,14 @@ export function AdminCmsManagementScreen({
       ) : null}
       {!hasManagePermission ? (
         <AdminInlineNotice>
-          This session can view CMS records but cannot edit them. Backend permissions still decide actual write access.
+          This login can view these records but cannot edit or publish them.
         </AdminInlineNotice>
       ) : null}
 
       <AdminFilterBar
         searchValue={search}
         onSearchValueChange={setSearch}
-        resultSummary={`${records.length} records returned from the backend contract for this collection.`}
+        resultSummary={`Showing ${records.length} ${getCmsCollectionLabel(collection).toLowerCase()} records.`}
         actions={
           <button
             type="button"

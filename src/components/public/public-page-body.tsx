@@ -36,8 +36,8 @@ export function PublicPageBody({
   if (blocks.length === 0) {
     return (
       <EmptyState
-        eyebrow="CMS-ready body"
-        title="This page is ready for authored public content."
+        eyebrow="Coming soon"
+        title="This page will be updated soon."
         description={fallbackSummary}
       />
     );
@@ -87,12 +87,12 @@ export function PublicPageBody({
                     className="tc-panel rounded-[28px] p-5"
                   >
                     <h3 className="text-lg font-semibold text-[color:var(--brand)]">
-                      {readString(item.title, "Public content block")}
+                      {readString(item.title, "More information")}
                     </h3>
                     <p className="tc-muted mt-3 text-sm leading-6">
                       {readString(
                         item.description,
-                        "Structured feature copy will render here once authored.",
+                        "Details will be updated soon.",
                       )}
                     </p>
                   </article>
@@ -179,7 +179,7 @@ export function PublicPageBody({
               <p className="tc-muted mt-4 text-sm leading-7">
                 {readString(
                   block.description,
-                  "This page is in place and ready for later authored content.",
+                  "This information will be updated soon.",
                 )}
               </p>
             </section>
@@ -199,7 +199,7 @@ export function PublicPageBody({
               <p className="tc-muted mt-4 text-sm leading-7">
                 {readString(
                   block.description,
-                  "This call-to-action group will become richer as public content is authored.",
+                  "Choose one of the options below.",
                 )}
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
@@ -233,8 +233,7 @@ export function PublicPageBody({
               {title || "Public content block"}
             </h2>
             <p className="tc-muted mt-3 text-sm leading-6">
-              This page block type is not authored yet, but the route is ready to
-              accept richer CMS-managed content later.
+              More information for this section will be added soon.
             </p>
           </section>
         );

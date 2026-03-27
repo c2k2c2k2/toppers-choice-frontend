@@ -111,6 +111,7 @@ export const adminQueryKeys = {
         topicId: filters.topicId ?? null,
       },
     ] as const,
+  noteIndex: (noteId: string) => ["admin", "notes", noteId, "index"] as const,
   questions: (filters: {
     difficulty?: string | null;
     examTrackId?: string | null;
@@ -309,6 +310,9 @@ export const queryKeys = {
         },
       ] as const,
     note: (noteId: string) => ["student", "notes", "detail", noteId] as const,
+    noteIndex: (noteId: string) => ["student", "notes", "index", noteId] as const,
+    noteBookmarks: (noteId: string) =>
+      ["student", "notes", "bookmarks", noteId] as const,
     practiceSessions: (filters: {
       limit?: number | null;
       status?: string | null;

@@ -1,12 +1,12 @@
 import { AdminPermissionGuard } from "@/components/admin/admin-permission-guard";
-import { AdminNotesListScreen } from "@/components/admin/admin-notes-list-screen";
+import { AdminNoteEditorScreen } from "@/components/admin/admin-note-editor-screen";
 
-export default function AdminNotesPage() {
+export default function AdminNewNotePage() {
   return (
     <AdminPermissionGuard
       permissionKeys={["content.notes.read", "content.notes.manage", "content.notes.publish"]}
     >
-      <AdminNotesListScreen />
+      <AdminNoteEditorScreen />
     </AdminPermissionGuard>
   );
 }

@@ -71,7 +71,7 @@ export default async function PublicTrackPage({ params }: PublicTrackPageProps) 
         <article className="tc-card rounded-[30px] p-6">
           <p className="tc-overline">Audience</p>
           <h2 className="tc-display mt-3 text-3xl font-semibold tracking-tight text-[color:var(--brand)]">
-            Who this path serves
+            Who this path is for
           </h2>
           <p className="tc-muted mt-4 text-sm leading-7">{content.track.audience}</p>
           <ul className="tc-muted mt-5 list-disc space-y-3 pl-5 text-sm leading-6">
@@ -84,7 +84,7 @@ export default async function PublicTrackPage({ params }: PublicTrackPageProps) 
         <article className="tc-panel rounded-[30px] p-6">
           <p className="tc-overline">Expected outcomes</p>
           <h2 className="tc-display mt-3 text-3xl font-semibold tracking-tight text-[color:var(--brand)]">
-            Why this public track route exists early
+            What students can expect
           </h2>
           <ul className="tc-muted mt-5 list-disc space-y-3 pl-5 text-sm leading-6">
             {content.track.outcomes.map((outcome) => (
@@ -99,21 +99,20 @@ export default async function PublicTrackPage({ params }: PublicTrackPageProps) 
           bodyJson={content.cmsPage.bodyJson}
           fallbackSummary={
             content.cmsPage.summary ??
-            "This track is ready for richer authored CMS content when available."
+            "More details about this preparation path will be added soon."
           }
         />
       ) : null}
 
       <section className="space-y-4">
         <div className="max-w-3xl space-y-3">
-          <p className="tc-overline">Pricing link-up</p>
+          <p className="tc-overline">Plans</p>
           <h2 className="tc-display text-3xl font-semibold tracking-tight text-[color:var(--brand)] md:text-4xl">
-            Track pages can already lead into the pricing surface.
+            Compare plans for this path.
           </h2>
           <p className="tc-muted text-base leading-7">
-            This keeps public discovery, preparation-path exploration, and plan
-            comparison connected even before checkout and student entitlement
-            flows are added.
+            Review the available options and continue to the student app when
+            you are ready to enroll.
           </p>
         </div>
         <div className="grid gap-4 xl:grid-cols-2">

@@ -11,9 +11,9 @@ export default function StudentError({
 }>) {
   return (
     <ErrorState
-      title="The student surface hit an error."
+      title="The student app hit an error."
       description={error.message}
-      retryLabel="Retry student surface"
+      retryLabel="Try student app again"
       onRetry={reset}
     />
   );

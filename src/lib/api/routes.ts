@@ -30,10 +30,15 @@ export const apiRoutes = {
     list: "/notes",
     tree: "/notes/tree",
     detail: (noteId: string) => `/notes/${encodeURIComponent(noteId)}`,
+    index: (noteId: string) => `/notes/${encodeURIComponent(noteId)}/index`,
     viewSession: (noteId: string) =>
       `/notes/${encodeURIComponent(noteId)}/view-session`,
     progress: (noteId: string) =>
       `/notes/${encodeURIComponent(noteId)}/progress`,
+    bookmarks: (noteId: string) =>
+      `/notes/${encodeURIComponent(noteId)}/bookmarks`,
+    bookmark: (noteId: string, bookmarkId: string) =>
+      `/notes/${encodeURIComponent(noteId)}/bookmarks/${encodeURIComponent(bookmarkId)}`,
     watermark: (noteViewSessionId: string) =>
       `/notes/view-sessions/${encodeURIComponent(noteViewSessionId)}/watermark`,
     content: (noteViewSessionId: string) =>
@@ -219,6 +224,9 @@ export const apiRoutes = {
     notes: {
       list: "/admin/notes",
       detail: (noteId: string) => `/admin/notes/${encodeURIComponent(noteId)}`,
+      index: (noteId: string) => `/admin/notes/${encodeURIComponent(noteId)}/index`,
+      indexEntry: (noteId: string, entryId: string) =>
+        `/admin/notes/${encodeURIComponent(noteId)}/index/${encodeURIComponent(entryId)}`,
       publish: (noteId: string) =>
         `/admin/notes/${encodeURIComponent(noteId)}/publish`,
       unpublish: (noteId: string) =>

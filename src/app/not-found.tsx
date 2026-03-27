@@ -6,7 +6,7 @@ export default function NotFound() {
       <EmptyState
         eyebrow="Not found"
         title="This public path is not available."
-        description="The route either has not been authored yet or the requested CMS-backed public page does not exist."
+        description="The page you are looking for does not exist or has been moved."
         ctaHref="/"
         ctaLabel="Return to public home"
       />

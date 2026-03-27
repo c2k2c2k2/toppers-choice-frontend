@@ -258,8 +258,8 @@ export function AdminCommerceScreen({
     return (
       <EmptyState
         eyebrow="Access"
-        title="Commerce visibility is locked."
-        description="This session does not currently expose payments read permissions."
+        title="This section is not available for this login."
+        description="Ask an admin with payment access to open this section or update your role."
       />
     );
   }
@@ -271,7 +271,7 @@ export function AdminCommerceScreen({
     return (
       <LoadingState
         title={`Loading ${initialTab} workspace`}
-        description="Pulling plan catalog and payment order state from the backend commerce contracts."
+        description="Fetching the latest plans and payment records."
       />
     );
   }
@@ -283,7 +283,7 @@ export function AdminCommerceScreen({
     return (
       <ErrorState
         title="The commerce workspace could not be loaded."
-        description="One or more plans or payments queries failed."
+        description="We couldn't load plans or payments right now."
         onRetry={() => {
           if (initialTab === "plans") {
             void plansQuery.refetch();
@@ -301,11 +301,11 @@ export function AdminCommerceScreen({
     <div className="flex flex-col gap-6">
       <AdminPageHeader
         eyebrow="Commerce"
-        title={initialTab === "plans" ? "Plan catalog is now editable." : "Payment order support is now live."}
+        title={initialTab === "plans" ? "Plans" : "Payments"}
         description={
           initialTab === "plans"
-            ? "Plan definitions, entitlement bundles, and pricing metadata now live in the admin panel instead of staying backend-only."
-            : "Orders now surface enough operational detail for support and finance admins to inspect and reconcile provider state."
+            ? "Create and update plan names, pricing, duration, and included access."
+            : "Review payment orders, statuses, and support details."
         }
       />
 
@@ -315,12 +315,12 @@ export function AdminCommerceScreen({
           {
             href: "/admin/plans",
             label: "Plans",
-            description: "Plan code, pricing, duration, and entitlement bundles.",
+            description: "Plan code, pricing, duration, and included access.",
           },
           {
             href: "/admin/payments",
             label: "Payments",
-            description: "Orders, status transitions, and manual reconcile actions.",
+            description: "Orders, payment status, and manual checks.",
           },
         ]}
       />

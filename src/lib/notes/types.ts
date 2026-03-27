@@ -1,4 +1,5 @@
 import type { ApiJsonRequestBody } from "@/lib/api/openapi";
+import type { MarathiEncodedFontKey } from "@/lib/marathi";
 
 export interface NotesListFilters {
   mediumId?: string | null;
@@ -130,3 +131,41 @@ export interface NoteWatermarkResponse {
 }
 
 export type NoteAccessMode = NoteSummary["access"]["mode"];
+
+export interface NoteIndexEntry {
+  createdAt: string;
+  id: string;
+  indentLevel: number;
+  noteId: string;
+  orderIndex: number;
+  pageNumber: number;
+  serialLabel: string | null;
+  title: string;
+  titleFontHint: MarathiEncodedFontKey | null;
+  updatedAt: string;
+}
+
+export interface NoteIndexListResponse {
+  items: NoteIndexEntry[];
+}
+
+export interface NoteBookmark {
+  createdAt: string;
+  id: string;
+  label: string | null;
+  noteId: string;
+  noteIndexEntryId: string | null;
+  pageNumber: number;
+  updatedAt: string;
+  userId: string;
+}
+
+export interface NoteBookmarkListResponse {
+  items: NoteBookmark[];
+}
+
+export interface UpsertNoteBookmarkInput {
+  label?: string;
+  noteIndexEntryId?: string;
+  pageNumber: number;
+}

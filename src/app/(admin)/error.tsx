@@ -11,9 +11,9 @@ export default function AdminError({
 }>) {
   return (
     <ErrorState
-      title="The admin surface hit an error."
+      title="The admin panel hit an error."
       description={error.message}
-      retryLabel="Retry admin surface"
+      retryLabel="Try admin panel again"
       onRetry={reset}
     />
   );

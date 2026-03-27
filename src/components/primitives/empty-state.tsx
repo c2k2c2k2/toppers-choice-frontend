@@ -9,7 +9,7 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({
-  eyebrow = "Placeholder",
+  eyebrow = "Nothing here yet",
   title,
   description,
   ctaHref,

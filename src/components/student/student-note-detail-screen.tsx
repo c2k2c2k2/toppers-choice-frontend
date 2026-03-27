@@ -51,7 +51,7 @@ export function StudentNoteDetailScreen({
         <EmptyState
           eyebrow="Note not found"
           title="That note is not in the published library."
-          description="The note route is live, but the requested note id does not exist in the current published backend response."
+          description="The selected note could not be found in the current published library."
           ctaHref="/student/notes"
           ctaLabel="Back to notes library"
         />
@@ -62,7 +62,7 @@ export function StudentNoteDetailScreen({
       return (
         <ErrorState
           title="The note detail could not load."
-          description="We couldn't finish resolving the selected note from the protected backend."
+          description="We couldn't finish loading this note right now."
           onRetry={() => void noteQuery.refetch()}
         />
       );
@@ -71,7 +71,7 @@ export function StudentNoteDetailScreen({
     return (
       <LoadingState
         title="Preparing the note detail"
-        description="Loading the selected note summary, entitlement state, and latest reader progress."
+        description="Loading the note summary, access status, and latest progress."
       />
     );
   }
@@ -138,7 +138,7 @@ export function StudentNoteDetailScreen({
                 Note summary
               </p>
               <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-                Reader context and entitlement cues
+                What you have in this note
               </h2>
             </div>
             <Link href="/student/notes" className="tc-button-secondary">
@@ -160,7 +160,7 @@ export function StudentNoteDetailScreen({
             </div>
 
             <div className="tc-card rounded-[24px] p-5">
-              <p className="tc-overline">Reading signals</p>
+              <p className="tc-overline">Reading progress</p>
               <div className="mt-3 flex flex-col gap-3 text-sm leading-6 text-[color:var(--brand)]">
                 <p>Last page viewed: {getOptionalNumber(note.progress?.lastPageViewed) ?? 0}</p>
                 <p>Max page reached: {getOptionalNumber(note.progress?.maxPageViewed) ?? 0}</p>
@@ -169,11 +169,11 @@ export function StudentNoteDetailScreen({
             </div>
 
             <div className="tc-card rounded-[24px] p-5">
-              <p className="tc-overline">Protected delivery</p>
+              <p className="tc-overline">Reader tools</p>
               <div className="mt-3 flex flex-col gap-3 text-sm leading-6 text-[color:var(--brand)]">
-                <p>Watermark overlays are fetched per secure note session.</p>
-                <p>The PDF stream is never added to the offline shell cache.</p>
-                <p>Progress resumes from backend state instead of trusting local protected storage.</p>
+                <p>Open the full-screen zen reader on mobile for a distraction-free flow.</p>
+                <p>Use the note index to jump directly to chapters or topics.</p>
+                <p>Bookmark pages while reading so you can return quickly later.</p>
               </div>
             </div>
           </div>

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PublicPageHero } from "@/components/public/public-page-hero";
 import {
   PublicPlanCard,
@@ -10,13 +11,14 @@ export async function generateMetadata() {
   return buildPublicMetadata({
     title: "Pricing",
     description:
-      "View the public pricing foundation for Topper's Choice, with backend-managed plans that now bridge into the live student checkout flow.",
+      "Compare Topper's Choice plans and continue to the student app when you are ready to enroll.",
     path: "/pricing",
   });
 }
 
 export default async function PricingPage() {
   const content = await getPublicHomeContent();
+  const supportHref = `https://wa.me/91${content.branding.supportWhatsapp.replace(/\D/g, "")}`;
   const cards =
     content.plans.length > 0
       ? content.plans.map(mapPlanToCardData)
@@ -25,25 +27,25 @@ export default async function PricingPage() {
   return (
     <div className="flex flex-col gap-8">
       <PublicPageHero
-        eyebrow="Pricing route"
-        title="Public pricing now hands off into the live student plans flow."
-        description="This page stays server-first, renders backend-managed plans from `/public/plans`, and routes purchase intent into the authenticated student checkout surface."
+        eyebrow="Plans"
+        title="Choose the plan that fits your preparation."
+        description="Compare the available Topper's Choice plans here. When you are ready, continue to the student app to sign in and complete enrollment."
         actions={[
           { label: "Open student plans", href: "/student/plans?intent=all&source=public-pricing&returnTo=%2Fpricing", tone: "primary" },
-          { label: "Browse preparation tracks", href: "/tracks/mpsc-allied", tone: "secondary" },
+          { label: "Talk to support", href: supportHref, tone: "secondary" },
         ]}
         stats={[
           {
-            label: content.hasLivePlans ? "Plan source" : "Plan source",
-            value: content.hasLivePlans ? "Live backend" : "Preview fallback",
+            label: "Plans",
+            value: content.hasLivePlans ? `${content.plans.length} live` : "Ask for fees",
           },
           {
-            label: "Checkout readiness",
-            value: "Student handoff live",
+            label: "Access",
+            value: "Notes, tests, guidance",
           },
           {
-            label: "Route strategy",
-            value: "Server-first",
+            label: "Enrollment",
+            value: "Student login required",
           },
         ]}
       />
@@ -56,27 +58,35 @@ export default async function PricingPage() {
 
       <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <article className="tc-panel rounded-[30px] p-6">
-          <p className="tc-overline">Dynamic later, structured now</p>
+          <p className="tc-overline">How enrollment works</p>
           <h2 className="tc-display mt-3 text-3xl font-semibold tracking-tight text-[color:var(--brand)]">
-            What becomes live when backend plan data is present
+            Compare first, enroll after sign-in.
           </h2>
           <ul className="tc-muted mt-5 list-disc space-y-3 pl-5 text-sm leading-6">
-            <li>Plan ordering, duration, and copy come from the public plans API.</li>
-            <li>Plan cards can hand off intent into the protected student plans route without redesigning public pricing.</li>
-            <li>Payment result polling and entitlement refresh stay in the shared frontend foundation after checkout returns.</li>
+            <li>Compare the plan options here before you decide.</li>
+            <li>Continue to the student app when you want to sign in or create an account.</li>
+            <li>Complete payment and access refresh inside the student area tied to your account.</li>
           </ul>
         </article>
 
         <article className="tc-card rounded-[30px] p-6">
-          <p className="tc-overline">Current F09 shape</p>
+          <p className="tc-overline">Need help choosing?</p>
           <h2 className="tc-display mt-3 text-3xl font-semibold tracking-tight text-[color:var(--brand)]">
-            Public discovery stays public. Checkout still becomes student-aware.
+            Talk to the academy before you enroll.
           </h2>
           <p className="tc-muted mt-4 text-sm leading-7">
-            The public route does not create orders directly. It hands the user
-            into the protected student shell so checkout, payment status, and
-            entitlement refresh all stay tied to the authenticated account.
+            If you want help choosing the right plan, batch, or access level,
+            message support first and then continue with enrollment when you are
+            ready.
           </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link href={supportHref} className="tc-button-primary">
+              WhatsApp support
+            </Link>
+            <Link href="/tracks/mpsc-allied" className="tc-button-secondary">
+              Explore tracks
+            </Link>
+          </div>
         </article>
       </section>
     </div>

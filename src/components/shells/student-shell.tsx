@@ -37,35 +37,31 @@ export function StudentShell({
 
   let shellTitle = authSession.user?.fullName ?? "Student workspace";
   let shellDescription =
-    "Protected app chrome with cross-route track and medium state, ready for the full student product.";
+    "Use this area to open notes, practice, tests, plans, and updates.";
 
   if (pathname.startsWith("/student/catalog")) {
-    shellTitle = "Catalog workspace";
+    shellTitle = "Catalog";
+    shellDescription = "Browse your available tracks, subjects, and topics.";
   } else if (pathname.startsWith("/student/practice")) {
-    shellTitle = "Practice workspace";
-    shellDescription =
-      "Focused practice sessions with weak-area entry points, saved drafts, reveal-aware review, and completion summaries.";
+    shellTitle = "Practice";
+    shellDescription = "Solve practice questions and review mistakes topic by topic.";
   } else if (pathname.startsWith("/student/tests")) {
-    shellTitle = "Timed test workspace";
-    shellDescription =
-      "Timed test listings, instruction-led starts, autosaved attempts, countdown safety, and result review now live in the student app.";
+    shellTitle = "Tests";
+    shellDescription = "Take mock tests, review scores, and track your performance.";
   } else if (pathname.startsWith("/student/plans")) {
     shellTitle = "Plans and access";
-    shellDescription =
-      "Backend-managed public plans, authenticated entitlements, checkout handoff, and payment-status refresh live in one student route.";
+    shellDescription = "Check your active plan, payment status, and available access.";
   } else if (
     pathname.startsWith("/student/guidance") ||
     pathname.startsWith("/student/english-speaking") ||
     pathname.startsWith("/student/current-affairs") ||
     pathname.startsWith("/student/monthly-updates")
   ) {
-    shellTitle = "Structured learning";
-    shellDescription =
-      "Reusable structured content lists and detail flows for guidance, English speaking, current affairs, and monthly updates.";
+    shellTitle = "Guidance and learning";
+    shellDescription = "Open guidance, English speaking, current affairs, and monthly updates.";
   } else if (pathname.startsWith("/student/notes")) {
-    shellTitle = "Notes workspace";
-    shellDescription =
-      "Secure note discovery, preview handling, watermark sessions, and progress tracking live in this student surface.";
+    shellTitle = "Notes";
+    shellDescription = "Read your notes and continue from where you left off.";
   }
 
   return (
@@ -73,14 +69,13 @@ export function StudentShell({
       <div className="mx-auto flex min-h-dvh w-full max-w-7xl flex-col gap-4 px-4 py-4 lg:flex-row">
         <aside className="tc-shell-rail hidden w-80 shrink-0 rounded-[28px] p-5 lg:block">
           <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-            Student surface
+            Student app
           </p>
           <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-            Dashboard-first learning shell
+            Learning dashboard
           </h2>
           <p className="tc-muted mt-3 text-sm leading-6">
-            One mobile-first workspace for catalog discovery, notes, guidance,
-            practice, tests, and payments.
+            Open your notes, practice, tests, plans, and updates from one place.
           </p>
 
           <div className="mt-5 grid gap-3">
@@ -153,7 +148,7 @@ export function StudentShell({
                     className="tc-kicker"
                     style={{ color: "var(--accent-student)" }}
                   >
-                    Shared student layout
+                    Current page
                   </p>
                 </div>
                 <h1 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
@@ -175,7 +170,7 @@ export function StudentShell({
                   </p>
                 </div>
                 <Link href="/" className="tc-button-secondary">
-                  Back to public home
+                  Website
                 </Link>
                 <button
                   type="button"

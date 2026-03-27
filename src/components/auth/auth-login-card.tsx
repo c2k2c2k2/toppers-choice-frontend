@@ -21,6 +21,7 @@ const SURFACE_CONFIG: Record<
     allowSignup: boolean;
     description: string;
     eyebrow: string;
+    highlights: string[];
     otherSurfaceHref: string;
     otherSurfaceLabel: string;
     title: string;
@@ -30,21 +31,31 @@ const SURFACE_CONFIG: Record<
     accentColor: "var(--accent-student)",
     allowSignup: true,
     description:
-      "Resume notes, practice, tests, announcements, and later premium flows from the mobile-first student shell.",
+      "Sign in to continue your notes, practice, tests, announcements, and purchased access from one place.",
     eyebrow: "Student sign in",
+    highlights: [
+      "Open notes, practice, tests, and updates from one dashboard",
+      "Keep your study progress linked to the same account",
+      "Use the same login when you buy or renew access",
+    ],
     otherSurfaceHref: "/admin/login",
     otherSurfaceLabel: "Admin login",
-    title: "Continue into the student workspace.",
+    title: "Welcome back, student.",
   },
   admin: {
     accentColor: "var(--accent-admin)",
     allowSignup: false,
     description:
-      "Sign in to the admin surface with the backend-driven role and permission model already enforced by the shared auth session layer.",
+      "Sign in to manage website content, learning material, students, plans, and day-to-day operations.",
     eyebrow: "Admin sign in",
+    highlights: [
+      "Manage pages, content, tests, students, and plans",
+      "Only the sections allowed for your role are shown",
+      "Important actions stay protected by admin permissions",
+    ],
     otherSurfaceHref: "/student/login",
     otherSurfaceLabel: "Student login",
-    title: "Continue into the admin workspace.",
+    title: "Admin login",
   },
 };
 
@@ -133,7 +144,7 @@ export function AuthLoginCard({
       setErrorMessage(
         getApiErrorMessage(
           error,
-          "The sign-in request could not be completed right now.",
+          "We couldn't sign you in right now.",
         ),
       );
     } finally {
@@ -156,11 +167,7 @@ export function AuthLoginCard({
           </p>
 
           <div className="mt-6 grid gap-3">
-            {[
-              "Shared token storage with refresh-aware bootstrap",
-              "User-type-aware redirects for student and admin surfaces",
-              "Permission gates ready for admin modules",
-            ].map((item) => (
+            {config.highlights.map((item) => (
               <div
                 key={item}
                 className="rounded-[22px] border border-white/12 bg-white/10 px-4 py-3 text-sm text-white/88"
@@ -282,12 +289,11 @@ export function AuthLoginCard({
 
           <div className="tc-panel rounded-[28px] p-5">
             <p className="tc-overline" style={{ color: config.accentColor }}>
-              Redirect behavior
+              Helpful note
             </p>
             <p className="tc-muted mt-3 text-sm leading-6">
-              If you sign into the wrong surface, the shared auth layer will
-              keep the session and send you to the correct workspace instead of
-              leaving you stranded on the wrong route group.
+              If you sign in to the wrong panel by mistake, we will send you to
+              the correct student or admin dashboard automatically.
             </p>
           </div>
         </div>

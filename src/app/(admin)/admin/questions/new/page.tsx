@@ -1,7 +1,7 @@
 import { AdminPermissionGuard } from "@/components/admin/admin-permission-guard";
-import { AdminQuestionsListScreen } from "@/components/admin/admin-questions-list-screen";
+import { AdminQuestionEditorScreen } from "@/components/admin/admin-question-editor-screen";
 
-export default function AdminQuestionsPage() {
+export default function AdminNewQuestionPage() {
   return (
     <AdminPermissionGuard
       permissionKeys={[
@@ -10,7 +10,7 @@ export default function AdminQuestionsPage() {
         "academics.questions.publish",
       ]}
     >
-      <AdminQuestionsListScreen />
+      <AdminQuestionEditorScreen />
     </AdminPermissionGuard>
   );
 }

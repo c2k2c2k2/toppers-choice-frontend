@@ -31,6 +31,10 @@ function readRecordArray(value: unknown) {
   return Array.isArray(value) ? value.filter(isRecord) : [];
 }
 
+function getSectionEyebrow(section: CmsSection, fallback: string) {
+  return readString(section.configJson?.eyebrow, fallback);
+}
+
 function renderRichTextSection(section: CmsSection) {
   const paragraphs = readStringArray(section.bodyJson?.paragraphs);
   const stats = readRecordArray(section.bodyJson?.stats);
@@ -39,7 +43,7 @@ function renderRichTextSection(section: CmsSection) {
     <section key={section.id} className="tc-card tc-motion-rise rounded-[32px] p-6 md:p-8">
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <div>
-          <p className="tc-overline">{section.code.replace(/-/g, " ")}</p>
+          <p className="tc-overline">{getSectionEyebrow(section, "Overview")}</p>
           <h2 className="tc-display mt-3 text-3xl font-semibold tracking-tight text-[color:var(--brand)] md:text-4xl">
             {section.title}
           </h2>
@@ -55,14 +59,14 @@ function renderRichTextSection(section: CmsSection) {
           </div>
         </div>
         <aside className="tc-panel rounded-[28px] p-5">
-          <p className="tc-overline">Section rhythm</p>
+          <p className="tc-overline">Highlights</p>
           <div className="mt-4 grid gap-3">
             {stats.map((stat, index) => (
               <div key={`${section.id}-stat-${index}`} className="tc-card rounded-[22px] p-4">
                 <p className="text-2xl font-semibold text-[color:var(--brand)]">
-                  {readString(stat.value, "Live")}
+                  {readString(stat.value, "Available")}
                 </p>
-                <p className="tc-muted mt-1 text-sm">{readString(stat.label, "Public section metric")}</p>
+                <p className="tc-muted mt-1 text-sm">{readString(stat.label, "Highlight")}</p>
               </div>
             ))}
           </div>
@@ -95,7 +99,7 @@ function renderContentFeedSection(
   return (
     <section key={section.id} className="space-y-4">
       <div className="max-w-3xl space-y-3">
-        <p className="tc-overline">{section.code.replace(/-/g, " ")}</p>
+        <p className="tc-overline">{getSectionEyebrow(section, "Highlights")}</p>
         <h2 className="tc-display text-3xl font-semibold tracking-tight text-[color:var(--brand)] md:text-4xl">
           {section.title}
         </h2>
@@ -111,12 +115,12 @@ function renderContentFeedSection(
             <article className="tc-panel tc-motion-rise rounded-[28px] p-5">
               <p className="tc-overline">{readString(item.label, "Highlight")}</p>
               <h3 className="tc-display mt-3 text-2xl font-semibold tracking-tight text-[color:var(--brand)]">
-                {readString(item.title, "Public content card")}
+                {readString(item.title, "More information")}
               </h3>
               <p className="tc-muted mt-3 text-sm leading-6">
                 {readString(
                   item.description,
-                  "Structured card copy will render here once authored.",
+                  "Details will be updated soon.",
                 )}
               </p>
               {readString(item.meta) ? (
@@ -151,7 +155,7 @@ function renderPlanHighlightsSection(
       : planPreviews.map(mapPlanPreviewToCardData);
   const note = readString(
     section.configJson?.note,
-    "Public plans will slot into this grid when the backend publishes active plans.",
+    "Fee details and plan options will appear here.",
   );
 
   return (
@@ -184,7 +188,7 @@ function renderCtaGroupSection(section: CmsSection) {
   return (
     <section key={section.id} className="space-y-4">
       <div className="max-w-3xl space-y-3">
-        <p className="tc-overline">{section.code.replace(/-/g, " ")}</p>
+        <p className="tc-overline">{getSectionEyebrow(section, "Next step")}</p>
         <h2 className="tc-display text-3xl font-semibold tracking-tight text-[color:var(--brand)] md:text-4xl">
           {section.title}
         </h2>
@@ -210,7 +214,7 @@ function renderCtaGroupSection(section: CmsSection) {
               <p className="tc-muted mt-3 text-sm leading-6">
                 {readString(
                   item.description,
-                  "This route is mounted now and will become richer in later prompts.",
+                  "Open this section for more information.",
                 )}
               </p>
               <Link
@@ -266,8 +270,7 @@ export function PublicSectionRenderer({
             key={section.id}
             className="tc-panel rounded-[28px] p-6 text-sm text-[color:var(--muted)]"
           >
-            {section.title} is wired as a CMS section, but its renderer is not
-            authored yet.
+            {section.title} will be updated soon.
           </section>
         );
       })}

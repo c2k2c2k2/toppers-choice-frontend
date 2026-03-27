@@ -5,11 +5,15 @@ import {
 import { buildApiUrl, withQuery } from "@/lib/api/config";
 import { apiRoutes } from "@/lib/api/routes";
 import type {
+  NoteBookmark,
+  NoteBookmarkListResponse,
   NoteDetailResponse,
+  NoteIndexListResponse,
   NoteProgressResponse,
   NotesListFilters,
   NotesListResponse,
   NotesTreeResponse,
+  UpsertNoteBookmarkInput,
   NoteViewSessionResponse,
   NoteWatermarkResponse,
   UpdateNoteProgressInput,
@@ -65,6 +69,17 @@ export function getPublishedNote(
   );
 }
 
+export function getPublishedNoteIndex(
+  noteId: string,
+  accessToken: string,
+  options: ApiRequestOptions = {},
+) {
+  return apiRequest<NoteIndexListResponse>(
+    apiRoutes.notes.index(noteId),
+    buildAuthedOptions(accessToken, options),
+  );
+}
+
 export function createNoteViewSession(
   noteId: string,
   accessToken: string,
@@ -91,6 +106,65 @@ export function updateNoteProgress(
       ...options,
       body: payload,
       method: "POST",
+    }),
+  );
+}
+
+export function getNoteBookmarks(
+  noteId: string,
+  accessToken: string,
+  options: ApiRequestOptions = {},
+) {
+  return apiRequest<NoteBookmarkListResponse>(
+    apiRoutes.notes.bookmarks(noteId),
+    buildAuthedOptions(accessToken, options),
+  );
+}
+
+export function createNoteBookmark(
+  noteId: string,
+  payload: UpsertNoteBookmarkInput,
+  accessToken: string,
+  options: ApiRequestOptions = {},
+) {
+  return apiRequest<NoteBookmark>(
+    apiRoutes.notes.bookmarks(noteId),
+    buildAuthedOptions(accessToken, {
+      ...options,
+      body: payload,
+      method: "POST",
+    }),
+  );
+}
+
+export function updateNoteBookmark(
+  noteId: string,
+  bookmarkId: string,
+  payload: UpsertNoteBookmarkInput,
+  accessToken: string,
+  options: ApiRequestOptions = {},
+) {
+  return apiRequest<NoteBookmark>(
+    apiRoutes.notes.bookmark(noteId, bookmarkId),
+    buildAuthedOptions(accessToken, {
+      ...options,
+      body: payload,
+      method: "PATCH",
+    }),
+  );
+}
+
+export function deleteNoteBookmark(
+  noteId: string,
+  bookmarkId: string,
+  accessToken: string,
+  options: ApiRequestOptions = {},
+) {
+  return apiRequest<{ message: string }>(
+    apiRoutes.notes.bookmark(noteId, bookmarkId),
+    buildAuthedOptions(accessToken, {
+      ...options,
+      method: "DELETE",
     }),
   );
 }

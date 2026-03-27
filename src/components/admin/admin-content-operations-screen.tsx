@@ -471,8 +471,8 @@ export function AdminContentOperationsScreen({
     return (
       <EmptyState
         eyebrow="Access"
-        title="This content workspace is locked."
-        description="The current admin session does not expose read access for the requested content module."
+        title="This section is not available for this login."
+        description="Ask an admin with content access to open this section or update your role."
       />
     );
   }
@@ -484,7 +484,7 @@ export function AdminContentOperationsScreen({
     return (
       <LoadingState
         title={`Loading ${initialTab === "notes" ? "notes" : "structured content"} workspace`}
-        description="Pulling live catalog records and editor context from the backend admin contracts."
+        description="Fetching the latest records for this section."
       />
     );
   }
@@ -496,7 +496,7 @@ export function AdminContentOperationsScreen({
     return (
       <ErrorState
         title="The content workspace could not be loaded."
-        description="One or more admin content queries failed, so the editor was not rendered."
+        description="We couldn't load this content section right now."
         onRetry={() => {
           if (initialTab === "notes") {
             void notesQuery.refetch();
@@ -519,13 +519,13 @@ export function AdminContentOperationsScreen({
         eyebrow="Authoring"
         title={
           initialTab === "notes"
-            ? "Notes management is now contract-driven."
-            : "Structured content authoring is now contract-driven."
+            ? "Notes"
+            : "Structured content"
         }
         description={
           initialTab === "notes"
-            ? "The admin panel now manages premium note metadata, access modes, and publication state directly against the backend note contracts."
-            : "Guidance, English speaking, current affairs, and monthly updates now share one backend-ready authoring workspace instead of hardcoded frontend scaffolds."
+            ? "Create, update, and publish note records for students."
+            : "Manage guidance, English speaking, current affairs, and monthly updates from one editor."
         }
         actions={
           <>
@@ -556,12 +556,12 @@ export function AdminContentOperationsScreen({
           {
             href: "/admin/notes",
             label: "Notes",
-            description: "PDF-backed note metadata, access, and publish workflow.",
+            description: "Notes, access settings, and publish status.",
           },
           {
             href: "/admin/content",
             label: "Structured content",
-            description: "Rich JSON lessons and feed entries across all content families.",
+            description: "Guidance and article-style learning content.",
           },
         ]}
       />

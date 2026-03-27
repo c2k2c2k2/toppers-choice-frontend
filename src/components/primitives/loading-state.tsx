@@ -4,8 +4,8 @@ interface LoadingStateProps {
 }
 
 export function LoadingState({
-  title = "Preparing the application shell",
-  description = "Shared providers, route groups, and placeholder surfaces are loading.",
+  title = "Loading page",
+  description = "Please wait while the latest information is loaded.",
 }: Readonly<LoadingStateProps>) {
   return (
     <section
