@@ -1,8 +1,13 @@
+import katex from "katex"
+
 export type MarathiEncodedFontKey = "shree-dev" | "surekh"
 
 export type MarathiRenderMode = "plain" | "unicode" | "legacy-encoded"
 
 export const DEFAULT_MARATHI_ENCODED_FONT: MarathiEncodedFontKey = "shree-dev"
+export const QUESTION_MATH_INLINE_ATTR = "data-question-math-inline"
+export const QUESTION_MATH_BLOCK_ATTR = "data-question-math-block"
+export const LEGACY_QUESTION_EQUATION_ATTR = "data-question-equation"
 
 export const MARATHI_FONT_LABELS: Record<MarathiEncodedFontKey, string> = {
   "shree-dev": "Shree-Dev / Shreelipi-style",
@@ -31,7 +36,10 @@ const FONT_HINTS: Record<MarathiEncodedFontKey, readonly string[]> = {
     "sulekha",
     "ttsurekh",
     "dvbwsr3",
+    "dvbw-ttsurekhen",
     "dvbwttsurekhen",
+    "web-surekh-en",
+    "isfoc-devanagari-bilingual-web-surekh-en-normal",
     "font-marathi-surekh",
     "font-marathi-sulekha",
     'data-marathi-font="surekh"',
@@ -59,10 +67,231 @@ function joinMarkupAttributes(input: {
   return [input.className, input.dataFont, input.style].filter(Boolean).join(" ")
 }
 
+function decodeHtmlEntities(value: string) {
+  return value
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .replace(/&nbsp;/g, " ")
+}
+
+function escapeHtmlAttribute(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+}
+
+function normalizeStoredLatex(raw: string) {
+  const decoded = decodeHtmlEntities(String(raw || "")).trim()
+  if (!decoded) {
+    return ""
+  }
+
+  if (decoded.startsWith('"') && decoded.endsWith('"')) {
+    try {
+      const parsed = JSON.parse(decoded)
+      if (typeof parsed === "string") {
+        return parsed.trim()
+      }
+    } catch {
+      // Fall back to the normalization below.
+    }
+  }
+
+  if (
+    (decoded.startsWith('"') && decoded.endsWith('"')) ||
+    (decoded.startsWith("'") && decoded.endsWith("'"))
+  ) {
+    return decoded.slice(1, -1).trim()
+  }
+
+  return decoded
+}
+
+function renderMathNode(
+  latexSource: string,
+  options: {
+    className: string
+    displayMode: boolean
+    tag: "div" | "span"
+  },
+) {
+  const latex = normalizeStoredLatex(latexSource) || "\\square"
+  const rendered = katex.renderToString(latex, {
+    displayMode: options.displayMode,
+    strict: "ignore",
+    throwOnError: false,
+  })
+
+  return `<${options.tag} class="${options.className}" data-latex-source="${escapeHtmlAttribute(
+    latex,
+  )}">${rendered}</${options.tag}>`
+}
+
+function renderQuestionMathHtml(html: string) {
+  if (!html.trim()) {
+    return html
+  }
+
+  return html
+    .replace(
+      /<span\b[^>]*data-question-math-inline=(["'])([\s\S]*?)\1[^>]*>[\s\S]*?<\/span>/gi,
+      (_match, _quote, latex) =>
+        renderMathNode(latex, {
+          className: "tc-question-math-rendered tc-question-math-rendered-inline",
+          displayMode: false,
+          tag: "span",
+        }),
+    )
+    .replace(
+      /<span\b[^>]*data-latex=(["'])([\s\S]*?)\1[^>]*>[\s\S]*?<\/span>/gi,
+      (_match, _quote, latex) =>
+        renderMathNode(latex, {
+          className: "tc-question-math-rendered tc-question-math-rendered-inline",
+          displayMode: false,
+          tag: "span",
+        }),
+    )
+    .replace(
+      /<div\b[^>]*data-question-math-block=(["'])([\s\S]*?)\1[^>]*>[\s\S]*?<\/div>/gi,
+      (_match, _quote, latex) =>
+        renderMathNode(latex, {
+          className: "tc-question-math-rendered tc-question-math-rendered-block",
+          displayMode: true,
+          tag: "div",
+        }),
+    )
+    .replace(
+      /<div\b[^>]*data-latex=(["'])([\s\S]*?)\1[^>]*>[\s\S]*?<\/div>/gi,
+      (_match, _quote, latex) =>
+        renderMathNode(latex, {
+          className: "tc-question-math-rendered tc-question-math-rendered-block",
+          displayMode: true,
+          tag: "div",
+        }),
+    )
+    .replace(
+      /<code\b[^>]*data-question-equation=(["'])true\1[^>]*>([\s\S]*?)<\/code>/gi,
+      (_match, _quote, latex) =>
+        renderMathNode(latex, {
+          className: "tc-question-math-rendered tc-question-math-rendered-inline",
+          displayMode: false,
+          tag: "span",
+        }),
+    )
+}
+
+function buildMixedLegacySegments(value: string) {
+  return value
+    .split(/([\u0900-\u097F]+)/g)
+    .filter((segment) => segment.length > 0)
+    .map((segment) => ({
+      fontKey: DEVANAGARI_CHAR_PATTERN.test(segment)
+        ? null
+        : getLikelyLegacyMarathiFontKey(segment),
+      text: segment,
+    }))
+}
+
+export function decorateMixedLegacyHtmlSegments(html: string) {
+  if (!html.trim() || typeof window === "undefined") {
+    return html
+  }
+
+  try {
+    const parser = new DOMParser()
+    const document = parser.parseFromString(`<div id="root">${html}</div>`, "text/html")
+    const root = document.getElementById("root")
+    if (!root) {
+      return html
+    }
+
+    const walker = document.createTreeWalker(
+      root,
+      globalThis.NodeFilter.SHOW_TEXT,
+    )
+    const textNodes: Text[] = []
+
+    while (walker.nextNode()) {
+      const currentNode = walker.currentNode
+      if (currentNode instanceof Text) {
+        textNodes.push(currentNode)
+      }
+    }
+
+    textNodes.forEach((textNode) => {
+      const parentElement = textNode.parentElement
+      if (!parentElement) {
+        return
+      }
+
+      if (
+        parentElement.closest(
+          [
+            "[data-question-font]",
+            "[data-marathi-font]",
+            ".font-marathi-encoded",
+            ".font-marathi-shree-dev",
+            ".font-marathi-surekh",
+            ".font-marathi-sulekha",
+            ".font-legacy-marathi",
+            "code",
+            "pre",
+            "script",
+            "style",
+            `[${QUESTION_MATH_INLINE_ATTR}]`,
+            `[${QUESTION_MATH_BLOCK_ATTR}]`,
+          ].join(", "),
+        )
+      ) {
+        return
+      }
+
+      const segments = buildMixedLegacySegments(textNode.textContent ?? "")
+      if (!segments.some((segment) => segment.fontKey)) {
+        return
+      }
+
+      const fragment = document.createDocumentFragment()
+      segments.forEach((segment) => {
+        if (!segment.fontKey) {
+          fragment.append(document.createTextNode(segment.text))
+          return
+        }
+
+        const span = document.createElement("span")
+        span.textContent = segment.text
+        span.setAttribute("data-question-font", segment.fontKey)
+        span.className = MARATHI_FONT_CLASSES[segment.fontKey]
+        fragment.append(span)
+      })
+
+      textNode.replaceWith(fragment)
+    })
+
+    return root.innerHTML
+  } catch {
+    return html
+  }
+}
+
 export function extractTextFromHtml(value: string): string {
   return value
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(
+      /<(?:span|div)\b[^>]*data-question-math-(?:inline|block)=(["'])([\s\S]*?)\1[^>]*>[\s\S]*?<\/(?:span|div)>/gi,
+      (_match, _quote, latex) => ` ${normalizeStoredLatex(latex)} `,
+    )
+    .replace(
+      /<code\b[^>]*data-question-equation=(["'])true\1[^>]*>([\s\S]*?)<\/code>/gi,
+      (_match, _quote, latex) => ` ${decodeHtmlEntities(latex)} `,
+    )
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/gi, " ")
     .replace(/&amp;/gi, "&")
@@ -88,6 +317,48 @@ export function getMarathiFontKeyFromHint(
   }
 
   return null
+}
+
+export function getMarathiFontKeyFromElement(
+  element: HTMLElement,
+): MarathiEncodedFontKey | null {
+  const explicitQuestionFont = element.getAttribute("data-question-font")
+  if (explicitQuestionFont === "shree-dev") {
+    return explicitQuestionFont
+  }
+
+  if (explicitQuestionFont === "surekh" || explicitQuestionFont === "sulekha") {
+    return "surekh"
+  }
+
+  const explicitMarathiFont = element.getAttribute("data-marathi-font")
+  if (explicitMarathiFont === "shree-dev") {
+    return explicitMarathiFont
+  }
+
+  if (explicitMarathiFont === "surekh" || explicitMarathiFont === "sulekha") {
+    return "surekh"
+  }
+
+  const classes = element.className.toLowerCase().split(/\s+/)
+  if (
+    classes.includes("font-marathi-surekh") ||
+    classes.includes("font-marathi-sulekha")
+  ) {
+    return "surekh"
+  }
+
+  if (
+    classes.includes("font-marathi-shree-dev") ||
+    classes.includes("font-legacy-marathi")
+  ) {
+    return "shree-dev"
+  }
+
+  const styleValue = `${element.getAttribute("style") || ""} ${
+    element.style.fontFamily || ""
+  }`
+  return getMarathiFontKeyFromHint(styleValue)
 }
 
 export function getLikelyLegacyMarathiFontKey(
@@ -256,24 +527,31 @@ export function applyMarathiHtmlFontHint(
     }
   }
 
-  const extractedText = extractTextFromHtml(normalized)
+  const renderedHtml = decorateMixedLegacyHtmlSegments(
+    renderQuestionMathHtml(normalized),
+  )
+  const extractedText = extractTextFromHtml(renderedHtml)
   const hintedFont =
     options?.fontHint ??
-    getMarathiFontKeyFromHint(normalized) ??
+    getMarathiFontKeyFromHint(renderedHtml) ??
     getLikelyLegacyMarathiFontKey(extractedText)
 
-  if (hasExplicitMarathiFontHint(normalized)) {
+  if (hasExplicitMarathiFontHint(renderedHtml)) {
     return {
-      html: normalized,
+      html: renderedHtml,
       fontKey: hintedFont,
       className: hintedFont ? MARATHI_FONT_CLASSES[hintedFont] : null,
-      mode: hintedFont ? "legacy-encoded" : DEVANAGARI_CHAR_PATTERN.test(extractedText) ? "unicode" : "plain",
+      mode: hintedFont
+        ? "legacy-encoded"
+        : DEVANAGARI_CHAR_PATTERN.test(extractedText)
+          ? "unicode"
+          : "plain",
     }
   }
 
   if (hintedFont) {
     return {
-      html: `<div class="${MARATHI_FONT_CLASSES[hintedFont]}" data-marathi-font="${hintedFont}">${normalized}</div>`,
+      html: `<div class="${MARATHI_FONT_CLASSES[hintedFont]}" data-marathi-font="${hintedFont}">${renderedHtml}</div>`,
       fontKey: hintedFont,
       className: MARATHI_FONT_CLASSES[hintedFont],
       mode: "legacy-encoded",
@@ -282,7 +560,7 @@ export function applyMarathiHtmlFontHint(
 
   if (DEVANAGARI_CHAR_PATTERN.test(extractedText)) {
     return {
-      html: normalized,
+      html: renderedHtml,
       fontKey: null,
       className: "font-marathi-unicode",
       mode: "unicode",
@@ -290,7 +568,7 @@ export function applyMarathiHtmlFontHint(
   }
 
   return {
-    html: normalized,
+    html: renderedHtml,
     fontKey: null,
     className: null,
     mode: "plain",

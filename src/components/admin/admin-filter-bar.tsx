@@ -16,10 +16,10 @@ export function AdminFilterBar({
   searchValue,
 }: Readonly<AdminFilterBarProps>) {
   return (
-    <section className="tc-glass rounded-[24px] p-5">
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+    <section className="tc-admin-frame rounded-[24px] p-4 md:p-5">
+      <div className="grid gap-4 xl:grid-cols-[minmax(18rem,1.35fr)_minmax(0,1fr)] xl:items-end">
         <label className="tc-form-field">
-          <span className="tc-form-label">Search</span>
+          <span className="tc-form-label">Search the workspace</span>
           <input
             value={searchValue}
             onChange={(event) => onSearchValueChange(event.target.value)}
@@ -37,7 +37,7 @@ export function AdminFilterBar({
           {resultSummary ?? "Use the filters to narrow the list."}
         </p>
         {actions ? (
-          <div className="flex flex-wrap items-center gap-3">{actions}</div>
+          <div className="tc-admin-toolbar">{actions}</div>
         ) : null}
       </div>
     </section>

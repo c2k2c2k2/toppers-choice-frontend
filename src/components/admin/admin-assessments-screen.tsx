@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { adminQueryKeys } from "@/lib/api/query-keys";
@@ -32,15 +34,34 @@ import {
 } from "@/lib/admin";
 import { AdminDataTable } from "@/components/admin/admin-data-table";
 import { AdminFilterBar } from "@/components/admin/admin-filter-bar";
+import { AdminFontTextField } from "@/components/admin/admin-font-text-field";
 import { AdminInlineNotice } from "@/components/admin/admin-inline-notice";
+import {
+  AdminKeyValueEditor,
+  parseKeyValueObject,
+  serializeKeyValueRows,
+  type AdminKeyValueRow,
+} from "@/components/admin/admin-key-value-editor";
+import {
+  AdminQuestionReferenceEditor,
+  buildQuestionReferenceRows,
+  serializeQuestionReferenceRows,
+  type AdminQuestionReferenceRow,
+} from "@/components/admin/admin-question-reference-editor";
+import { AdminRichHtmlField } from "@/components/admin/admin-rich-html-field";
 import { AdminInput, AdminSelect, AdminTextarea } from "@/components/admin/admin-form-field";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import {
+  buildStructuredDocumentFromHtml,
+  readStructuredDocumentHtml,
+} from "@/lib/admin/rich-text";
 import { AdminRouteTabs } from "@/components/admin/admin-route-tabs";
 import { AdminToneBadge } from "@/components/admin/admin-status-badge";
 import { useAdminTaxonomyReferenceData } from "@/components/admin/use-admin-taxonomy-reference-data";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
 import { LoadingState } from "@/components/primitives/loading-state";
+import { TextContent } from "@/components/primitives/text-content";
 
 type AssessmentTab = "questions" | "tests";
 
@@ -64,14 +85,14 @@ interface TestFormState {
   availableFrom: string;
   availableUntil: string;
   code: string;
-  configJson: string;
+  configRows: AdminKeyValueRow[];
   durationMinutes: string;
   examTrackId: string;
   family: TestFamily;
-  instructionsJson: string;
+  instructionsHtml: string;
   maxAttempts: string;
   mediumId: string;
-  questionsJson: string;
+  questions: AdminQuestionReferenceRow[];
   randomizeQuestionOrder: boolean;
   shortDescription: string;
   slug: string;
@@ -114,14 +135,14 @@ const EMPTY_TEST_FORM_STATE: TestFormState = {
   availableFrom: "",
   availableUntil: "",
   code: "",
-  configJson: "",
+  configRows: [],
   durationMinutes: "",
   examTrackId: "",
   family: "SUBJECT_WISE",
-  instructionsJson: "",
+  instructionsHtml: "",
   maxAttempts: "",
   mediumId: "",
-  questionsJson: "",
+  questions: [],
   randomizeQuestionOrder: false,
   shortDescription: "",
   slug: "",
@@ -201,21 +222,14 @@ function buildTestFormState(
       typeof test.availableUntil === "string" ? test.availableUntil : null,
     ),
     code: typeof test.code === "string" ? test.code : "",
-    configJson: stringifyJsonInput(test.configJson),
+    configRows: parseKeyValueObject(test.configJson),
     durationMinutes: String(test.durationMinutes),
     examTrackId: typeof test.examTrackId === "string" ? test.examTrackId : "",
     family: test.family,
-    instructionsJson: stringifyJsonInput(test.instructionsJson),
+    instructionsHtml: readStructuredDocumentHtml(test.instructionsJson),
     maxAttempts: String(test.maxAttempts),
     mediumId: typeof test.mediumId === "string" ? test.mediumId : "",
-    questionsJson: stringifyJsonInput(
-      test.questions.map((question) => ({
-        negativeMarks: question.negativeMarks,
-        orderIndex: question.orderIndex,
-        positiveMarks: question.positiveMarks,
-        questionId: question.questionId,
-      })),
-    ),
+    questions: buildQuestionReferenceRows(test.questions),
     randomizeQuestionOrder: test.randomizeQuestionOrder,
     shortDescription:
       typeof test.shortDescription === "string" ? test.shortDescription : "",
@@ -227,10 +241,15 @@ function buildTestFormState(
 
 export function AdminAssessmentsScreen({
   initialTab,
+  testId = null,
+  testView = "workspace",
 }: Readonly<{
   initialTab: AssessmentTab;
+  testId?: string | null;
+  testView?: "editor" | "list" | "workspace";
 }>) {
   const authSession = useAuthSession();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const taxonomy = useAdminTaxonomyReferenceData();
   const canReadQuestions = authSession.hasPermission("academics.questions.read");
@@ -256,6 +275,9 @@ export function AdminAssessmentsScreen({
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
   const [testForm, setTestForm] = useState<TestFormState>(EMPTY_TEST_FORM_STATE);
   const [message, setMessage] = useState<string | null>(null);
+  const isTestEditorMode = initialTab === "tests" && testView === "editor";
+  const isTestListMode = initialTab === "tests" && testView === "list";
+  const isCreatingTest = isTestEditorMode && !testId;
 
   const questionsQuery = useAuthenticatedQuery({
     enabled: initialTab === "questions" && canReadQuestions,
@@ -309,9 +331,18 @@ export function AdminAssessmentsScreen({
   });
 
   const testDetailQuery = useAuthenticatedQuery({
-    enabled: initialTab === "tests" && canReadTests && Boolean(selectedTestId),
-    queryFn: (accessToken) => getAdminTest(selectedTestId ?? "", accessToken),
-    queryKey: ["admin", "tests", "detail", selectedTestId ?? "new"],
+    enabled:
+      initialTab === "tests" &&
+      canReadTests &&
+      Boolean(isTestEditorMode ? testId : selectedTestId),
+    queryFn: (accessToken) =>
+      getAdminTest(isTestEditorMode ? (testId ?? "") : (selectedTestId ?? ""), accessToken),
+    queryKey: [
+      "admin",
+      "tests",
+      "detail",
+      isTestEditorMode ? (testId ?? "new") : (selectedTestId ?? "new"),
+    ],
     staleTime: 30_000,
   });
 
@@ -325,6 +356,12 @@ export function AdminAssessmentsScreen({
   useEffect(() => {
     setTestForm(buildTestFormState(selectedTest));
   }, [selectedTest]);
+
+  useEffect(() => {
+    if (initialTab === "tests") {
+      setSelectedTestId(testId ?? null);
+    }
+  }, [initialTab, testId]);
 
   const questionSaveMutation = useAuthenticatedMutation({
     mutationFn: async (_: void, accessToken) => {
@@ -405,33 +442,22 @@ export function AdminAssessmentsScreen({
 
   const testSaveMutation = useAuthenticatedMutation({
     mutationFn: async (_: void, accessToken) => {
+      const instructionsJson = buildStructuredDocumentFromHtml(testForm.instructionsHtml);
       const input = {
         accessType: testForm.accessType,
         availableFrom: toIsoDateTime(testForm.availableFrom),
         availableUntil: toIsoDateTime(testForm.availableUntil),
         code: testForm.code.trim() || undefined,
-        configJson: safeJsonParse(testForm.configJson, {
-          allowEmpty: true,
-          label: "Config JSON",
-        }) as Record<string, never> | undefined,
+        configJson: serializeKeyValueRows(testForm.configRows) as
+          | Record<string, never>
+          | undefined,
         durationMinutes: parseOptionalInteger(testForm.durationMinutes),
         examTrackId: testForm.examTrackId.trim() || undefined,
         family: testForm.family,
-        instructionsJson: safeJsonParse(testForm.instructionsJson, {
-          allowEmpty: true,
-          label: "Instructions JSON",
-        }) as Record<string, never> | undefined,
+        instructionsJson: instructionsJson as unknown as Record<string, never> | undefined,
         maxAttempts: parseOptionalInteger(testForm.maxAttempts),
         mediumId: testForm.mediumId.trim() || undefined,
-        questions: (safeJsonParseArray(testForm.questionsJson, {
-          allowEmpty: false,
-          label: "Questions JSON",
-        }) ?? []) as Array<{
-          negativeMarks?: number;
-          orderIndex?: number;
-          positiveMarks?: number;
-          questionId: string;
-        }>,
+        questions: serializeQuestionReferenceRows(testForm.questions),
         randomizeQuestionOrder: testForm.randomizeQuestionOrder,
         shortDescription: testForm.shortDescription.trim() || undefined,
         slug: testForm.slug.trim() || undefined,
@@ -439,8 +465,8 @@ export function AdminAssessmentsScreen({
         title: testForm.title.trim(),
       };
 
-      if (!input.title || !input.durationMinutes) {
-        throw new Error("Title and duration are required.");
+      if (!input.title || !input.durationMinutes || input.questions.length === 0) {
+        throw new Error("Title, duration, and at least one question are required.");
       }
 
       const normalizedInput = {
@@ -448,8 +474,8 @@ export function AdminAssessmentsScreen({
         durationMinutes: input.durationMinutes,
       };
 
-      if (selectedTestId) {
-        return updateAdminTest(selectedTestId, normalizedInput, accessToken);
+      if (selectedTestId || testId) {
+        return updateAdminTest(selectedTestId ?? testId ?? "", normalizedInput, accessToken);
       }
 
       return createAdminTest(normalizedInput, accessToken);
@@ -458,18 +484,24 @@ export function AdminAssessmentsScreen({
       setSelectedTestId(test.id);
       setMessage("Test saved.");
       await queryClient.invalidateQueries({ queryKey: ["admin", "tests"] });
+
+      if (isTestEditorMode) {
+        router.replace(`/admin/tests/${test.id}`);
+      }
     },
   });
 
   const testPublishMutation = useAuthenticatedMutation({
     mutationFn: async (action: "publish" | "unpublish", accessToken) => {
-      if (!selectedTestId) {
+      if (!(selectedTestId || testId)) {
         throw new Error("Select a test first.");
       }
 
+      const activeTestId = selectedTestId ?? testId ?? "";
+
       return action === "publish"
-        ? publishAdminTest(selectedTestId, accessToken)
-        : unpublishAdminTest(selectedTestId, accessToken);
+        ? publishAdminTest(activeTestId, accessToken)
+        : unpublishAdminTest(activeTestId, accessToken);
     },
     onSuccess: async () => {
       setMessage("Test publication state updated.");
@@ -491,7 +523,8 @@ export function AdminAssessmentsScreen({
 
   if (
     (initialTab === "questions" && (questionsQuery.isLoading || questionDetailQuery.isLoading)) ||
-    (initialTab === "tests" && (testsQuery.isLoading || testDetailQuery.isLoading))
+    (initialTab === "tests" &&
+      (testsQuery.isLoading || (Boolean(selectedTestId || testId) && testDetailQuery.isLoading)))
   ) {
     return (
       <LoadingState
@@ -503,7 +536,8 @@ export function AdminAssessmentsScreen({
 
   if (
     (initialTab === "questions" && (questionsQuery.error || questionDetailQuery.error)) ||
-    (initialTab === "tests" && (testsQuery.error || testDetailQuery.error))
+    (initialTab === "tests" &&
+      (testsQuery.error || (Boolean(selectedTestId || testId) && testDetailQuery.error)))
   ) {
     return (
       <ErrorState
@@ -530,12 +564,31 @@ export function AdminAssessmentsScreen({
         title={
           initialTab === "questions"
             ? "Question bank"
-            : "Tests"
+            : isTestEditorMode
+              ? isCreatingTest
+                ? "Create test"
+                : "Edit test"
+              : "Tests"
         }
         description={
           initialTab === "questions"
             ? "Create and manage questions, options, answers, and difficulty level."
-            : "Create mock tests, choose questions, and publish them for students."
+            : isTestEditorMode
+              ? "Use a focused editor page for timing, question lineup, and Marathi-ready instructions."
+              : "Review tests here, then open a dedicated page to create or edit one assessment at a time."
+        }
+        actions={
+          initialTab === "tests" ? (
+            isTestEditorMode ? (
+              <Link href="/admin/tests" className="tc-button-secondary">
+                Back to tests
+              </Link>
+            ) : (
+              <Link href="/admin/tests/new" className="tc-button-primary">
+                Create test
+              </Link>
+            )
+          ) : null
         }
       />
 
@@ -555,21 +608,22 @@ export function AdminAssessmentsScreen({
         ]}
       />
 
-      <AdminFilterBar
-        searchValue={searchValue}
-        onSearchValueChange={setSearchValue}
-        searchPlaceholder={
-          initialTab === "questions"
-            ? "Search questions by code or statement"
-            : "Search tests by title, slug, or description"
-        }
-        resultSummary={`${
-          initialTab === "questions"
-            ? questionsQuery.data?.items.length ?? 0
-            : testsQuery.data?.items.length ?? 0
-        } ${initialTab} visible.`}
-      >
-        {initialTab === "questions" ? (
+      {initialTab === "questions" || !isTestEditorMode ? (
+        <AdminFilterBar
+          searchValue={searchValue}
+          onSearchValueChange={setSearchValue}
+          searchPlaceholder={
+            initialTab === "questions"
+              ? "Search questions by code or statement"
+              : "Search tests by title, slug, or description"
+          }
+          resultSummary={`${
+            initialTab === "questions"
+              ? questionsQuery.data?.items.length ?? 0
+              : testsQuery.data?.items.length ?? 0
+          } ${initialTab} visible.`}
+        >
+          {initialTab === "questions" ? (
           <>
             <label className="tc-form-field min-w-[12rem]">
               <span className="tc-form-label">Status</span>
@@ -638,7 +692,7 @@ export function AdminAssessmentsScreen({
               </select>
             </label>
           </>
-        ) : (
+          ) : (
           <>
             <label className="tc-form-field min-w-[12rem]">
               <span className="tc-form-label">Status</span>
@@ -686,8 +740,9 @@ export function AdminAssessmentsScreen({
               </select>
             </label>
           </>
-        )}
-      </AdminFilterBar>
+          )}
+        </AdminFilterBar>
+      ) : null}
 
       {message ? <AdminInlineNotice tone="success">{message}</AdminInlineNotice> : null}
       {initialTab === "questions" && questionSaveMutation.error ? (
@@ -717,8 +772,15 @@ export function AdminAssessmentsScreen({
         </AdminInlineNotice>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(24rem,0.95fr)]">
-        <section>
+      <div
+        className={
+          initialTab === "tests" && (isTestEditorMode || isTestListMode)
+            ? "grid gap-6"
+            : "grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(24rem,0.95fr)]"
+        }
+      >
+        {(initialTab === "questions" || !isTestEditorMode) ? (
+          <section>
           {initialTab === "questions" ? (
             <AdminDataTable
               rows={questionsQuery.data?.items ?? []}
@@ -778,8 +840,10 @@ export function AdminAssessmentsScreen({
             <AdminDataTable
               rows={testsQuery.data?.items ?? []}
               getRowId={(row) => row.id}
-              selectedRowId={selectedTestId}
-              onRowClick={(row) => setSelectedTestId(row.id)}
+              selectedRowId={isTestListMode ? null : selectedTestId}
+              onRowClick={(row) =>
+                isTestListMode ? router.push(`/admin/tests/${row.id}`) : setSelectedTestId(row.id)
+              }
               emptyState={
                 <EmptyState
                   eyebrow="Tests"
@@ -792,7 +856,11 @@ export function AdminAssessmentsScreen({
                   header: "Test",
                   render: (row) => (
                     <div className="space-y-1">
-                      <p className="font-semibold text-[color:var(--brand)]">{row.title}</p>
+                      <TextContent
+                        as="p"
+                        className="font-semibold text-[color:var(--brand)]"
+                        value={row.title}
+                      />
                       <p className="text-xs text-[color:var(--muted)]">
                         {row.family} · {row.slug}
                       </p>
@@ -829,9 +897,11 @@ export function AdminAssessmentsScreen({
               ]}
             />
           )}
-        </section>
+          </section>
+        ) : null}
 
-        <section className="tc-card rounded-[28px] p-6">
+        {(initialTab === "questions" || !isTestListMode) ? (
+          <section className="tc-card rounded-[28px] p-6">
           {initialTab === "questions" ? (
             <div className="grid gap-4">
               <h2 className="tc-display text-2xl font-semibold tracking-tight">
@@ -1007,14 +1077,23 @@ export function AdminAssessmentsScreen({
             </div>
           ) : (
             <div className="grid gap-4">
+              {isTestEditorMode && !isCreatingTest && !selectedTest ? (
+                <EmptyState
+                  eyebrow="Tests"
+                  title="That test could not be found."
+                  description="Return to the tests table and choose another record."
+                />
+              ) : (
+                <>
               <h2 className="tc-display text-2xl font-semibold tracking-tight">
-                {selectedTestId ? "Update test" : "Create test"}
+                {selectedTestId || testId ? "Update test" : "Create test"}
               </h2>
-              <AdminInput
+              <AdminFontTextField
                 label="Title"
+                storage="html"
                 value={testForm.title}
-                onChange={(event) =>
-                  setTestForm((current) => ({ ...current, title: event.target.value }))
+                onChange={(value) =>
+                  setTestForm((current) => ({ ...current, title: value }))
                 }
               />
               <div className="grid gap-4 md:grid-cols-2">
@@ -1166,44 +1245,51 @@ export function AdminAssessmentsScreen({
                   }))
                 }
               />
-              <AdminTextarea
+              <AdminFontTextField
                 label="Short description"
+                multiline
+                preserveParagraphs
+                rows={4}
+                storage="html"
                 value={testForm.shortDescription}
-                onChange={(event) =>
+                onChange={(value) =>
                   setTestForm((current) => ({
                     ...current,
-                    shortDescription: event.target.value,
+                    shortDescription: value,
                   }))
                 }
               />
-              <AdminTextarea
-                label="Instructions JSON"
-                value={testForm.instructionsJson}
-                onChange={(event) =>
+              <AdminRichHtmlField
+                label="Instructions"
+                hint="Write the student-facing attempt instructions here with formatting and Marathi font support."
+                minHeight="16rem"
+                value={testForm.instructionsHtml}
+                onChange={(value) =>
                   setTestForm((current) => ({
                     ...current,
-                    instructionsJson: event.target.value,
+                    instructionsHtml: value,
                   }))
                 }
               />
-              <AdminTextarea
-                label="Config JSON"
-                value={testForm.configJson}
-                onChange={(event) =>
+              <AdminKeyValueEditor
+                hint="Optional test settings for advanced behavior flags or client-side display hints."
+                label="Configuration"
+                rows={testForm.configRows}
+                onChange={(rows) =>
                   setTestForm((current) => ({
                     ...current,
-                    configJson: event.target.value,
+                    configRows: rows,
                   }))
                 }
               />
-              <AdminTextarea
-                label="Questions JSON"
-                hint='Example: [{"questionId":"id","orderIndex":10,"positiveMarks":2,"negativeMarks":0.5}]'
-                value={testForm.questionsJson}
-                onChange={(event) =>
+              <AdminQuestionReferenceEditor
+                hint="Add the question IDs in the order they should appear, along with positive and negative marks."
+                label="Question lineup"
+                rows={testForm.questions}
+                onChange={(rows) =>
                   setTestForm((current) => ({
                     ...current,
-                    questionsJson: event.target.value,
+                    questions: rows,
                   }))
                 }
               />
@@ -1232,7 +1318,7 @@ export function AdminAssessmentsScreen({
                 <button
                   type="button"
                   className="tc-button-secondary"
-                  disabled={!selectedTestId || !canPublishTests || testPublishMutation.isPending}
+                  disabled={!(selectedTestId || testId) || !canPublishTests || testPublishMutation.isPending}
                   onClick={() =>
                     testPublishMutation.mutate(
                       selectedTest?.status === "PUBLISHED" ? "unpublish" : "publish",
@@ -1242,9 +1328,12 @@ export function AdminAssessmentsScreen({
                   {selectedTest?.status === "PUBLISHED" ? "Unpublish" : "Publish"}
                 </button>
               </div>
+                </>
+              )}
             </div>
           )}
-        </section>
+          </section>
+        ) : null}
       </div>
     </div>
   );

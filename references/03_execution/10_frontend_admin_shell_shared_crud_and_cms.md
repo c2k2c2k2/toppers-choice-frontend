@@ -42,6 +42,11 @@ Done when:
 
 ## Implementation Notes
 - The admin shell should expose permission-aware navigation for the live F10 surfaces now and show later F11 domains as staged, non-clickable placeholders instead of pretending unfinished routes already exist.
-- CMS pages, banners, announcements, and sections should share one reusable management experience rather than four disconnected CRUD screens. Reuse one filter/table/editor pattern and vary only collection-specific fields and endpoint wiring.
-- CMS JSON fields such as `bodyJson`, `seoJson`, `metaJson`, and `configJson` should stay editable as raw JSON text for now so the frontend remains aligned to the backend contract without jumping ahead into bespoke block editors.
+- CMS pages, banners, announcements, and sections now share one reusable management foundation, but the UX is split into dedicated list and editor routes so admins do not work in a half-table and half-form layout.
+- Raw CMS JSON editors were replaced with friendly controls: rich HTML fields for long-form content, font-aware text fields for Marathi-safe copy, typed CTA/stat/card repeaters, and key-value editors only for genuinely optional extra metadata.
+- Public CMS rendering was upgraded so the new font-aware strings and rich HTML output from admin routes continue to render safely on landing pages, standalone CMS pages, and student/public announcement surfaces.
 - Upload integration should be real, not mocked: use the admin file init-upload and confirm-upload flow, and let the editor continue working even when the current admin session lacks `content.files.read` or `content.files.manage`.
+
+## Verification Notes
+- Verified with `pnpm lint` in the frontend repo after the CMS editor refactor.
+- Verified with `pnpm build` in the frontend repo, including the new `/admin/cms/*/new` and `/admin/cms/*/[recordId]` routes.

@@ -18,6 +18,7 @@ import {
   getStudentCatalog,
   getTrackLabel,
 } from "@/lib/student";
+import { TextContent } from "@/components/primitives/text-content";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
 import { LoadingState } from "@/components/primitives/loading-state";
@@ -44,7 +45,7 @@ function TestsMetricCard({
   value: string;
 }>) {
   return (
-    <div className="tc-glass rounded-[24px] p-5">
+    <div className="tc-student-metric rounded-[24px] p-5">
       <p className="tc-overline">{label}</p>
       <p className="mt-4 text-3xl font-semibold text-white">{value}</p>
       <p className="mt-2 text-sm text-white/72">{detail}</p>
@@ -174,7 +175,7 @@ export function StudentTestsHubScreen() {
   const activeAttempt = attempts.find((attempt) => attempt.status === "ACTIVE") ?? null;
   return (
     <div className="flex flex-col gap-6">
-      <section className="tc-hero rounded-[32px] p-6 md:p-7">
+      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
         <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
@@ -230,7 +231,7 @@ export function StudentTestsHubScreen() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
-        <section className="tc-panel rounded-[28px] p-6">
+        <section className="tc-student-panel rounded-[28px] p-6">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -304,7 +305,7 @@ export function StudentTestsHubScreen() {
           </div>
         </section>
 
-        <section className="tc-panel rounded-[28px] p-6">
+        <section className="tc-student-panel rounded-[28px] p-6">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -319,20 +320,26 @@ export function StudentTestsHubScreen() {
           {tests.length > 0 ? (
             <div className="mt-5 grid gap-4 xl:grid-cols-2">
               {tests.map((test) => (
-                <article key={test.id} className="tc-card rounded-[24px] p-5">
+                <article key={test.id} className="tc-student-card rounded-[24px] p-5">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="tc-code-chip">{getTestFamilyLabel(test.family)}</span>
                     <span className="tc-code-chip">{test.questionCount} questions</span>
                     <span className="tc-code-chip">{test.durationMinutes} min</span>
                     <span className="tc-code-chip">{test.access.mode}</span>
                   </div>
-                  <h3 className="mt-4 text-xl font-semibold text-[color:var(--brand)]">
-                    {test.title}
-                  </h3>
-                  <p className="tc-muted mt-3 text-sm leading-6">
-                    {test.shortDescription ??
-                      "The test detail route will show instructions, attempt rules, and the correct start/resume action."}
-                  </p>
+                  <TextContent
+                    as="h3"
+                    className="mt-4 text-xl font-semibold text-[color:var(--brand)]"
+                    value={test.title}
+                  />
+                  <TextContent
+                    as="p"
+                    className="tc-muted mt-3 text-sm leading-6"
+                    value={
+                      test.shortDescription ??
+                      "The test detail route will show instructions, attempt rules, and the correct start/resume action."
+                    }
+                  />
                   <div className="mt-4 flex flex-wrap gap-3 text-sm text-[color:var(--muted)]">
                     <span>{test.maxScore} marks</span>
                     <span>{test.maxAttempts} attempts</span>
@@ -348,7 +355,7 @@ export function StudentTestsHubScreen() {
               ))}
             </div>
           ) : (
-            <div className="tc-card mt-5 rounded-[24px] p-5">
+            <div className="tc-student-card mt-5 rounded-[24px] p-5">
               <p className="font-semibold text-[color:var(--brand)]">
                 No published tests match the current filter.
               </p>
@@ -361,7 +368,7 @@ export function StudentTestsHubScreen() {
         </section>
       </section>
 
-      <section className="tc-panel rounded-[28px] p-6">
+      <section className="tc-student-panel rounded-[28px] p-6">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -377,15 +384,17 @@ export function StudentTestsHubScreen() {
         <div className="mt-5 grid gap-4 xl:grid-cols-2">
           {attempts.length > 0 ? (
             attempts.map((attempt) => (
-              <article key={attempt.id} className="tc-card rounded-[24px] p-5">
+              <article key={attempt.id} className="tc-student-card rounded-[24px] p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="tc-overline">
                       {getTestAttemptStatusLabel(attempt.status)}
                     </p>
-                    <h3 className="mt-2 text-lg font-semibold text-[color:var(--brand)]">
-                      {attempt.testSnapshot.title}
-                    </h3>
+                    <TextContent
+                      as="h3"
+                      className="mt-2 text-lg font-semibold text-[color:var(--brand)]"
+                      value={attempt.testSnapshot.title}
+                    />
                   </div>
                   <span className="tc-code-chip">{attempt.percentage}%</span>
                 </div>
@@ -404,7 +413,7 @@ export function StudentTestsHubScreen() {
               </article>
             ))
           ) : (
-            <div className="tc-card rounded-[24px] p-5">
+            <div className="tc-student-card rounded-[24px] p-5">
               <p className="font-semibold text-[color:var(--brand)]">
                 No test attempts yet.
               </p>

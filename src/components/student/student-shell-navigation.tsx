@@ -85,7 +85,6 @@ export function StudentShellNavigation({
     <div className="flex flex-col gap-2">
       {STUDENT_NAV_ITEMS.map((item) => {
         const isActive = isActivePath(pathname, item.href);
-        const badgeLabel = item.status === "live" ? "Live" : "Soon";
 
         if (item.href) {
           return (
@@ -93,7 +92,7 @@ export function StudentShellNavigation({
               key={item.label}
               href={item.href}
               onClick={onNavigate}
-              className={`tc-rail-link ${compact ? "items-start" : ""}`}
+              className={`tc-student-nav-link ${compact ? "items-start" : ""}`}
               data-active={isActive}
             >
               <span className="flex min-w-0 flex-1 flex-col gap-1">
@@ -106,9 +105,15 @@ export function StudentShellNavigation({
                   </span>
                 ) : null}
               </span>
-              <span className="tc-nav-badge" data-status={item.status}>
-                {badgeLabel}
-              </span>
+              {item.status === "soon" ? (
+                <span className="tc-nav-badge" data-status={item.status}>
+                  Soon
+                </span>
+              ) : isActive && !compact ? (
+                <span className="tc-student-chip" data-tone="soft">
+                  Open
+                </span>
+              ) : null}
             </Link>
           );
         }
@@ -116,7 +121,7 @@ export function StudentShellNavigation({
         return (
           <div
             key={item.label}
-            className={`tc-rail-link ${compact ? "items-start" : ""}`}
+            className={`tc-student-nav-link ${compact ? "items-start" : ""}`}
             data-disabled="true"
           >
             <span className="flex min-w-0 flex-1 flex-col gap-1">
@@ -130,7 +135,7 @@ export function StudentShellNavigation({
               ) : null}
             </span>
             <span className="tc-nav-badge" data-status={item.status}>
-              {badgeLabel}
+              Soon
             </span>
           </div>
         );

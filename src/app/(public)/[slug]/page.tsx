@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { htmlToPlainText } from "@/lib/admin/rich-text";
 import { PublicPageBody } from "@/components/public/public-page-body";
 import { PublicPageHero } from "@/components/public/public-page-hero";
 import {
@@ -31,7 +32,7 @@ export async function generateMetadata({
   const noIndex = slug === "privacy" || slug === "terms";
 
   return buildPublicMetadata({
-    title: pageResult.page.title,
+    title: htmlToPlainText(pageResult.page.title) || pageResult.page.title,
     description: extractPageDescription(pageResult.page, pageResult.page.summary ?? ""),
     path: `/${slug}`,
     noIndex,

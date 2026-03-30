@@ -6,7 +6,7 @@ export default function AdminCmsSectionsPage() {
     <AdminPermissionGuard
       permissionKeys={["content.cms.read", "content.cms.manage", "content.cms.publish"]}
     >
-      <AdminCmsManagementScreen collection="sections" />
+      <AdminCmsManagementScreen collection="sections" view="list" />
     </AdminPermissionGuard>
   );
 }

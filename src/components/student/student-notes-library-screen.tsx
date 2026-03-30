@@ -268,7 +268,7 @@ export function StudentNotesLibraryScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="tc-hero rounded-[32px] p-6 md:p-7">
+      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
@@ -297,19 +297,19 @@ export function StudentNotesLibraryScreen() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <div className="tc-glass rounded-[24px] p-5">
+            <div className="tc-student-metric rounded-[24px] p-5">
               <p className="tc-overline">Visible notes</p>
               <p className="mt-4 text-3xl font-semibold text-white">
                 {filteredNotes.length}
               </p>
             </div>
-            <div className="tc-glass rounded-[24px] p-5">
+            <div className="tc-student-metric rounded-[24px] p-5">
               <p className="tc-overline">Ready now</p>
               <p className="mt-4 text-3xl font-semibold text-white">
                 {availableCount}
               </p>
             </div>
-            <div className="tc-glass rounded-[24px] p-5">
+            <div className="tc-student-metric rounded-[24px] p-5">
               <p className="tc-overline">Previewable</p>
               <p className="mt-4 text-3xl font-semibold text-white">
                 {previewCount}
@@ -319,7 +319,7 @@ export function StudentNotesLibraryScreen() {
         </div>
       </section>
 
-      <section className="tc-panel rounded-[28px] p-6">
+      <section className="tc-student-panel rounded-[28px] p-6">
         <div className="grid gap-5 xl:grid-cols-[1.3fr_1fr]">
           <label className="tc-form-field">
             <span className="tc-form-label">Search notes</span>
@@ -358,7 +358,7 @@ export function StudentNotesLibraryScreen() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-        <aside className="tc-panel rounded-[28px] p-5">
+        <aside className="tc-student-panel rounded-[28px] p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>

@@ -5,6 +5,7 @@ import {
   type PublicBootstrapResponse,
 } from "@/lib/api/site";
 import { isApiError } from "@/lib/api/errors";
+import { htmlToPlainText } from "@/lib/admin/rich-text";
 import { getPublicCmsPage, resolvePublicCms } from "@/lib/cms";
 import type { CmsBanner, CmsPage, CmsResolveResponse } from "@/lib/cms/types";
 import { listPublicPlans } from "@/lib/payments";
@@ -401,9 +402,9 @@ export function extractPageDescription(page: CmsPage | null, fallback: string) {
   }
 
   if (typeof page.summary === "string" && page.summary.trim().length > 0) {
-    return page.summary.trim();
+    return htmlToPlainText(page.summary) || page.summary.trim();
   }
 
   const seoDescription = readString(page.seoJson, ["description"]);
-  return seoDescription || fallback;
+  return htmlToPlainText(seoDescription) || seoDescription || fallback;
 }

@@ -6,7 +6,7 @@ export default function AdminCmsAnnouncementsPage() {
     <AdminPermissionGuard
       permissionKeys={["content.cms.read", "content.cms.manage", "content.cms.publish"]}
     >
-      <AdminCmsManagementScreen collection="announcements" />
+      <AdminCmsManagementScreen collection="announcements" view="list" />
     </AdminPermissionGuard>
   );
 }

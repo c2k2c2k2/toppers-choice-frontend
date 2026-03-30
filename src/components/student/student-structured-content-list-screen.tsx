@@ -30,6 +30,7 @@ import {
   getStudentCatalog,
   getTrackLabel,
 } from "@/lib/student";
+import { TextContent } from "@/components/primitives/text-content";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
 import { LoadingState } from "@/components/primitives/loading-state";
@@ -69,17 +70,23 @@ function ContentSummaryCard({
   return (
     <Link
       href={definition.detailHref(content.slug)}
-      className="tc-card rounded-[24px] p-5 transition-transform duration-200 hover:-translate-y-1"
+      className="tc-student-card rounded-[24px] p-5 transition-transform duration-200 hover:-translate-y-1"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="tc-overline">{definition.label}</p>
         <span className="tc-code-chip">{accessDescriptor.badgeLabel}</span>
       </div>
 
-      <h2 className="tc-display mt-4 text-2xl font-semibold tracking-tight text-[color:var(--brand)]">
-        {content.title}
-      </h2>
-      <p className="tc-muted mt-3 text-sm leading-6">{getContentExcerpt(content)}</p>
+      <TextContent
+        as="h2"
+        className="tc-display mt-4 text-2xl font-semibold tracking-tight text-[color:var(--brand)]"
+        value={content.title}
+      />
+      <TextContent
+        as="p"
+        className="tc-muted mt-3 text-sm leading-6"
+        value={getContentExcerpt(content)}
+      />
 
       <div className="mt-4 flex flex-wrap gap-2">
         <span className="tc-stat-chip">{formatReadingTime(content.readingTimeMinutes)}</span>
@@ -228,7 +235,7 @@ export function StudentStructuredContentListScreen({
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="tc-hero rounded-[32px] p-6 md:p-7">
+      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
@@ -253,7 +260,7 @@ export function StudentStructuredContentListScreen({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="tc-glass rounded-[24px] p-5">
+            <div className="tc-student-metric rounded-[24px] p-5">
               <p className="tc-overline">Featured items</p>
               <p className="mt-4 text-3xl font-semibold text-white">
                 {featuredItems.length}
@@ -262,7 +269,7 @@ export function StudentStructuredContentListScreen({
                 Highlighted for the current track and medium context
               </p>
             </div>
-            <div className="tc-glass rounded-[24px] p-5">
+            <div className="tc-student-metric rounded-[24px] p-5">
               <p className="tc-overline">Access filter</p>
               <p className="mt-4 text-lg font-semibold text-white">
                 {accessFilter === "all"
@@ -279,7 +286,7 @@ export function StudentStructuredContentListScreen({
         </div>
       </section>
 
-      <section className="tc-panel rounded-[28px] p-6">
+      <section className="tc-student-panel rounded-[28px] p-6">
         <div className="grid gap-5 xl:grid-cols-[1fr_1fr_1.1fr]">
           <div className="space-y-3">
             <p className="tc-overline">Exam track</p>

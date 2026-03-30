@@ -1,7 +1,13 @@
 "use client";
 
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
-import { useEffect, useRef, useState, type TouchEvent } from "react";
+import {
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+  type TouchEvent,
+} from "react";
 import { buildNoteContentUrl } from "@/lib/notes";
 import { NoteWatermarkOverlay } from "@/components/student/note-watermark-overlay";
 import type { NoteWatermarkResponse } from "@/lib/notes";
@@ -40,6 +46,114 @@ function isEditableTarget(target: EventTarget | null) {
     tagName === "textarea" ||
     tagName === "select" ||
     target.isContentEditable
+  );
+}
+
+type ViewerControlIcon =
+  | "first"
+  | "last"
+  | "minus"
+  | "next"
+  | "plus"
+  | "previous";
+
+function ViewerControlGlyph({
+  icon,
+}: Readonly<{
+  icon: ViewerControlIcon;
+}>) {
+  if (icon === "first") {
+    return (
+      <svg
+        aria-hidden="true"
+        className="h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+        viewBox="0 0 24 24"
+      >
+        <path d="M18 6L12 12L18 18" />
+        <path d="M12 6L6 12L12 18" />
+      </svg>
+    );
+  }
+
+  if (icon === "last") {
+    return (
+      <svg
+        aria-hidden="true"
+        className="h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+        viewBox="0 0 24 24"
+      >
+        <path d="M6 6L12 12L6 18" />
+        <path d="M12 6L18 12L12 18" />
+      </svg>
+    );
+  }
+
+  if (icon === "minus" || icon === "plus") {
+    return (
+      <svg
+        aria-hidden="true"
+        className="h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+        viewBox="0 0 24 24"
+      >
+        <path d="M5 12H19" />
+        {icon === "plus" ? <path d="M12 5V19" /> : null}
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.8"
+      viewBox="0 0 24 24"
+    >
+      <path d={icon === "next" ? "M9 6L15 12L9 18" : "M15 6L9 12L15 18"} />
+    </svg>
+  );
+}
+
+function ViewerControlButton({
+  disabled = false,
+  icon,
+  label,
+  onClick,
+}: Readonly<{
+  disabled?: boolean;
+  icon: ViewerControlIcon;
+  label: string;
+  onClick: () => void;
+}>) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      className="flex h-11 w-11 items-center justify-center rounded-[18px] border border-[rgba(0,30,64,0.08)] bg-white/90 text-[color:var(--brand)] shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-[rgba(0,51,102,0.18)] hover:bg-white disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-45"
+      disabled={disabled}
+      onClick={onClick}
+      title={label}
+    >
+      <ViewerControlGlyph icon={icon} />
+    </button>
   );
 }
 
@@ -85,6 +199,18 @@ export function PdfCanvasViewer({
   const [pageInput, setPageInput] = useState(String(initialPage));
   const [pageNumber, setPageNumber] = useState(initialPage);
   const [zoom, setZoom] = useState(clampZoom(initialZoom));
+  const emitError = useEffectEvent((message: string) => {
+    onError?.(message);
+  });
+  const emitPageChange = useEffectEvent((page: number, totalPages: number) => {
+    onPageChange?.(page, totalPages);
+  });
+  const emitReady = useEffectEvent((totalPages: number) => {
+    onReady?.(totalPages);
+  });
+  const emitZoomChange = useEffectEvent((nextZoom: number) => {
+    onZoomChange?.(nextZoom);
+  });
 
   useEffect(() => {
     const element = containerRef.current;
@@ -138,14 +264,14 @@ export function PdfCanvasViewer({
         setPageCount(documentInstance.numPages);
         setPageNumber(clampPage(initialPage, documentInstance.numPages));
         setPageInput(String(clampPage(initialPage, documentInstance.numPages)));
-        onReady?.(documentInstance.numPages);
+        emitReady(documentInstance.numPages);
       })
       .catch((error: unknown) => {
         if (cancelled) {
           return;
         }
 
-        onError?.(
+        emitError(
           error instanceof Error ? error.message : "Failed to load the note PDF.",
         );
       })
@@ -166,7 +292,7 @@ export function PdfCanvasViewer({
         loadingTask.destroy();
       }
     };
-  }, [initialPage, noteViewSessionId, noteViewToken, onError, onReady]);
+  }, [initialPage, noteViewSessionId, noteViewToken]);
 
   useEffect(() => {
     setPageInput(String(pageNumber));
@@ -184,8 +310,8 @@ export function PdfCanvasViewer({
   }, [pageCount, requestedPage]);
 
   useEffect(() => {
-    onZoomChange?.(zoom);
-  }, [onZoomChange, zoom]);
+    emitZoomChange(zoom);
+  }, [zoom]);
 
   useEffect(() => {
     if (!documentProxy || !canvasRef.current || !containerWidth) {
@@ -238,9 +364,13 @@ export function PdfCanvasViewer({
         await renderTaskRef.current.promise;
 
         if (!cancelled) {
-          onPageChange?.(pageNumber, documentProxy.numPages);
+          emitPageChange(pageNumber, documentProxy.numPages);
         }
       } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
         if (
           error instanceof Error &&
           (error.name === "RenderingCancelledException" ||
@@ -249,7 +379,7 @@ export function PdfCanvasViewer({
           return;
         }
 
-        onError?.(
+        emitError(
           error instanceof Error ? error.message : "Failed to render the note page.",
         );
       }
@@ -261,7 +391,7 @@ export function PdfCanvasViewer({
       cancelled = true;
       renderTaskRef.current?.cancel();
     };
-  }, [containerWidth, documentProxy, onError, onPageChange, pageNumber, zoom]);
+  }, [containerWidth, documentProxy, pageNumber, zoom]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -337,46 +467,38 @@ export function PdfCanvasViewer({
   return (
     <div className="flex flex-col gap-4">
       {showToolbar ? (
-        <div className="tc-panel rounded-[24px] p-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="tc-student-panel rounded-[24px] p-4">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
+              <ViewerControlButton
+                disabled={pageNumber <= 1}
+                icon="first"
+                label="Go to the first page"
                 onClick={() => goToPage(1)}
-                className="tc-button-secondary"
+              />
+              <ViewerControlButton
                 disabled={pageNumber <= 1}
-              >
-                First
-              </button>
-              <button
-                type="button"
+                icon="previous"
+                label="Go to the previous page"
                 onClick={() => goToPage(pageNumber - 1)}
-                className="tc-button-secondary"
-                disabled={pageNumber <= 1}
-              >
-                Previous
-              </button>
-              <button
-                type="button"
+              />
+              <ViewerControlButton
+                disabled={pageNumber >= pageCount}
+                icon="next"
+                label="Go to the next page"
                 onClick={() => goToPage(pageNumber + 1)}
-                className="tc-button-secondary"
+              />
+              <ViewerControlButton
                 disabled={pageNumber >= pageCount}
-              >
-                Next
-              </button>
-              <button
-                type="button"
+                icon="last"
+                label="Go to the last page"
                 onClick={() => goToPage(pageCount)}
-                className="tc-button-secondary"
-                disabled={pageNumber >= pageCount}
-              >
-                Last
-              </button>
+              />
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <label className="flex items-center gap-2 rounded-full bg-[rgba(255,255,255,0.78)] px-4 py-2">
-                <span className="text-sm font-semibold text-[color:var(--brand)]">
+              <label className="flex min-h-[2.75rem] items-center gap-2 rounded-full border border-[rgba(0,30,64,0.08)] bg-white/82 px-4 py-2 shadow-[var(--shadow-soft)]">
+                <span className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
                   Page
                 </span>
                 <input
@@ -394,28 +516,26 @@ export function PdfCanvasViewer({
                 <span className="text-sm text-[color:var(--muted)]">/ {pageCount}</span>
               </label>
 
-              <div className="flex items-center gap-2 rounded-full bg-[rgba(255,255,255,0.78)] px-3 py-2">
-                <button
-                  type="button"
+              <div className="flex min-h-[2.75rem] items-center gap-2 rounded-full border border-[rgba(0,30,64,0.08)] bg-white/82 px-2 py-2 shadow-[var(--shadow-soft)]">
+                <ViewerControlButton
+                  disabled={zoom <= MIN_ZOOM}
+                  icon="minus"
+                  label="Zoom out"
                   onClick={() =>
                     setZoom((currentZoom) => clampZoom(currentZoom - ZOOM_STEP))
                   }
-                  className="tc-button-secondary px-4 py-2"
-                >
-                  -
-                </button>
+                />
                 <span className="min-w-14 text-center text-sm font-semibold text-[color:var(--brand)]">
                   {Math.round(zoom * 100)}%
                 </span>
-                <button
-                  type="button"
+                <ViewerControlButton
+                  disabled={zoom >= MAX_ZOOM}
+                  icon="plus"
+                  label="Zoom in"
                   onClick={() =>
                     setZoom((currentZoom) => clampZoom(currentZoom + ZOOM_STEP))
                   }
-                  className="tc-button-secondary px-4 py-2"
-                >
-                  +
-                </button>
+                />
               </div>
             </div>
           </div>
@@ -425,7 +545,7 @@ export function PdfCanvasViewer({
       <div
         ref={containerRef}
         className={[
-          "tc-panel overflow-hidden rounded-[28px] bg-[linear-gradient(180deg,#11233d_0%,#0b182a_100%)] p-3 sm:p-5",
+          "tc-student-panel overflow-hidden rounded-[28px] bg-[linear-gradient(180deg,#11233d_0%,#0b182a_100%)] p-3 sm:p-5",
           shellClassName ?? "",
         ].join(" ")}
         onTouchEnd={handleTouchEnd}

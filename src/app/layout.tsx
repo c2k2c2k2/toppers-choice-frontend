@@ -6,6 +6,9 @@ import {
   Noto_Sans_Devanagari,
 } from "next/font/google";
 import { AppProviders } from "@/components/providers/app-providers";
+import "katex/dist/katex.min.css";
+import "mathlive/fonts.css";
+import "mathlive/static.css";
 import "./globals.css";
 
 const displayFont = Manrope({

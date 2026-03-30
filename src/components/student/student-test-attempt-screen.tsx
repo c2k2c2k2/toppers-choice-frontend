@@ -28,6 +28,7 @@ import { AssessmentReviewPanel } from "@/components/assessment/assessment-review
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
 import { LoadingState } from "@/components/primitives/loading-state";
+import { TextContent } from "@/components/primitives/text-content";
 import { useTestAttemptStore } from "@/stores";
 
 function resolveDraftStatus(input: {
@@ -78,7 +79,7 @@ function AttemptMetricCard({
   value: string;
 }>) {
   return (
-    <div className="tc-glass rounded-[24px] p-5">
+    <div className="tc-student-metric rounded-[24px] p-5">
       <p className="tc-overline">{label}</p>
       <p className="mt-4 text-3xl font-semibold text-white">{value}</p>
     </div>
@@ -335,15 +336,17 @@ export function StudentTestAttemptScreen({
   if (attempt.status !== "ACTIVE") {
     return (
       <div className="flex flex-col gap-6">
-        <section className="tc-hero rounded-[32px] p-6 md:p-7">
+        <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
           <div className="grid gap-6 xl:grid-cols-[1.06fr_0.94fr]">
             <div>
               <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
                 Test result
               </p>
-              <h1 className="tc-display mt-4 text-3xl font-semibold tracking-tight md:text-4xl">
-                {attempt.testSnapshot.title}
-              </h1>
+              <TextContent
+                as="h1"
+                className="tc-display mt-4 text-3xl font-semibold tracking-tight md:text-4xl"
+                value={attempt.testSnapshot.title}
+              />
               <p className="tc-muted mt-4 max-w-3xl text-base leading-7">
                 The attempt is now locked. Review the per-question feedback,
                 score breakdown, and submission timing before starting another
@@ -383,30 +386,30 @@ export function StudentTestAttemptScreen({
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-          <section className="tc-panel rounded-[28px] p-6">
+          <section className="tc-student-panel rounded-[28px] p-6">
             <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
               Attempt summary
             </p>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <div className="tc-card rounded-[22px] p-4">
+              <div className="tc-student-card rounded-[22px] p-4">
                 <p className="tc-overline">Status</p>
                 <p className="mt-2 font-semibold text-[color:var(--brand)]">
                   {getTestAttemptStatusLabel(attempt.status)}
                 </p>
               </div>
-              <div className="tc-card rounded-[22px] p-4">
+              <div className="tc-student-card rounded-[22px] p-4">
                 <p className="tc-overline">Submitted</p>
                 <p className="mt-2 font-semibold text-[color:var(--brand)]">
                   {formatAssessmentDate(attempt.submittedAt)}
                 </p>
               </div>
-              <div className="tc-card rounded-[22px] p-4">
+              <div className="tc-student-card rounded-[22px] p-4">
                 <p className="tc-overline">Skipped</p>
                 <p className="mt-2 font-semibold text-[color:var(--brand)]">
                   {attempt.skippedCount}
                 </p>
               </div>
-              <div className="tc-card rounded-[22px] p-4">
+              <div className="tc-student-card rounded-[22px] p-4">
                 <p className="tc-overline">Family</p>
                 <p className="mt-2 font-semibold text-[color:var(--brand)]">
                   {getTestFamilyLabel(attempt.testSnapshot.family)}
@@ -463,15 +466,17 @@ export function StudentTestAttemptScreen({
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="tc-hero rounded-[32px] p-6 md:p-7">
+      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
         <div className="grid gap-6 xl:grid-cols-[1.06fr_0.94fr]">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
               Active timed attempt
             </p>
-            <h1 className="tc-display mt-4 text-3xl font-semibold tracking-tight md:text-4xl">
-              {attempt.testSnapshot.title}
-            </h1>
+            <TextContent
+              as="h1"
+              className="tc-display mt-4 text-3xl font-semibold tracking-tight md:text-4xl"
+              value={attempt.testSnapshot.title}
+            />
             <p className="tc-muted mt-4 max-w-3xl text-base leading-7">
               Drafts autosave while you move through the question palette, but
               correctness stays hidden until the test is submitted or the timer
@@ -595,7 +600,7 @@ export function StudentTestAttemptScreen({
         </div>
 
         <div className="grid gap-6">
-          <section className="tc-panel rounded-[28px] p-6">
+          <section className="tc-student-panel rounded-[28px] p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -647,7 +652,7 @@ export function StudentTestAttemptScreen({
             </div>
           </section>
 
-          <section className="tc-panel rounded-[28px] p-6">
+          <section className="tc-student-panel rounded-[28px] p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -660,19 +665,19 @@ export function StudentTestAttemptScreen({
             </div>
 
             <div className="mt-5 grid gap-4">
-              <div className="tc-card rounded-[22px] p-4">
+              <div className="tc-student-card rounded-[22px] p-4">
                 <p className="tc-overline">Started</p>
                 <p className="mt-2 font-semibold text-[color:var(--brand)]">
                   {formatAssessmentDate(attempt.startedAt)}
                 </p>
               </div>
-              <div className="tc-card rounded-[22px] p-4">
+              <div className="tc-student-card rounded-[22px] p-4">
                 <p className="tc-overline">Expires</p>
                 <p className="mt-2 font-semibold text-[color:var(--brand)]">
                   {formatAssessmentDate(attempt.expiresAt)}
                 </p>
               </div>
-              <div className="tc-card rounded-[22px] p-4">
+              <div className="tc-student-card rounded-[22px] p-4">
                 <p className="tc-overline">Rules</p>
                 <p className="mt-2 font-semibold text-[color:var(--brand)]">
                   Results unlock only after submission

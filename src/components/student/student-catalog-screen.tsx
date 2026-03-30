@@ -154,7 +154,7 @@ export function StudentCatalogScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="tc-hero rounded-[32px] p-6 md:p-7">
+      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
@@ -170,7 +170,7 @@ export function StudentCatalogScreen() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="tc-glass rounded-[24px] p-5">
+            <div className="tc-student-metric rounded-[24px] p-5">
               <p className="tc-overline">Visible subjects</p>
               <p className="mt-4 text-3xl font-semibold text-white">
                 {filteredSubjects.length}
@@ -179,7 +179,7 @@ export function StudentCatalogScreen() {
                 filtered for the active track and search terms
               </p>
             </div>
-            <div className="tc-glass rounded-[24px] p-5">
+            <div className="tc-student-metric rounded-[24px] p-5">
               <p className="tc-overline">Last opened subject</p>
               <p className="mt-4 text-lg font-semibold text-white">
                 {lastCatalogSubjectSlug ?? "No subject opened yet"}
@@ -192,7 +192,7 @@ export function StudentCatalogScreen() {
         </div>
       </section>
 
-      <section className="tc-panel rounded-[28px] p-6">
+      <section className="tc-student-panel rounded-[28px] p-6">
         <div className="grid gap-5 xl:grid-cols-[1fr_1fr_1.1fr]">
           <div className="space-y-3">
             <p className="tc-overline">Exam track</p>
@@ -264,7 +264,7 @@ export function StudentCatalogScreen() {
                 mediumCode: snapshot.selectedMedium?.code ?? null,
               })}
               onClick={() => setLastCatalogSubjectSlug(subject.slug)}
-              className="tc-card rounded-[26px] p-5 transition-transform duration-200 hover:-translate-y-1"
+              className="tc-student-card rounded-[26px] p-5 transition-transform duration-200 hover:-translate-y-1"
             >
               <div className="flex flex-wrap items-center gap-3">
                 <h2 className="text-xl font-semibold text-[color:var(--brand)]">

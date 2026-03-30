@@ -23,6 +23,7 @@ import {
   resolveStructuredContentFontHint,
   type ContentFamily,
 } from "@/lib/content";
+import { TextContent } from "@/components/primitives/text-content";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
 import { LoadingState } from "@/components/primitives/loading-state";
@@ -107,18 +108,22 @@ export function StudentStructuredContentDetailScreen({
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="tc-hero rounded-[32px] p-6 md:p-7">
+      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
         <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
               {familyDefinition.eyebrow}
             </p>
-            <h1 className="tc-display mt-4 text-3xl font-semibold tracking-tight md:text-4xl">
-              {content.title}
-            </h1>
-            <p className="tc-muted mt-4 max-w-3xl text-base leading-7">
-              {getContentExcerpt(content)}
-            </p>
+            <TextContent
+              as="h1"
+              className="tc-display mt-4 text-3xl font-semibold tracking-tight md:text-4xl"
+              value={content.title}
+            />
+            <TextContent
+              as="p"
+              className="tc-muted mt-4 max-w-3xl text-base leading-7"
+              value={getContentExcerpt(content)}
+            />
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <span className="tc-stat-chip">{accessDescriptor.badgeLabel}</span>
@@ -137,7 +142,7 @@ export function StudentStructuredContentDetailScreen({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="tc-glass rounded-[24px] p-5">
+            <div className="tc-student-metric rounded-[24px] p-5">
               <p className="tc-overline">Tracks</p>
               <p className="mt-4 text-lg font-semibold text-white">
                 {trackLabels.length > 0 ? trackLabels.join(", ") : "All tracks"}
@@ -146,7 +151,7 @@ export function StudentStructuredContentDetailScreen({
                 Content visibility matches the current student study context.
               </p>
             </div>
-            <div className="tc-glass rounded-[24px] p-5">
+            <div className="tc-student-metric rounded-[24px] p-5">
               <p className="tc-overline">Mediums</p>
               <p className="mt-4 text-lg font-semibold text-white">
                 {mediumLabels.length > 0 ? mediumLabels.join(", ") : "All mediums"}
@@ -161,7 +166,7 @@ export function StudentStructuredContentDetailScreen({
 
       <section className="grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
         <div className="flex flex-col gap-6">
-          <section className="tc-panel rounded-[28px] p-6">
+          <section className="tc-student-panel rounded-[28px] p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p
@@ -180,7 +185,7 @@ export function StudentStructuredContentDetailScreen({
             </div>
 
             <div className="mt-5 grid gap-4">
-              <div className="tc-card rounded-[24px] p-5">
+              <div className="tc-student-card rounded-[24px] p-5">
                 <p className="tc-overline">Access state</p>
                 <p className="mt-2 text-lg font-semibold text-[color:var(--brand)]">
                   {accessDescriptor.badgeLabel}
@@ -198,7 +203,7 @@ export function StudentStructuredContentDetailScreen({
                 ) : null}
               </div>
 
-              <div className="tc-card rounded-[24px] p-5">
+              <div className="tc-student-card rounded-[24px] p-5">
                 <p className="tc-overline">Publishing details</p>
                 <div className="mt-3 flex flex-col gap-3 text-sm leading-6 text-[color:var(--brand)]">
                   <p>Published: {formatContentDate(content.publishedAt)}</p>
@@ -208,7 +213,7 @@ export function StudentStructuredContentDetailScreen({
               </div>
 
               {(summaryMonth || summaryLevel) && (
-                <div className="tc-card rounded-[24px] p-5">
+                <div className="tc-student-card rounded-[24px] p-5">
                   <p className="tc-overline">Lesson metadata</p>
                   <div className="mt-3 flex flex-col gap-3 text-sm leading-6 text-[color:var(--brand)]">
                     {summaryMonth ? <p>Month: {summaryMonth}</p> : null}
@@ -220,7 +225,7 @@ export function StudentStructuredContentDetailScreen({
           </section>
 
           {content.attachments.length > 0 ? (
-            <section className="tc-panel rounded-[28px] p-6">
+            <section className="tc-student-panel rounded-[28px] p-6">
               <p
                 className="tc-kicker"
                 style={{ color: familyDefinition.accentCssVar }}
@@ -244,7 +249,7 @@ export function StudentStructuredContentDetailScreen({
         </div>
 
         {canViewContent ? (
-          <section className="tc-card rounded-[28px] p-6 md:p-7">
+          <section className="tc-student-card rounded-[28px] p-6 md:p-7">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p

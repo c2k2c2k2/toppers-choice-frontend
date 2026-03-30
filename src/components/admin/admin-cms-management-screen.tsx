@@ -1,9 +1,11 @@
-"use client";
+"use client"
 
-import { useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { adminQueryKeys } from "@/lib/api/query-keys";
-import { useAuthenticatedMutation, useAuthenticatedQuery, useAuthSession } from "@/lib/auth";
+import Link from "next/link"
+import { useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useQueryClient } from "@tanstack/react-query"
+import { adminQueryKeys } from "@/lib/api/query-keys"
+import { useAuthenticatedMutation, useAuthenticatedQuery, useAuthSession } from "@/lib/auth"
 import {
   createAdminCmsAnnouncement,
   createAdminCmsBanner,
@@ -28,8 +30,6 @@ import {
   reorderAdminCmsBanners,
   reorderAdminCmsPages,
   reorderAdminCmsSections,
-  safeJsonParse,
-  stringifyJsonInput,
   summarizeCmsRecord,
   unpublishAdminCmsAnnouncement,
   unpublishAdminCmsBanner,
@@ -48,90 +48,159 @@ import {
   type CmsSectionType,
   type CmsStatus,
   type CmsVisibility,
-} from "@/lib/admin";
-import { AdminAnnouncementLevelBadge, AdminStatusBadge, AdminVisibilityBadge } from "@/components/admin/admin-status-badge";
-import { AdminAssetUploader } from "@/components/admin/admin-asset-uploader";
-import { AdminDataTable } from "@/components/admin/admin-data-table";
-import { AdminFilterBar } from "@/components/admin/admin-filter-bar";
-import { AdminInlineNotice } from "@/components/admin/admin-inline-notice";
-import { AdminInput, AdminSelect, AdminTextarea } from "@/components/admin/admin-form-field";
-import { AdminPageHeader } from "@/components/admin/admin-page-header";
-import { EmptyState } from "@/components/primitives/empty-state";
-import { ErrorState } from "@/components/primitives/error-state";
-import { LoadingState } from "@/components/primitives/loading-state";
+} from "@/lib/admin"
+import {
+  buildStructuredDocumentFromHtml,
+  htmlToPlainText,
+  readStructuredDocumentHtml,
+} from "@/lib/admin/rich-text"
+import {
+  AdminAnnouncementLevelBadge,
+  AdminStatusBadge,
+  AdminVisibilityBadge,
+} from "@/components/admin/admin-status-badge"
+import { AdminAssetUploader } from "@/components/admin/admin-asset-uploader"
+import {
+  AdminCmsCtaEditor,
+  AdminCmsFeedItemsEditor,
+  AdminCmsStatsEditor,
+  buildCmsCtaRows,
+  buildCmsFeedItemRows,
+  buildCmsStatRows,
+  serializeCmsCtaRows,
+  serializeCmsFeedItemRows,
+  serializeCmsStatRows,
+  type AdminCmsCtaRow,
+  type AdminCmsFeedItemRow,
+  type AdminCmsStatRow,
+} from "@/components/admin/admin-cms-friendly-editors"
+import { AdminDataTable } from "@/components/admin/admin-data-table"
+import { AdminFilterBar } from "@/components/admin/admin-filter-bar"
+import { AdminFontTextField } from "@/components/admin/admin-font-text-field"
+import { AdminInput, AdminSelect } from "@/components/admin/admin-form-field"
+import { AdminInlineNotice } from "@/components/admin/admin-inline-notice"
+import {
+  AdminKeyValueEditor,
+  parseKeyValueObject,
+  serializeKeyValueRows,
+  type AdminKeyValueRow,
+} from "@/components/admin/admin-key-value-editor"
+import { AdminPageHeader } from "@/components/admin/admin-page-header"
+import { AdminRichHtmlField } from "@/components/admin/admin-rich-html-field"
+import { AdminRouteTabs } from "@/components/admin/admin-route-tabs"
+import { TextContent } from "@/components/primitives/text-content"
+import { EmptyState } from "@/components/primitives/empty-state"
+import { ErrorState } from "@/components/primitives/error-state"
+import { LoadingState } from "@/components/primitives/loading-state"
 
-const CMS_STATUS_OPTIONS: CmsStatus[] = ["DRAFT", "PUBLISHED", "ARCHIVED"];
-const CMS_VISIBILITY_OPTIONS: CmsVisibility[] = [
-  "PUBLIC",
-  "AUTHENTICATED",
-  "INTERNAL",
-];
+const CMS_STATUS_OPTIONS: CmsStatus[] = ["DRAFT", "PUBLISHED", "ARCHIVED"]
+const CMS_VISIBILITY_OPTIONS: CmsVisibility[] = ["PUBLIC", "AUTHENTICATED", "INTERNAL"]
 const CMS_PLACEMENT_OPTIONS: CmsBannerPlacement[] = [
   "LANDING_HOME",
   "STUDENT_HOME",
   "COMMON",
-];
-const CMS_SURFACE_OPTIONS: CmsSectionSurface[] = [
-  "LANDING_HOME",
-  "STUDENT_HOME",
-];
+]
+const CMS_SURFACE_OPTIONS: CmsSectionSurface[] = ["LANDING_HOME", "STUDENT_HOME"]
 const CMS_SECTION_TYPE_OPTIONS: CmsSectionType[] = [
   "RICH_TEXT",
   "CONTENT_FEED",
   "PLAN_HIGHLIGHTS",
   "CTA_GROUP",
-];
+]
 const ANNOUNCEMENT_LEVEL_OPTIONS: CmsAnnouncementLevel[] = [
   "INFO",
   "SUCCESS",
   "WARNING",
   "CRITICAL",
-];
+]
+
+type CmsManagementView = "list" | "editor"
+
+interface CmsLinkedAsset {
+  accessLevel?: string
+  contentType?: string
+  id: string
+  originalFileName: string
+  publicDeliveryPath?: string
+  status?: string
+}
 
 interface CmsEditorFormState {
-  bodyJsonText: string;
-  bodyText: string;
-  code: string;
-  ctaHref: string;
-  ctaLabel: string;
-  endsAt: string;
-  imageAssetId: string;
-  isPinned: boolean;
-  level: CmsAnnouncementLevel;
-  linkHref: string;
-  linkLabel: string;
-  metaJsonText: string;
-  orderIndex: string;
-  placement: CmsBannerPlacement;
-  seoJsonText: string;
-  slug: string;
-  startsAt: string;
-  subtitle: string;
-  summary: string;
-  surface: CmsSectionSurface;
-  title: string;
-  type: CmsSectionType;
-  visibility: CmsVisibility;
-  configJsonText: string;
+  announcementBodyHtml: string
+  announcementMetaRows: AdminKeyValueRow[]
+  bannerBodyHtml: string
+  bannerMetaRows: AdminKeyValueRow[]
+  bannerSecondaryCtaHref: string
+  bannerSecondaryCtaLabel: string
+  bannerStatsRows: AdminCmsStatRow[]
+  code: string
+  columns: string
+  ctaHref: string
+  ctaLabel: string
+  endsAt: string
+  eyeBrow: string
+  imageAssetId: string
+  isPinned: boolean
+  level: CmsAnnouncementLevel
+  linkHref: string
+  linkLabel: string
+  note: string
+  orderIndex: string
+  pageBodyHtml: string
+  placement: CmsBannerPlacement
+  sectionConfigRows: AdminKeyValueRow[]
+  sectionCtaRows: AdminCmsCtaRow[]
+  sectionFeedRows: AdminCmsFeedItemRow[]
+  sectionRichTextHtml: string
+  sectionStatsRows: AdminCmsStatRow[]
+  seoDescription: string
+  seoExtraRows: AdminKeyValueRow[]
+  seoKeywords: string
+  seoNoIndex: boolean
+  seoTitle: string
+  slug: string
+  startsAt: string
+  subtitle: string
+  summary: string
+  surface: CmsSectionSurface
+  title: string
+  type: CmsSectionType
+  visibility: CmsVisibility
 }
 
 const EMPTY_FORM_STATE: CmsEditorFormState = {
-  bodyJsonText: "",
-  bodyText: "",
+  announcementBodyHtml: "",
+  announcementMetaRows: [],
+  bannerBodyHtml: "",
+  bannerMetaRows: [],
+  bannerSecondaryCtaHref: "",
+  bannerSecondaryCtaLabel: "",
+  bannerStatsRows: [],
   code: "",
-  configJsonText: "",
+  columns: "",
   ctaHref: "",
   ctaLabel: "",
   endsAt: "",
+  eyeBrow: "",
   imageAssetId: "",
   isPinned: false,
   level: "INFO",
   linkHref: "",
   linkLabel: "",
-  metaJsonText: "",
+  note: "",
   orderIndex: "",
+  pageBodyHtml: "",
   placement: "LANDING_HOME",
-  seoJsonText: "",
+  sectionConfigRows: [],
+  sectionCtaRows: [],
+  sectionFeedRows: [],
+  sectionRichTextHtml: "",
+  sectionStatsRows: [],
+  seoDescription: "",
+  seoExtraRows: [],
+  seoKeywords: "",
+  seoNoIndex: false,
+  seoTitle: "",
   slug: "",
   startsAt: "",
   subtitle: "",
@@ -140,189 +209,148 @@ const EMPTY_FORM_STATE: CmsEditorFormState = {
   title: "",
   type: "RICH_TEXT",
   visibility: "PUBLIC",
-};
+}
 
-function toDatetimeLocalValue(value: string | null | undefined) {
-  if (!value) {
-    return "";
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value)
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;")
+}
+
+function readString(value: unknown) {
+  return typeof value === "string" ? value : ""
+}
+
+function readStringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value
+        .filter((entry): entry is string => typeof entry === "string")
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+    : []
+}
+
+function buildParagraphHtmlFromArray(value: unknown) {
+  const paragraphs = readStringArray(value)
+  return paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("")
+}
+
+function trimOrUndefined(value: string) {
+  const normalized = value.trim()
+  return normalized || undefined
+}
+
+function toDatetimeLocalValue(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) {
+    return ""
   }
 
-  const date = new Date(value);
-  const timezoneOffset = date.getTimezoneOffset() * 60_000;
-  return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 16);
+  const date = new Date(value)
+  const timezoneOffset = date.getTimezoneOffset() * 60_000
+  return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 16)
 }
 
 function toIsoDateTime(value: string) {
   if (!value.trim()) {
-    return undefined;
+    return undefined
   }
 
-  return new Date(value).toISOString();
+  return new Date(value).toISOString()
 }
 
 function toOrderIndex(value: string) {
   if (!value.trim()) {
-    return undefined;
+    return undefined
   }
 
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) ? parsed : undefined;
+  const parsed = Number.parseInt(value, 10)
+  return Number.isFinite(parsed) ? parsed : undefined
 }
 
-function asSchemaJson(
+function toOptionalNumber(value: string) {
+  if (!value.trim()) {
+    return undefined
+  }
+
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : undefined
+}
+
+function asSchemaJson(value: Record<string, unknown> | undefined) {
+  return value as Record<string, never> | undefined
+}
+
+function asRequiredSchemaJson(value: Record<string, unknown> | undefined) {
+  return (value ?? {}) as Record<string, never>
+}
+
+function omitObjectKeys(
   value: Record<string, unknown> | null | undefined,
+  keys: string[],
 ) {
-  return value as Record<string, never> | undefined;
-}
+  const source = value ?? {}
+  const nextValue: Record<string, unknown> = {}
 
-function asRequiredSchemaJson(
-  value: Record<string, unknown> | null | undefined,
-) {
-  return value as Record<string, never>;
-}
-
-function buildFormState(record: CmsRecord | null): CmsEditorFormState {
-  if (!record) {
-    return EMPTY_FORM_STATE;
-  }
-
-  if ("slug" in record) {
-    return {
-      ...EMPTY_FORM_STATE,
-      bodyJsonText: stringifyJsonInput(record.bodyJson),
-      imageAssetId:
-        typeof record.coverImageAssetId === "string" ? record.coverImageAssetId : "",
-      orderIndex: String(record.orderIndex),
-      seoJsonText: stringifyJsonInput(record.seoJson),
-      slug: record.slug,
-      summary: typeof record.summary === "string" ? record.summary : "",
-      title: record.title,
-      visibility: record.visibility,
-    };
-  }
-
-  if ("placement" in record) {
-    return {
-      ...EMPTY_FORM_STATE,
-      bodyText: typeof record.body === "string" ? record.body : "",
-      ctaHref: typeof record.ctaHref === "string" ? record.ctaHref : "",
-      ctaLabel: typeof record.ctaLabel === "string" ? record.ctaLabel : "",
-      endsAt: toDatetimeLocalValue(
-        typeof record.endsAt === "string" ? record.endsAt : null,
-      ),
-      imageAssetId:
-        typeof record.imageAssetId === "string" ? record.imageAssetId : "",
-      metaJsonText: stringifyJsonInput(record.metaJson),
-      orderIndex: String(record.orderIndex),
-      placement: record.placement,
-      startsAt: toDatetimeLocalValue(
-        typeof record.startsAt === "string" ? record.startsAt : null,
-      ),
-      subtitle: typeof record.subtitle === "string" ? record.subtitle : "",
-      title: record.title,
-      visibility: record.visibility,
-    };
-  }
-
-  if ("level" in record) {
-    return {
-      ...EMPTY_FORM_STATE,
-      bodyText: record.body,
-      endsAt: toDatetimeLocalValue(
-        typeof record.endsAt === "string" ? record.endsAt : null,
-      ),
-      isPinned: record.isPinned,
-      level: record.level,
-      linkHref: typeof record.linkHref === "string" ? record.linkHref : "",
-      linkLabel: typeof record.linkLabel === "string" ? record.linkLabel : "",
-      metaJsonText: stringifyJsonInput(record.metaJson),
-      orderIndex: String(record.orderIndex),
-      startsAt: toDatetimeLocalValue(
-        typeof record.startsAt === "string" ? record.startsAt : null,
-      ),
-      title: record.title,
-      visibility: record.visibility,
-    };
-  }
-
-  return {
-    ...EMPTY_FORM_STATE,
-    bodyJsonText: stringifyJsonInput(record.bodyJson),
-    configJsonText: stringifyJsonInput(record.configJson),
-    code: record.code,
-    imageAssetId: typeof record.imageAssetId === "string" ? record.imageAssetId : "",
-    orderIndex: String(record.orderIndex),
-    subtitle: typeof record.subtitle === "string" ? record.subtitle : "",
-    surface: record.surface,
-    title: record.title,
-    type: record.type,
-    visibility: record.visibility,
-  };
-}
-
-function sortRecords(records: CmsRecord[], orderedIds: string[]) {
-  if (orderedIds.length === 0) {
-    return [...records].sort((left, right) => left.orderIndex - right.orderIndex);
-  }
-
-  const orderLookup = new Map(orderedIds.map((id, index) => [id, index]));
-
-  return [...records].sort((left, right) => {
-    const leftIndex = orderLookup.get(left.id);
-    const rightIndex = orderLookup.get(right.id);
-
-    if (leftIndex === undefined && rightIndex === undefined) {
-      return left.orderIndex - right.orderIndex;
+  for (const [key, entry] of Object.entries(source)) {
+    if (keys.includes(key)) {
+      continue
     }
 
-    if (leftIndex === undefined) {
-      return 1;
+    nextValue[key] = entry
+  }
+
+  return nextValue
+}
+
+function mergeSchemaObjects(...values: Array<Record<string, unknown> | undefined>) {
+  const nextValue: Record<string, unknown> = {}
+
+  for (const entry of values) {
+    if (!entry) {
+      continue
     }
 
-    if (rightIndex === undefined) {
-      return -1;
-    }
-
-    return leftIndex - rightIndex;
-  });
-}
-
-function moveRecord(ids: string[], targetId: string, direction: -1 | 1) {
-  const currentIndex = ids.indexOf(targetId);
-
-  if (currentIndex < 0) {
-    return ids;
+    Object.assign(nextValue, entry)
   }
 
-  const nextIndex = currentIndex + direction;
-
-  if (nextIndex < 0 || nextIndex >= ids.length) {
-    return ids;
-  }
-
-  const nextIds = [...ids];
-  const [moved] = nextIds.splice(currentIndex, 1);
-  nextIds.splice(nextIndex, 0, moved);
-  return nextIds;
+  return Object.keys(nextValue).length > 0 ? nextValue : undefined
 }
 
-function hasMatchingOrder(ids: string[], records: CmsRecord[]) {
-  if (ids.length !== records.length) {
-    return false;
+function readCmsRichTextHtml(value: unknown) {
+  if (isRecord(value) && Array.isArray(value.paragraphs)) {
+    return buildParagraphHtmlFromArray(value.paragraphs)
   }
 
-  const recordIds = new Set(records.map((record) => record.id));
-  return ids.every((id) => recordIds.has(id));
+  return readStructuredDocumentHtml(value)
 }
 
-function buildCollectionQuery(
+function getCmsCollectionHref(collection: CmsCollection) {
+  return `/admin/cms/${collection}`
+}
+
+function getCmsEditorHref(collection: CmsCollection, recordId: string) {
+  return `${getCmsCollectionHref(collection)}/${recordId}`
+}
+
+function getCmsNewHref(collection: CmsCollection) {
+  return `${getCmsCollectionHref(collection)}/new`
+}
+
+function buildCmsCollectionQuery(
   collection: CmsCollection,
   filters: {
-    placement: string;
-    search: string;
-    status: string;
-    surface: string;
-    visibility: string;
+    placement: string
+    search: string
+    status: string
+    surface: string
+    visibility: string
   },
 ): NonNullable<CmsListQuery> {
   return {
@@ -331,41 +359,330 @@ function buildCollectionQuery(
     status: filters.status ? (filters.status as CmsStatus) : undefined,
     surface: collection === "sections" ? (filters.surface as CmsSectionSurface) : undefined,
     visibility: filters.visibility ? (filters.visibility as CmsVisibility) : undefined,
-  };
+  }
+}
+
+async function listCmsRecords(
+  collection: CmsCollection,
+  accessToken: string,
+  query: CmsListQuery = {},
+) {
+  switch (collection) {
+    case "pages":
+      return listAdminCmsPages(accessToken, query)
+    case "banners":
+      return listAdminCmsBanners(accessToken, query)
+    case "announcements":
+      return listAdminCmsAnnouncements(accessToken, query)
+    case "sections":
+      return listAdminCmsSections(accessToken, query)
+  }
+}
+
+function sortRecords(records: CmsRecord[], orderedIds: string[]) {
+  if (orderedIds.length === 0) {
+    return [...records].sort((left, right) => left.orderIndex - right.orderIndex)
+  }
+
+  const orderLookup = new Map(orderedIds.map((id, index) => [id, index]))
+
+  return [...records].sort((left, right) => {
+    const leftIndex = orderLookup.get(left.id)
+    const rightIndex = orderLookup.get(right.id)
+
+    if (leftIndex === undefined && rightIndex === undefined) {
+      return left.orderIndex - right.orderIndex
+    }
+
+    if (leftIndex === undefined) {
+      return 1
+    }
+
+    if (rightIndex === undefined) {
+      return -1
+    }
+
+    return leftIndex - rightIndex
+  })
+}
+
+function moveRecord(ids: string[], targetId: string, direction: -1 | 1) {
+  const currentIndex = ids.indexOf(targetId)
+
+  if (currentIndex < 0) {
+    return ids
+  }
+
+  const nextIndex = currentIndex + direction
+  if (nextIndex < 0 || nextIndex >= ids.length) {
+    return ids
+  }
+
+  const nextIds = [...ids]
+  const [moved] = nextIds.splice(currentIndex, 1)
+  nextIds.splice(nextIndex, 0, moved)
+  return nextIds
+}
+
+function hasMatchingOrder(ids: string[], records: CmsRecord[]) {
+  if (ids.length !== records.length) {
+    return false
+  }
+
+  const recordIds = new Set(records.map((record) => record.id))
+  return ids.every((id) => recordIds.has(id))
+}
+
+function getCmsRouteTabs() {
+  return [
+    {
+      href: getCmsCollectionHref("pages"),
+      label: "Pages",
+      description: "Standalone public pages and policy screens.",
+    },
+    {
+      href: getCmsCollectionHref("banners"),
+      label: "Banners",
+      description: "Home hero and shared promotional banners.",
+    },
+    {
+      href: getCmsCollectionHref("announcements"),
+      label: "Announcements",
+      description: "Public and student-facing notices.",
+    },
+    {
+      href: getCmsCollectionHref("sections"),
+      label: "Sections",
+      description: "Landing and student home modules.",
+    },
+  ]
+}
+
+function buildFormState(record: CmsRecord | null): CmsEditorFormState {
+  if (!record) {
+    return EMPTY_FORM_STATE
+  }
+
+  if ("slug" in record) {
+    const seoJson = isRecord(record.seoJson) ? record.seoJson : {}
+    const rawKeywords: unknown[] = Array.isArray(seoJson["keywords"])
+      ? seoJson["keywords"]
+      : []
+    const keywords = rawKeywords
+          .filter((entry): entry is string => typeof entry === "string")
+          .join(", ")
+
+    return {
+      ...EMPTY_FORM_STATE,
+      imageAssetId: readString(record.coverImageAssetId),
+      orderIndex: String(record.orderIndex),
+      pageBodyHtml: readStructuredDocumentHtml(record.bodyJson),
+      seoDescription: readString(seoJson.description),
+      seoExtraRows: parseKeyValueObject(
+        omitObjectKeys(seoJson, ["title", "description", "keywords", "noIndex"]),
+      ),
+      seoKeywords: keywords,
+      seoNoIndex: seoJson.noIndex === true,
+      seoTitle: readString(seoJson.title),
+      slug: record.slug,
+      summary: readString(record.summary),
+      title: record.title,
+      visibility: record.visibility,
+    }
+  }
+
+  if ("placement" in record) {
+    const metaJson = isRecord(record.metaJson) ? record.metaJson : {}
+
+    return {
+      ...EMPTY_FORM_STATE,
+      bannerBodyHtml: readString(record.body),
+      bannerMetaRows: parseKeyValueObject(
+        omitObjectKeys(metaJson, ["secondaryCtaHref", "secondaryCtaLabel", "stats"]),
+      ),
+      bannerSecondaryCtaHref: readString(metaJson.secondaryCtaHref),
+      bannerSecondaryCtaLabel: readString(metaJson.secondaryCtaLabel),
+      bannerStatsRows: buildCmsStatRows(metaJson.stats),
+      ctaHref: readString(record.ctaHref),
+      ctaLabel: readString(record.ctaLabel),
+      endsAt: toDatetimeLocalValue(record.endsAt),
+      imageAssetId: readString(record.imageAssetId),
+      orderIndex: String(record.orderIndex),
+      placement: record.placement,
+      startsAt: toDatetimeLocalValue(record.startsAt),
+      subtitle: readString(record.subtitle),
+      title: record.title,
+      visibility: record.visibility,
+    }
+  }
+
+  if ("level" in record) {
+    return {
+      ...EMPTY_FORM_STATE,
+      announcementBodyHtml: record.body,
+      announcementMetaRows: parseKeyValueObject(record.metaJson),
+      endsAt: toDatetimeLocalValue(record.endsAt),
+      isPinned: record.isPinned,
+      level: record.level,
+      linkHref: readString(record.linkHref),
+      linkLabel: readString(record.linkLabel),
+      orderIndex: String(record.orderIndex),
+      startsAt: toDatetimeLocalValue(record.startsAt),
+      title: record.title,
+      visibility: record.visibility,
+    }
+  }
+
+  const configJson = isRecord(record.configJson) ? record.configJson : {}
+
+  return {
+    ...EMPTY_FORM_STATE,
+    code: record.code,
+    columns:
+      typeof configJson.columns === "number" ? String(configJson.columns) : "",
+    eyeBrow: readString(configJson.eyebrow),
+    imageAssetId: readString(record.imageAssetId),
+    note: readString(configJson.note),
+    orderIndex: String(record.orderIndex),
+    sectionConfigRows: parseKeyValueObject(
+      omitObjectKeys(configJson, ["columns", "eyebrow", "note"]),
+    ),
+    sectionCtaRows:
+      record.type === "CTA_GROUP" ? buildCmsCtaRows(record.bodyJson?.items) : [],
+    sectionFeedRows:
+      record.type === "CONTENT_FEED"
+        ? buildCmsFeedItemRows(record.bodyJson?.items)
+        : [],
+    sectionRichTextHtml:
+      record.type === "RICH_TEXT" ? readCmsRichTextHtml(record.bodyJson) : "",
+    sectionStatsRows:
+      record.type === "RICH_TEXT" ? buildCmsStatRows(record.bodyJson?.stats) : [],
+    subtitle: readString(record.subtitle),
+    surface: record.surface,
+    title: record.title,
+    type: record.type,
+    visibility: record.visibility,
+  }
+}
+
+function buildPageSeoJson(form: CmsEditorFormState) {
+  const keywords = form.seoKeywords
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+
+  return mergeSchemaObjects(
+    serializeKeyValueRows(form.seoExtraRows),
+    trimOrUndefined(form.seoTitle) ? { title: trimOrUndefined(form.seoTitle) } : undefined,
+    trimOrUndefined(form.seoDescription)
+      ? { description: trimOrUndefined(form.seoDescription) }
+      : undefined,
+    keywords.length > 0 ? { keywords } : undefined,
+    form.seoNoIndex ? { noIndex: true } : undefined,
+  )
+}
+
+function buildBannerMetaJson(form: CmsEditorFormState) {
+  return mergeSchemaObjects(
+    serializeKeyValueRows(form.bannerMetaRows),
+    trimOrUndefined(form.bannerSecondaryCtaLabel)
+      ? { secondaryCtaLabel: trimOrUndefined(form.bannerSecondaryCtaLabel) }
+      : undefined,
+    trimOrUndefined(form.bannerSecondaryCtaHref)
+      ? { secondaryCtaHref: trimOrUndefined(form.bannerSecondaryCtaHref) }
+      : undefined,
+    serializeCmsStatRows(form.bannerStatsRows)
+      ? { stats: serializeCmsStatRows(form.bannerStatsRows) }
+      : undefined,
+  )
+}
+
+function buildSectionConfigJson(form: CmsEditorFormState) {
+  return mergeSchemaObjects(
+    serializeKeyValueRows(form.sectionConfigRows),
+    trimOrUndefined(form.eyeBrow) ? { eyebrow: trimOrUndefined(form.eyeBrow) } : undefined,
+    form.type === "CONTENT_FEED" && toOptionalNumber(form.columns)
+      ? { columns: toOptionalNumber(form.columns) }
+      : undefined,
+    form.type === "PLAN_HIGHLIGHTS" && trimOrUndefined(form.note)
+      ? { note: trimOrUndefined(form.note) }
+      : undefined,
+  )
+}
+
+function buildSectionBodyJson(form: CmsEditorFormState) {
+  if (form.type === "RICH_TEXT") {
+    return mergeSchemaObjects(
+      buildStructuredDocumentFromHtml(form.sectionRichTextHtml),
+      serializeCmsStatRows(form.sectionStatsRows)
+        ? { stats: serializeCmsStatRows(form.sectionStatsRows) }
+        : undefined,
+    )
+  }
+
+  if (form.type === "CONTENT_FEED") {
+    const items = serializeCmsFeedItemRows(form.sectionFeedRows)
+    return items ? { items } : undefined
+  }
+
+  if (form.type === "CTA_GROUP") {
+    const items = serializeCmsCtaRows(form.sectionCtaRows)
+    return items ? { items } : undefined
+  }
+
+  return undefined
+}
+
+function hasMeaningfulHtml(value: string) {
+  return htmlToPlainText(value).trim().length > 0
+}
+
+function buildEditorTitle(collection: CmsCollection, record: CmsRecord | null) {
+  if (record) {
+    return htmlToPlainText(record.title) || record.title
+  }
+
+  const label = getCmsCollectionLabel(collection)
+  return `New ${label.slice(0, -1).toLowerCase()}`
 }
 
 export function AdminCmsManagementScreen({
   collection,
+  recordId,
+  view = "list",
 }: Readonly<{
-  collection: CmsCollection;
+  collection: CmsCollection
+  recordId?: string
+  view?: CmsManagementView
 }>) {
-  const authSession = useAuthSession();
-  const queryClient = useQueryClient();
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
-  const [visibility, setVisibility] = useState("");
-  const [placement, setPlacement] = useState("");
-  const [surface, setSurface] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
-  const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
-  const [editorState, setEditorState] = useState<CmsEditorFormState | null>(null);
-  const [editorAsset, setEditorAsset] = useState<{
-    accessLevel?: string;
-    contentType?: string;
-    id: string;
-    originalFileName: string;
-    publicDeliveryPath?: string;
-    status?: string;
-  } | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [orderIds, setOrderIds] = useState<string[]>([]);
+  if (view === "editor") {
+    return <AdminCmsEditorScreen collection={collection} recordId={recordId} />
+  }
 
-  const hasManagePermission = authSession.hasPermission("content.cms.manage");
-  const hasPublishPermission = authSession.hasPermission("content.cms.publish");
+  return <AdminCmsListScreen collection={collection} />
+}
+
+function AdminCmsListScreen({
+  collection,
+}: Readonly<{
+  collection: CmsCollection
+}>) {
+  const router = useRouter()
+  const authSession = useAuthSession()
+  const queryClient = useQueryClient()
+  const [search, setSearch] = useState("")
+  const [status, setStatus] = useState("")
+  const [visibility, setVisibility] = useState("")
+  const [placement, setPlacement] = useState("")
+  const [surface, setSurface] = useState("")
+  const [message, setMessage] = useState<string | null>(null)
+  const [orderIds, setOrderIds] = useState<string[]>([])
+
+  const hasManagePermission = authSession.hasPermission("content.cms.manage")
 
   const filters = useMemo(
     () =>
-      buildCollectionQuery(collection, {
+      buildCmsCollectionQuery(collection, {
         placement,
         search,
         status,
@@ -373,26 +690,15 @@ export function AdminCmsManagementScreen({
         visibility,
       }),
     [collection, placement, search, status, surface, visibility],
-  );
+  )
 
   const listQuery = useAuthenticatedQuery({
-    queryFn: async (accessToken) => {
-      switch (collection) {
-        case "pages":
-          return listAdminCmsPages(accessToken, filters);
-        case "banners":
-          return listAdminCmsBanners(accessToken, filters);
-        case "announcements":
-          return listAdminCmsAnnouncements(accessToken, filters);
-        case "sections":
-          return listAdminCmsSections(accessToken, filters);
-      }
-    },
+    queryFn: (accessToken) => listCmsRecords(collection, accessToken, filters),
     queryKey: adminQueryKeys.cms(collection, filters),
     staleTime: 15_000,
-  });
+  })
 
-  const records = useMemo(() => (listQuery.data?.items ?? []) as CmsRecord[], [listQuery.data]);
+  const records = useMemo(() => (listQuery.data?.items ?? []) as CmsRecord[], [listQuery.data])
   const defaultOrderIds = useMemo(
     () =>
       records
@@ -400,281 +706,75 @@ export function AdminCmsManagementScreen({
         .sort((left, right) => left.orderIndex - right.orderIndex)
         .map((record) => record.id),
     [records],
-  );
+  )
   const effectiveOrderIds = useMemo(
     () => (hasMatchingOrder(orderIds, records) ? orderIds : defaultOrderIds),
     [defaultOrderIds, orderIds, records],
-  );
+  )
   const sortedRecords = useMemo(
     () => sortRecords(records, effectiveOrderIds),
     [effectiveOrderIds, records],
-  );
-  const selectedRecord = useMemo(() => {
-    if (isCreating) {
-      return null;
-    }
-
-    if (selectedRecordId) {
-      return (
-        sortedRecords.find((record) => record.id === selectedRecordId) ??
-        sortedRecords[0] ??
-        null
-      );
-    }
-
-    return sortedRecords[0] ?? null;
-  }, [isCreating, selectedRecordId, sortedRecords]);
-  const hasExplicitSelection =
-    Boolean(selectedRecordId) &&
-    sortedRecords.some((record) => record.id === selectedRecordId);
-  const activeEditorState =
-    isCreating || hasExplicitSelection
-      ? (editorState ?? buildFormState(selectedRecord))
-      : buildFormState(selectedRecord);
-  const activeEditorAsset =
-    isCreating || hasExplicitSelection
-      ? (editorAsset ?? getCmsRecordAsset(selectedRecord) ?? null)
-      : (getCmsRecordAsset(selectedRecord) ?? null);
-
-  async function invalidateCollection() {
-    await queryClient.invalidateQueries({
-      queryKey: adminQueryKeys.cms(collection, filters),
-    });
-  }
-
-  const saveMutation = useAuthenticatedMutation({
-    mutationFn: async (_: undefined, accessToken) => {
-      switch (collection) {
-        case "pages": {
-          const payload = {
-            slug: activeEditorState.slug.trim(),
-            title: activeEditorState.title.trim(),
-            summary: activeEditorState.summary.trim() || undefined,
-            bodyJson: asRequiredSchemaJson(
-              safeJsonParse(activeEditorState.bodyJsonText, {
-                label: "Body JSON",
-              }),
-            ),
-            seoJson: asSchemaJson(
-              safeJsonParse(activeEditorState.seoJsonText, {
-                allowEmpty: true,
-                label: "SEO JSON",
-              }) ?? undefined,
-            ),
-            visibility: activeEditorState.visibility,
-            coverImageAssetId: activeEditorState.imageAssetId.trim() || undefined,
-            orderIndex: toOrderIndex(activeEditorState.orderIndex),
-          };
-
-          return selectedRecord
-            ? updateAdminCmsPage(selectedRecord.id, payload, accessToken)
-            : createAdminCmsPage(payload, accessToken);
-        }
-
-        case "banners": {
-          const payload = {
-            placement: activeEditorState.placement,
-            title: activeEditorState.title.trim(),
-            subtitle: activeEditorState.subtitle.trim() || undefined,
-            body: activeEditorState.bodyText.trim() || undefined,
-            ctaLabel: activeEditorState.ctaLabel.trim() || undefined,
-            ctaHref: activeEditorState.ctaHref.trim() || undefined,
-            imageAssetId: activeEditorState.imageAssetId.trim() || undefined,
-            visibility: activeEditorState.visibility,
-            orderIndex: toOrderIndex(activeEditorState.orderIndex),
-            startsAt: toIsoDateTime(activeEditorState.startsAt),
-            endsAt: toIsoDateTime(activeEditorState.endsAt),
-            metaJson: asSchemaJson(
-              safeJsonParse(activeEditorState.metaJsonText, {
-                allowEmpty: true,
-                label: "Meta JSON",
-              }) ?? undefined,
-            ),
-          };
-
-          return selectedRecord
-            ? updateAdminCmsBanner(selectedRecord.id, payload, accessToken)
-            : createAdminCmsBanner(payload, accessToken);
-        }
-
-        case "announcements": {
-          const payload = {
-            title: activeEditorState.title.trim(),
-            body: activeEditorState.bodyText.trim(),
-            linkLabel: activeEditorState.linkLabel.trim() || undefined,
-            linkHref: activeEditorState.linkHref.trim() || undefined,
-            level: activeEditorState.level,
-            visibility: activeEditorState.visibility,
-            isPinned: activeEditorState.isPinned,
-            orderIndex: toOrderIndex(activeEditorState.orderIndex),
-            startsAt: toIsoDateTime(activeEditorState.startsAt),
-            endsAt: toIsoDateTime(activeEditorState.endsAt),
-            metaJson: asSchemaJson(
-              safeJsonParse(activeEditorState.metaJsonText, {
-                allowEmpty: true,
-                label: "Meta JSON",
-              }) ?? undefined,
-            ),
-          };
-
-          return selectedRecord
-            ? updateAdminCmsAnnouncement(selectedRecord.id, payload, accessToken)
-            : createAdminCmsAnnouncement(payload, accessToken);
-        }
-
-        case "sections": {
-          const payload = {
-            surface: activeEditorState.surface,
-            code: activeEditorState.code.trim(),
-            title: activeEditorState.title.trim(),
-            subtitle: activeEditorState.subtitle.trim() || undefined,
-            type: activeEditorState.type,
-            bodyJson: asSchemaJson(
-              safeJsonParse(activeEditorState.bodyJsonText, {
-                allowEmpty: true,
-                label: "Body JSON",
-              }) ?? undefined,
-            ),
-            configJson: asSchemaJson(
-              safeJsonParse(activeEditorState.configJsonText, {
-                allowEmpty: true,
-                label: "Config JSON",
-              }) ?? undefined,
-            ),
-            imageAssetId: activeEditorState.imageAssetId.trim() || undefined,
-            visibility: activeEditorState.visibility,
-            orderIndex: toOrderIndex(activeEditorState.orderIndex),
-          };
-
-          return selectedRecord
-            ? updateAdminCmsSection(selectedRecord.id, payload, accessToken)
-            : createAdminCmsSection(payload, accessToken);
-        }
-      }
-    },
-    onSuccess: async (record) => {
-      setMessage(
-        selectedRecord
-          ? `${getCmsCollectionLabel(collection)} record updated successfully.`
-          : `${getCmsCollectionLabel(collection)} record created successfully.`,
-      );
-      setIsCreating(false);
-      setSelectedRecordId(record.id);
-      setEditorState(buildFormState(record));
-      setEditorAsset(getCmsRecordAsset(record) ?? null);
-      await invalidateCollection();
-    },
-  });
-
-  const publishMutation = useAuthenticatedMutation({
-    mutationFn: async (_: undefined, accessToken) => {
-      if (!selectedRecord) {
-        throw new Error("Select a record before changing publish status.");
-      }
-
-      switch (collection) {
-        case "pages":
-          return isCmsRecordPublished(selectedRecord)
-            ? unpublishAdminCmsPage(selectedRecord.id, accessToken)
-            : publishAdminCmsPage(selectedRecord.id, accessToken);
-        case "banners":
-          return isCmsRecordPublished(selectedRecord)
-            ? unpublishAdminCmsBanner(selectedRecord.id, accessToken)
-            : publishAdminCmsBanner(selectedRecord.id, accessToken);
-        case "announcements":
-          return isCmsRecordPublished(selectedRecord)
-            ? unpublishAdminCmsAnnouncement(selectedRecord.id, accessToken)
-            : publishAdminCmsAnnouncement(selectedRecord.id, accessToken);
-        case "sections":
-          return isCmsRecordPublished(selectedRecord)
-            ? unpublishAdminCmsSection(selectedRecord.id, accessToken)
-            : publishAdminCmsSection(selectedRecord.id, accessToken);
-      }
-    },
-    onSuccess: async (record) => {
-      setMessage(
-        isCmsRecordPublished(record)
-          ? `${record.title} is now published.`
-          : `${record.title} is back in draft mode.`,
-      );
-      setIsCreating(false);
-      setEditorState(buildFormState(record));
-      setEditorAsset(getCmsRecordAsset(record) ?? null);
-      await invalidateCollection();
-    },
-  });
+  )
 
   const reorderMutation = useAuthenticatedMutation({
-    mutationFn: async (_: undefined, accessToken) => {
+    mutationFn: async (_unused: undefined, accessToken) => {
       const payload = {
         orderedIds: effectiveOrderIds,
-      };
+      }
 
       switch (collection) {
         case "pages":
-          return reorderAdminCmsPages(payload, accessToken);
+          return reorderAdminCmsPages(payload, accessToken)
         case "banners":
-          return reorderAdminCmsBanners(payload, accessToken);
+          return reorderAdminCmsBanners(payload, accessToken)
         case "announcements":
-          return reorderAdminCmsAnnouncements(payload, accessToken);
+          return reorderAdminCmsAnnouncements(payload, accessToken)
         case "sections":
-          return reorderAdminCmsSections(payload, accessToken);
+          return reorderAdminCmsSections(payload, accessToken)
       }
     },
     onSuccess: async () => {
-      setMessage(`${getCmsCollectionLabel(collection)} order synced with the backend.`);
-      await invalidateCollection();
+      setMessage(`${getCmsCollectionLabel(collection)} order saved.`)
+      await queryClient.invalidateQueries({
+        queryKey: ["admin", "cms", collection],
+      })
     },
-  });
+  })
 
   if (listQuery.isLoading) {
     return (
       <LoadingState
         title={`Loading ${getCmsCollectionLabel(collection).toLowerCase()}`}
-        description="Fetching the latest records for this section."
+        description="Fetching the latest records for this CMS collection."
       />
-    );
+    )
   }
 
-  if (listQuery.error) {
+  if (listQuery.isError) {
     return (
       <ErrorState
         title={`The ${getCmsCollectionLabel(collection).toLowerCase()} workspace could not be loaded.`}
-        description="We couldn't load this CMS section right now."
+        description="We couldn't load this CMS collection right now."
         onRetry={() => void listQuery.refetch()}
       />
-    );
+    )
   }
 
   return (
     <div className="flex flex-col gap-6">
       <AdminPageHeader
-        eyebrow={`${getCmsCollectionLabel(collection)} management`}
+        eyebrow="CMS management"
         title={getCmsCollectionLabel(collection)}
-        description="Search, filter, reorder, edit, upload assets, and publish records for this website section."
+        description="Use the list here for filtering and ordering, then open a dedicated editor page to create or update one record at a time."
         actions={
           <>
+            <Link href={getCmsNewHref(collection)} className="tc-button-primary">
+              New record
+            </Link>
             <button
               type="button"
               className="tc-button-secondary"
-              onClick={() => {
-                setMessage(null);
-                setIsCreating(true);
-                setSelectedRecordId(null);
-                setEditorState(buildFormState(null));
-                setEditorAsset(null);
-              }}
-            >
-              New record
-            </button>
-            <button
-              type="button"
-              className="tc-button-primary"
-              disabled={
-                !hasManagePermission ||
-                reorderMutation.isPending ||
-                effectiveOrderIds.length === 0
-              }
+              disabled={!hasManagePermission || effectiveOrderIds.length === 0 || reorderMutation.isPending}
               onClick={() => reorderMutation.mutate(undefined)}
             >
               {reorderMutation.isPending ? "Saving order..." : "Save order"}
@@ -682,6 +782,517 @@ export function AdminCmsManagementScreen({
           </>
         }
       />
+
+      <AdminRouteTabs
+        activeHref={getCmsCollectionHref(collection)}
+        items={getCmsRouteTabs()}
+      />
+
+      {message ? <AdminInlineNotice tone="success">{message}</AdminInlineNotice> : null}
+      {reorderMutation.error ? (
+        <AdminInlineNotice tone="warning">
+          {getApiErrorMessage(reorderMutation.error, "The visible order could not be saved.")}
+        </AdminInlineNotice>
+      ) : null}
+      {!hasManagePermission ? (
+        <AdminInlineNotice>
+          This login can review the CMS collections but cannot change records.
+        </AdminInlineNotice>
+      ) : null}
+
+      <AdminFilterBar
+        searchPlaceholder={`Search ${getCmsCollectionLabel(collection).toLowerCase()} by title or code`}
+        searchValue={search}
+        onSearchValueChange={setSearch}
+        resultSummary={`${records.length} ${getCmsCollectionLabel(collection).toLowerCase()} found`}
+        actions={
+          <button
+            type="button"
+            className="tc-button-secondary"
+            onClick={() => {
+              setSearch("")
+              setStatus("")
+              setVisibility("")
+              setPlacement("")
+              setSurface("")
+            }}
+          >
+            Reset filters
+          </button>
+        }
+      >
+        <AdminSelect
+          label="Status"
+          value={status}
+          onChange={(event) => setStatus(event.target.value)}
+        >
+          <option value="">All statuses</option>
+          {CMS_STATUS_OPTIONS.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </AdminSelect>
+        <AdminSelect
+          label="Visibility"
+          value={visibility}
+          onChange={(event) => setVisibility(event.target.value)}
+        >
+          <option value="">All visibility</option>
+          {CMS_VISIBILITY_OPTIONS.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </AdminSelect>
+        {collection === "banners" ? (
+          <AdminSelect
+            label="Placement"
+            value={placement}
+            onChange={(event) => setPlacement(event.target.value)}
+          >
+            <option value="">All placements</option>
+            {CMS_PLACEMENT_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </AdminSelect>
+        ) : null}
+        {collection === "sections" ? (
+          <AdminSelect
+            label="Surface"
+            value={surface}
+            onChange={(event) => setSurface(event.target.value)}
+          >
+            <option value="">All surfaces</option>
+            {CMS_SURFACE_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {getCmsSurfaceLabel(option)}
+              </option>
+            ))}
+          </AdminSelect>
+        ) : null}
+      </AdminFilterBar>
+
+      <AdminDataTable
+        columns={[
+          {
+            header: "Record",
+            render: (record: CmsRecord) => (
+              <div className="space-y-2">
+                <TextContent
+                  as="p"
+                  className="font-semibold text-[color:var(--brand)]"
+                  value={record.title}
+                />
+                <p className="text-xs text-[color:var(--muted)]">
+                  {htmlToPlainText(summarizeCmsRecord(record)) || summarizeCmsRecord(record)}
+                </p>
+              </div>
+            ),
+          },
+          {
+            header: "Status",
+            render: (record: CmsRecord) => (
+              <div className="flex flex-wrap gap-2">
+                <AdminStatusBadge status={record.status} />
+                <AdminVisibilityBadge visibility={record.visibility} />
+                {"level" in record ? (
+                  <AdminAnnouncementLevelBadge level={record.level} />
+                ) : null}
+              </div>
+            ),
+          },
+          {
+            header: "Order",
+            render: (record: CmsRecord) => (
+              <div className="space-y-2 text-sm text-[color:var(--muted)]">
+                <p>#{record.orderIndex}</p>
+                <p>
+                  {formatAdminDateTime(
+                    "publishedAt" in record && typeof record.publishedAt === "string"
+                      ? record.publishedAt
+                      : null,
+                  )}
+                </p>
+              </div>
+            ),
+          },
+          {
+            header: "Actions",
+            render: (record: CmsRecord) => (
+              <div className="flex flex-wrap gap-2">
+                <Link href={getCmsEditorHref(collection, record.id)} className="tc-button-secondary">
+                  Edit
+                </Link>
+                <button
+                  type="button"
+                  className="tc-button-secondary"
+                  disabled={!hasManagePermission}
+                  onClick={() =>
+                    setOrderIds((current) =>
+                      moveRecord(
+                        hasMatchingOrder(current, records) ? current : defaultOrderIds,
+                        record.id,
+                        -1,
+                      ),
+                    )
+                  }
+                >
+                  Up
+                </button>
+                <button
+                  type="button"
+                  className="tc-button-secondary"
+                  disabled={!hasManagePermission}
+                  onClick={() =>
+                    setOrderIds((current) =>
+                      moveRecord(
+                        hasMatchingOrder(current, records) ? current : defaultOrderIds,
+                        record.id,
+                        1,
+                      ),
+                    )
+                  }
+                >
+                  Down
+                </button>
+              </div>
+            ),
+          },
+        ]}
+        emptyState={
+          <EmptyState
+            eyebrow="No records"
+            title={`No ${getCmsCollectionLabel(collection).toLowerCase()} matched the current filters.`}
+            description="Reset the filters or create the first record for this CMS collection."
+          />
+        }
+        getRowId={(record: CmsRecord) => record.id}
+        onRowClick={(record: CmsRecord) => router.push(getCmsEditorHref(collection, record.id))}
+        rows={sortedRecords}
+      />
+    </div>
+  )
+}
+
+function AdminCmsEditorScreen({
+  collection,
+  recordId,
+}: Readonly<{
+  collection: CmsCollection
+  recordId?: string
+}>) {
+  const authSession = useAuthSession()
+  const canReadCms = authSession.hasPermission("content.cms.read")
+
+  const listQuery = useAuthenticatedQuery({
+    enabled: Boolean(recordId) && canReadCms,
+    queryFn: (accessToken) => listCmsRecords(collection, accessToken),
+    queryKey: adminQueryKeys.cms(collection, {}),
+    staleTime: 15_000,
+  })
+
+  const currentRecord = useMemo(() => {
+    if (!recordId) {
+      return null
+    }
+
+    return ((listQuery.data?.items ?? []) as CmsRecord[]).find((record) => record.id === recordId) ?? null
+  }, [listQuery.data?.items, recordId])
+
+  if (recordId && listQuery.isLoading) {
+    return (
+      <LoadingState
+        title={`Loading ${getCmsCollectionLabel(collection).slice(0, -1).toLowerCase()} editor`}
+        description="Fetching this CMS record and its current publication state."
+      />
+    )
+  }
+
+  if (recordId && listQuery.isError) {
+    return (
+      <ErrorState
+        title="The CMS editor could not load."
+        description="We couldn't finish loading this record."
+        onRetry={() => void listQuery.refetch()}
+      />
+    )
+  }
+
+  if (recordId && !currentRecord) {
+    return (
+      <EmptyState
+        eyebrow="CMS"
+        title="This record could not be found."
+        description="Return to the collection list and choose another record."
+      />
+    )
+  }
+
+  return (
+    <AdminCmsEditorForm
+      key={
+        currentRecord
+          ? `${collection}:${currentRecord.id}:${typeof currentRecord.publishedAt === "string" ? currentRecord.publishedAt : "loaded"}`
+          : `${collection}:new`
+      }
+      collection={collection}
+      record={currentRecord}
+    />
+  )
+}
+
+function AdminCmsEditorForm({
+  collection,
+  record,
+}: Readonly<{
+  collection: CmsCollection
+  record: CmsRecord | null
+}>) {
+  const router = useRouter()
+  const queryClient = useQueryClient()
+  const authSession = useAuthSession()
+  const hasManagePermission = authSession.hasPermission("content.cms.manage")
+  const hasPublishPermission = authSession.hasPermission("content.cms.publish")
+  const [currentRecord, setCurrentRecord] = useState<CmsRecord | null>(record)
+  const [form, setForm] = useState<CmsEditorFormState>(() => buildFormState(record))
+  const [currentAsset, setCurrentAsset] = useState<CmsLinkedAsset | null>(
+    (getCmsRecordAsset(record) ?? null) as CmsLinkedAsset | null,
+  )
+  const [message, setMessage] = useState<string | null>(null)
+
+  async function invalidateCollection() {
+    await queryClient.invalidateQueries({
+      queryKey: ["admin", "cms", collection],
+    })
+  }
+
+  const saveMutation = useAuthenticatedMutation({
+    mutationFn: async (_unused: undefined, accessToken) => {
+      switch (collection) {
+        case "pages": {
+          const payload = {
+            bodyJson: asRequiredSchemaJson(
+              buildStructuredDocumentFromHtml(form.pageBodyHtml),
+            ),
+            coverImageAssetId: trimOrUndefined(form.imageAssetId),
+            orderIndex: toOrderIndex(form.orderIndex),
+            seoJson: asSchemaJson(buildPageSeoJson(form)),
+            slug: form.slug.trim(),
+            summary: trimOrUndefined(form.summary),
+            title: form.title.trim(),
+            visibility: form.visibility,
+          }
+
+          return currentRecord
+            ? updateAdminCmsPage(currentRecord.id, payload, accessToken)
+            : createAdminCmsPage(payload, accessToken)
+        }
+
+        case "banners": {
+          const payload = {
+            body: trimOrUndefined(form.bannerBodyHtml),
+            ctaHref: trimOrUndefined(form.ctaHref),
+            ctaLabel: trimOrUndefined(form.ctaLabel),
+            endsAt: toIsoDateTime(form.endsAt),
+            imageAssetId: trimOrUndefined(form.imageAssetId),
+            metaJson: asSchemaJson(buildBannerMetaJson(form)),
+            orderIndex: toOrderIndex(form.orderIndex),
+            placement: form.placement,
+            startsAt: toIsoDateTime(form.startsAt),
+            subtitle: trimOrUndefined(form.subtitle),
+            title: form.title.trim(),
+            visibility: form.visibility,
+          }
+
+          return currentRecord
+            ? updateAdminCmsBanner(currentRecord.id, payload, accessToken)
+            : createAdminCmsBanner(payload, accessToken)
+        }
+
+        case "announcements": {
+          const payload = {
+            body: form.announcementBodyHtml.trim(),
+            endsAt: toIsoDateTime(form.endsAt),
+            isPinned: form.isPinned,
+            level: form.level,
+            linkHref: trimOrUndefined(form.linkHref),
+            linkLabel: trimOrUndefined(form.linkLabel),
+            metaJson: asSchemaJson(serializeKeyValueRows(form.announcementMetaRows)),
+            orderIndex: toOrderIndex(form.orderIndex),
+            startsAt: toIsoDateTime(form.startsAt),
+            title: form.title.trim(),
+            visibility: form.visibility,
+          }
+
+          return currentRecord
+            ? updateAdminCmsAnnouncement(currentRecord.id, payload, accessToken)
+            : createAdminCmsAnnouncement(payload, accessToken)
+        }
+
+        case "sections": {
+          const payload = {
+            bodyJson: asSchemaJson(buildSectionBodyJson(form)),
+            code: form.code.trim(),
+            configJson: asSchemaJson(buildSectionConfigJson(form)),
+            imageAssetId: trimOrUndefined(form.imageAssetId),
+            orderIndex: toOrderIndex(form.orderIndex),
+            subtitle: trimOrUndefined(form.subtitle),
+            surface: form.surface,
+            title: form.title.trim(),
+            type: form.type,
+            visibility: form.visibility,
+          }
+
+          return currentRecord
+            ? updateAdminCmsSection(currentRecord.id, payload, accessToken)
+            : createAdminCmsSection(payload, accessToken)
+        }
+      }
+    },
+    onSuccess: async (savedRecord) => {
+      await invalidateCollection()
+
+      if (!currentRecord) {
+        router.replace(getCmsEditorHref(collection, savedRecord.id))
+        return
+      }
+
+      setCurrentRecord(savedRecord)
+      setCurrentAsset(getCmsRecordAsset(savedRecord) ?? null)
+      setForm(buildFormState(savedRecord))
+      setMessage(`${getCmsCollectionLabel(collection).slice(0, -1)} saved.`)
+    },
+  })
+
+  const publishMutation = useAuthenticatedMutation({
+    mutationFn: async (_unused: undefined, accessToken) => {
+      if (!currentRecord) {
+        throw new Error("Save this record before changing its publish status.")
+      }
+
+      switch (collection) {
+        case "pages":
+          return isCmsRecordPublished(currentRecord)
+            ? unpublishAdminCmsPage(currentRecord.id, accessToken)
+            : publishAdminCmsPage(currentRecord.id, accessToken)
+        case "banners":
+          return isCmsRecordPublished(currentRecord)
+            ? unpublishAdminCmsBanner(currentRecord.id, accessToken)
+            : publishAdminCmsBanner(currentRecord.id, accessToken)
+        case "announcements":
+          return isCmsRecordPublished(currentRecord)
+            ? unpublishAdminCmsAnnouncement(currentRecord.id, accessToken)
+            : publishAdminCmsAnnouncement(currentRecord.id, accessToken)
+        case "sections":
+          return isCmsRecordPublished(currentRecord)
+            ? unpublishAdminCmsSection(currentRecord.id, accessToken)
+            : publishAdminCmsSection(currentRecord.id, accessToken)
+      }
+    },
+    onSuccess: async (savedRecord) => {
+      setCurrentRecord(savedRecord)
+      setCurrentAsset(getCmsRecordAsset(savedRecord) ?? null)
+      setForm(buildFormState(savedRecord))
+      setMessage(
+        isCmsRecordPublished(savedRecord)
+          ? `${htmlToPlainText(savedRecord.title) || "Record"} is published.`
+          : `${htmlToPlainText(savedRecord.title) || "Record"} moved back to draft.`,
+      )
+      await invalidateCollection()
+    },
+  })
+
+  const canSave =
+    collection === "pages"
+      ? Boolean(form.title.trim() && form.slug.trim())
+      : collection === "banners"
+        ? Boolean(form.title.trim())
+        : collection === "announcements"
+          ? Boolean(form.title.trim() && hasMeaningfulHtml(form.announcementBodyHtml))
+          : Boolean(form.title.trim() && form.code.trim())
+
+  return (
+    <div className="flex flex-col gap-6">
+      <AdminPageHeader
+        eyebrow="CMS editor"
+        title={buildEditorTitle(collection, currentRecord)}
+        description="Each CMS record now edits on its own page, with form fields that map back to the same backend DTOs without requiring raw JSON editing."
+        actions={
+          <>
+            <Link href={getCmsCollectionHref(collection)} className="tc-button-secondary">
+              Back to list
+            </Link>
+            {currentRecord ? (
+              <button
+                type="button"
+                className="tc-button-secondary"
+                disabled={!hasPublishPermission || publishMutation.isPending}
+                onClick={() => publishMutation.mutate(undefined)}
+              >
+                {publishMutation.isPending
+                  ? "Updating..."
+                  : isCmsRecordPublished(currentRecord)
+                    ? "Move to draft"
+                    : "Publish"}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="tc-button-primary"
+              disabled={!hasManagePermission || !canSave || saveMutation.isPending}
+              onClick={() => {
+                setMessage(null)
+                saveMutation.mutate(undefined)
+              }}
+            >
+              {saveMutation.isPending
+                ? "Saving..."
+                : currentRecord
+                  ? "Save record"
+                  : "Create record"}
+            </button>
+          </>
+        }
+      />
+
+      <AdminRouteTabs
+        activeHref={getCmsCollectionHref(collection)}
+        items={getCmsRouteTabs()}
+      />
+
+      {currentRecord ? (
+        <div className="grid gap-4 md:grid-cols-4">
+          <div className="tc-glass rounded-[22px] p-4">
+            <p className="tc-overline">Status</p>
+            <p className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
+              {currentRecord.status}
+            </p>
+          </div>
+          <div className="tc-glass rounded-[22px] p-4">
+            <p className="tc-overline">Visibility</p>
+            <p className="mt-3 text-sm font-semibold text-[color:var(--brand)]">
+              {currentRecord.visibility}
+            </p>
+          </div>
+          <div className="tc-glass rounded-[22px] p-4">
+            <p className="tc-overline">Published</p>
+            <p className="mt-3 text-sm font-semibold text-[color:var(--brand)]">
+              {formatAdminDateTime(
+                typeof currentRecord.publishedAt === "string" ? currentRecord.publishedAt : null,
+              )}
+            </p>
+          </div>
+          <div className="tc-glass rounded-[22px] p-4">
+            <p className="tc-overline">Order</p>
+            <p className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
+              {currentRecord.orderIndex}
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       {message ? <AdminInlineNotice tone="success">{message}</AdminInlineNotice> : null}
       {saveMutation.error ? (
@@ -693,714 +1304,534 @@ export function AdminCmsManagementScreen({
         <AdminInlineNotice tone="warning">
           {getApiErrorMessage(
             publishMutation.error,
-            "The CMS record publish state could not be updated.",
+            "The CMS publish state could not be updated.",
           )}
         </AdminInlineNotice>
       ) : null}
       {!hasManagePermission ? (
         <AdminInlineNotice>
-          This login can view these records but cannot edit or publish them.
+          This login can review the editor but cannot save or publish changes.
         </AdminInlineNotice>
       ) : null}
 
-      <AdminFilterBar
-        searchValue={search}
-        onSearchValueChange={setSearch}
-        resultSummary={`Showing ${records.length} ${getCmsCollectionLabel(collection).toLowerCase()} records.`}
-        actions={
-          <button
-            type="button"
-            className="tc-button-secondary"
-            onClick={() => {
-              setSearch("");
-              setStatus("");
-              setVisibility("");
-              setPlacement("");
-              setSurface("");
-            }}
+      <section className="tc-card rounded-[28px] p-6">
+        <div className="grid gap-4 lg:grid-cols-3">
+          <AdminFontTextField
+            disabled={!hasManagePermission}
+            label="Title"
+            storage="html"
+            value={form.title}
+            onChange={(value) => setForm((current) => ({ ...current, title: value }))}
+          />
+          <AdminInput
+            disabled={!hasManagePermission}
+            label="Order index"
+            type="number"
+            min={0}
+            value={form.orderIndex}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, orderIndex: event.target.value }))
+            }
+          />
+          <AdminSelect
+            disabled={!hasManagePermission}
+            label="Visibility"
+            value={form.visibility}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                visibility: event.target.value as CmsVisibility,
+              }))
+            }
           >
-            Reset filters
-          </button>
-        }
-      >
-        <label className="tc-form-field min-w-40 flex-1">
-          <span className="tc-form-label">Status</span>
-          <select
-            className="tc-input"
-            value={status}
-            onChange={(event) => setStatus(event.target.value)}
-          >
-            <option value="">All statuses</option>
-            {CMS_STATUS_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="tc-form-field min-w-40 flex-1">
-          <span className="tc-form-label">Visibility</span>
-          <select
-            className="tc-input"
-            value={visibility}
-            onChange={(event) => setVisibility(event.target.value)}
-          >
-            <option value="">All visibility</option>
             {CMS_VISIBILITY_OPTIONS.map((option) => (
               <option key={option} value={option}>
                 {option}
               </option>
             ))}
-          </select>
-        </label>
-
-        {collection === "banners" ? (
-          <label className="tc-form-field min-w-40 flex-1">
-            <span className="tc-form-label">Placement</span>
-            <select
-              className="tc-input"
-              value={placement}
-              onChange={(event) => setPlacement(event.target.value)}
-            >
-              <option value="">All placements</option>
-              {CMS_PLACEMENT_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
-
-        {collection === "sections" ? (
-          <label className="tc-form-field min-w-40 flex-1">
-            <span className="tc-form-label">Surface</span>
-            <select
-              className="tc-input"
-              value={surface}
-              onChange={(event) => setSurface(event.target.value)}
-            >
-              <option value="">All surfaces</option>
-              {CMS_SURFACE_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
-      </AdminFilterBar>
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-        <div className="space-y-4">
-          <AdminDataTable
-            columns={[
-              {
-                header: "Record",
-                render: (record: CmsRecord) => (
-                  <div className="space-y-2">
-                    <p className="font-semibold text-[color:var(--brand)]">
-                      {record.title}
-                    </p>
-                    <p className="text-xs text-[color:var(--muted)]">
-                      {summarizeCmsRecord(record)}
-                    </p>
-                  </div>
-                ),
-              },
-              {
-                header: "Status",
-                render: (record: CmsRecord) => (
-                  <div className="flex flex-wrap gap-2">
-                    <AdminStatusBadge status={record.status} />
-                    <AdminVisibilityBadge visibility={record.visibility} />
-                    {"level" in record ? (
-                      <AdminAnnouncementLevelBadge level={record.level} />
-                    ) : null}
-                  </div>
-                ),
-              },
-              {
-                header: "Schedule",
-                render: (record: CmsRecord) => (
-                  <div className="space-y-2 text-xs text-[color:var(--muted)]">
-                    <p>Order #{record.orderIndex}</p>
-                    <p>
-                      {"publishedAt" in record
-                        ? formatAdminDateTime(
-                            typeof record.publishedAt === "string" ? record.publishedAt : null,
-                          )
-                        : "Not published"}
-                    </p>
-                  </div>
-                ),
-              },
-              {
-                header: "Actions",
-                render: (record: CmsRecord) => (
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      className="tc-button-secondary"
-                      onClick={() => {
-                        setMessage(null);
-                        setIsCreating(false);
-                        setSelectedRecordId(record.id);
-                        setEditorState(buildFormState(record));
-                        setEditorAsset(getCmsRecordAsset(record) ?? null);
-                      }}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="tc-button-secondary"
-                      disabled={!hasManagePermission}
-                      onClick={() =>
-                        setOrderIds((current) =>
-                          moveRecord(
-                            hasMatchingOrder(current, records) ? current : defaultOrderIds,
-                            record.id,
-                            -1,
-                          ),
-                        )
-                      }
-                    >
-                      Up
-                    </button>
-                    <button
-                      type="button"
-                      className="tc-button-secondary"
-                      disabled={!hasManagePermission}
-                      onClick={() =>
-                        setOrderIds((current) =>
-                          moveRecord(
-                            hasMatchingOrder(current, records) ? current : defaultOrderIds,
-                            record.id,
-                            1,
-                          ),
-                        )
-                      }
-                    >
-                      Down
-                    </button>
-                  </div>
-                ),
-              },
-            ]}
-            emptyState={
-              <EmptyState
-                eyebrow="No records"
-                title={`No ${getCmsCollectionLabel(collection).toLowerCase()} match the current filters.`}
-                description="Reset the filters or create the first record for this CMS collection."
-              />
-            }
-            getRowId={(record: CmsRecord) => record.id}
-            onRowClick={(record: CmsRecord) => {
-              setMessage(null);
-              setIsCreating(false);
-              setSelectedRecordId(record.id);
-              setEditorState(buildFormState(record));
-              setEditorAsset(getCmsRecordAsset(record) ?? null);
-            }}
-            rows={sortedRecords}
-            selectedRowId={selectedRecord?.id ?? null}
-          />
+          </AdminSelect>
         </div>
 
-        <section className="tc-card rounded-[28px] p-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="tc-kicker" style={{ color: "var(--accent-admin)" }}>
-                {selectedRecord ? "Editing record" : "Create record"}
-              </p>
-              <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-                {selectedRecord
-                  ? selectedRecord.title
-                  : `New ${getCmsCollectionLabel(collection).slice(0, -1).toLowerCase()}`}
-              </h2>
-              <p className="tc-muted mt-2 text-sm leading-6">
-                This editor stays contract-driven against the backend DTOs and publish workflow.
-              </p>
+        {collection === "pages" ? (
+          <div className="mt-5 grid gap-5">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <AdminInput
+                disabled={!hasManagePermission}
+                label="Slug"
+                hint="Used for public routes such as /about or /privacy."
+                value={form.slug}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, slug: event.target.value }))
+                }
+              />
             </div>
-            {selectedRecord ? (
-              <div className="flex flex-wrap gap-2">
-                <AdminStatusBadge status={selectedRecord.status} />
-                <AdminVisibilityBadge visibility={selectedRecord.visibility} />
-              </div>
-            ) : null}
-          </div>
 
-          <div className="mt-6 grid gap-4">
-            <AdminInput
-              label="Title"
-              value={activeEditorState.title}
+            <AdminFontTextField
               disabled={!hasManagePermission}
-              onChange={(event) =>
-                setEditorState((current) => ({
-                  ...(current ?? buildFormState(selectedRecord)),
-                  title: event.target.value,
-                }))
+              hint="Shown in the hero area and page listings."
+              label="Summary"
+              multiline
+              preserveParagraphs
+              rows={4}
+              storage="html"
+              value={form.summary}
+              onChange={(value) => setForm((current) => ({ ...current, summary: value }))}
+            />
+
+            <AdminRichHtmlField
+              disabled={!hasManagePermission}
+              hint="Use the rich editor instead of writing block JSON by hand."
+              label="Page body"
+              value={form.pageBodyHtml}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, pageBodyHtml: value }))
               }
             />
 
-            {collection === "pages" ? (
-              <>
-                <AdminInput
-                  label="Slug"
-                  hint="Used for public page routes like /about or /privacy."
-                  value={activeEditorState.slug}
+            <section className="rounded-[24px] border border-[rgba(0,30,64,0.08)] bg-white/72 p-5">
+              <h2 className="tc-display text-xl font-semibold tracking-tight text-[color:var(--brand)]">
+                SEO
+              </h2>
+              <div className="mt-4 grid gap-4">
+                <AdminFontTextField
                   disabled={!hasManagePermission}
-                  onChange={(event) =>
-                    setEditorState((current) => ({
-                      ...(current ?? buildFormState(selectedRecord)),
-                      slug: event.target.value,
-                    }))
-                  }
+                  label="SEO title"
+                  storage="plain"
+                  value={form.seoTitle}
+                  onChange={(value) => setForm((current) => ({ ...current, seoTitle: value }))}
                 />
-                <AdminTextarea
-                  label="Summary"
+                <AdminFontTextField
+                  disabled={!hasManagePermission}
+                  label="SEO description"
+                  multiline
                   rows={3}
-                  value={activeEditorState.summary}
-                  disabled={!hasManagePermission}
-                  onChange={(event) =>
-                    setEditorState((current) => ({
-                      ...(current ?? buildFormState(selectedRecord)),
-                      summary: event.target.value,
-                    }))
+                  storage="plain"
+                  value={form.seoDescription}
+                  onChange={(value) =>
+                    setForm((current) => ({ ...current, seoDescription: value }))
                   }
                 />
-                <AdminTextarea
-                  label="Body JSON"
-                  rows={8}
-                  hint="Use block JSON compatible with the shared frontend section renderer."
-                  value={activeEditorState.bodyJsonText}
-                  disabled={!hasManagePermission}
-                  onChange={(event) =>
-                    setEditorState((current) => ({
-                      ...(current ?? buildFormState(selectedRecord)),
-                      bodyJsonText: event.target.value,
-                    }))
-                  }
-                />
-                <AdminTextarea
-                  label="SEO JSON"
-                  rows={5}
-                  value={activeEditorState.seoJsonText}
-                  disabled={!hasManagePermission}
-                  onChange={(event) =>
-                    setEditorState((current) => ({
-                      ...(current ?? buildFormState(selectedRecord)),
-                      seoJsonText: event.target.value,
-                    }))
-                  }
-                />
-              </>
-            ) : null}
-
-            {collection === "banners" ? (
-              <>
-                <AdminSelect
-                  label="Placement"
-                  value={activeEditorState.placement}
-                  disabled={!hasManagePermission}
-                  onChange={(event) =>
-                    setEditorState((current) => ({
-                      ...(current ?? buildFormState(selectedRecord)),
-                      placement: event.target.value as CmsBannerPlacement,
-                    }))
-                  }
-                >
-                  {CMS_PLACEMENT_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </AdminSelect>
                 <AdminInput
-                  label="Subtitle"
-                  value={activeEditorState.subtitle}
                   disabled={!hasManagePermission}
+                  label="Keywords"
+                  hint="Separate keywords with commas."
+                  value={form.seoKeywords}
                   onChange={(event) =>
-                    setEditorState((current) => ({
-                      ...(current ?? buildFormState(selectedRecord)),
-                      subtitle: event.target.value,
-                    }))
+                    setForm((current) => ({ ...current, seoKeywords: event.target.value }))
                   }
                 />
-                <AdminTextarea
-                  label="Body copy"
-                  rows={4}
-                  value={activeEditorState.bodyText}
+                <label className="flex items-center gap-3 rounded-[18px] border border-[rgba(0,30,64,0.08)] bg-white/72 px-4 py-3 text-sm font-medium text-[color:var(--brand)]">
+                  <input
+                    checked={form.seoNoIndex}
+                    disabled={!hasManagePermission}
+                    type="checkbox"
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        seoNoIndex: event.target.checked,
+                      }))
+                    }
+                  />
+                  Do not index this page in search engines.
+                </label>
+                <AdminKeyValueEditor
                   disabled={!hasManagePermission}
-                  onChange={(event) =>
-                    setEditorState((current) => ({
-                      ...(current ?? buildFormState(selectedRecord)),
-                      bodyText: event.target.value,
-                    }))
-                  }
+                  hint="Optional extra SEO fields if your backend consumers use additional metadata keys."
+                  label="Extra SEO fields"
+                  rows={form.seoExtraRows}
+                  onChange={(rows) => setForm((current) => ({ ...current, seoExtraRows: rows }))}
                 />
-                <div className="grid gap-4 md:grid-cols-2">
-                  <AdminInput
-                    label="CTA label"
-                    value={activeEditorState.ctaLabel}
-                    disabled={!hasManagePermission}
-                    onChange={(event) =>
-                      setEditorState((current) => ({
-                        ...(current ?? buildFormState(selectedRecord)),
-                        ctaLabel: event.target.value,
-                      }))
-                    }
-                  />
-                  <AdminInput
-                    label="CTA href"
-                    value={activeEditorState.ctaHref}
-                    disabled={!hasManagePermission}
-                    onChange={(event) =>
-                      setEditorState((current) => ({
-                        ...(current ?? buildFormState(selectedRecord)),
-                        ctaHref: event.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <AdminInput
-                    label="Starts at"
-                    type="datetime-local"
-                    value={activeEditorState.startsAt}
-                    disabled={!hasManagePermission}
-                    onChange={(event) =>
-                      setEditorState((current) => ({
-                        ...(current ?? buildFormState(selectedRecord)),
-                        startsAt: event.target.value,
-                      }))
-                    }
-                  />
-                  <AdminInput
-                    label="Ends at"
-                    type="datetime-local"
-                    value={activeEditorState.endsAt}
-                    disabled={!hasManagePermission}
-                    onChange={(event) =>
-                      setEditorState((current) => ({
-                        ...(current ?? buildFormState(selectedRecord)),
-                        endsAt: event.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <AdminTextarea
-                  label="Meta JSON"
-                  rows={5}
-                  value={activeEditorState.metaJsonText}
-                  disabled={!hasManagePermission}
-                  onChange={(event) =>
-                    setEditorState((current) => ({
-                      ...(current ?? buildFormState(selectedRecord)),
-                      metaJsonText: event.target.value,
-                    }))
-                  }
-                />
-              </>
-            ) : null}
+              </div>
+            </section>
+          </div>
+        ) : null}
 
-            {collection === "announcements" ? (
-              <>
-                <AdminTextarea
-                  label="Announcement body"
-                  rows={4}
-                  value={activeEditorState.bodyText}
-                  disabled={!hasManagePermission}
-                  onChange={(event) =>
-                    setEditorState((current) => ({
-                      ...(current ?? buildFormState(selectedRecord)),
-                      bodyText: event.target.value,
-                    }))
-                  }
-                />
-                <div className="grid gap-4 md:grid-cols-2">
-                  <AdminSelect
-                    label="Level"
-                    value={activeEditorState.level}
-                    disabled={!hasManagePermission}
-                    onChange={(event) =>
-                      setEditorState((current) => ({
-                        ...(current ?? buildFormState(selectedRecord)),
-                        level: event.target.value as CmsAnnouncementLevel,
-                      }))
-                    }
-                  >
-                    {ANNOUNCEMENT_LEVEL_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </AdminSelect>
-                  <label className="tc-form-field">
-                    <span className="tc-form-label">Pinned</span>
-                    <button
-                      type="button"
-                      className="tc-button-secondary justify-start"
-                      disabled={!hasManagePermission}
-                      onClick={() =>
-                        setEditorState((current) => ({
-                          ...(current ?? buildFormState(selectedRecord)),
-                          isPinned: !(current ?? buildFormState(selectedRecord)).isPinned,
-                        }))
-                      }
-                    >
-                      {activeEditorState.isPinned ? "Pinned announcement" : "Not pinned"}
-                    </button>
-                  </label>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <AdminInput
-                    label="Link label"
-                    value={activeEditorState.linkLabel}
-                    disabled={!hasManagePermission}
-                    onChange={(event) =>
-                      setEditorState((current) => ({
-                        ...(current ?? buildFormState(selectedRecord)),
-                        linkLabel: event.target.value,
-                      }))
-                    }
-                  />
-                  <AdminInput
-                    label="Link href"
-                    value={activeEditorState.linkHref}
-                    disabled={!hasManagePermission}
-                    onChange={(event) =>
-                      setEditorState((current) => ({
-                        ...(current ?? buildFormState(selectedRecord)),
-                        linkHref: event.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <AdminInput
-                    label="Starts at"
-                    type="datetime-local"
-                    value={activeEditorState.startsAt}
-                    disabled={!hasManagePermission}
-                    onChange={(event) =>
-                      setEditorState((current) => ({
-                        ...(current ?? buildFormState(selectedRecord)),
-                        startsAt: event.target.value,
-                      }))
-                    }
-                  />
-                  <AdminInput
-                    label="Ends at"
-                    type="datetime-local"
-                    value={activeEditorState.endsAt}
-                    disabled={!hasManagePermission}
-                    onChange={(event) =>
-                      setEditorState((current) => ({
-                        ...(current ?? buildFormState(selectedRecord)),
-                        endsAt: event.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <AdminTextarea
-                  label="Meta JSON"
-                  rows={5}
-                  value={activeEditorState.metaJsonText}
-                  disabled={!hasManagePermission}
-                  onChange={(event) =>
-                    setEditorState((current) => ({
-                      ...(current ?? buildFormState(selectedRecord)),
-                      metaJsonText: event.target.value,
-                    }))
-                  }
-                />
-              </>
-            ) : null}
-
-            {collection === "sections" ? (
-              <>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <AdminInput
-                    label="Code"
-                    hint="Used as the stable identifier for stitched home sections."
-                    value={activeEditorState.code}
-                    disabled={!hasManagePermission}
-                    onChange={(event) =>
-                      setEditorState((current) => ({
-                        ...(current ?? buildFormState(selectedRecord)),
-                        code: event.target.value,
-                      }))
-                    }
-                  />
-                  <AdminSelect
-                    label="Surface"
-                    value={activeEditorState.surface}
-                    disabled={!hasManagePermission}
-                    onChange={(event) =>
-                      setEditorState((current) => ({
-                        ...(current ?? buildFormState(selectedRecord)),
-                        surface: event.target.value as CmsSectionSurface,
-                      }))
-                    }
-                  >
-                    {CMS_SURFACE_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {getCmsSurfaceLabel(option)}
-                      </option>
-                    ))}
-                  </AdminSelect>
-                </div>
-                <AdminInput
-                  label="Subtitle"
-                  value={activeEditorState.subtitle}
-                  disabled={!hasManagePermission}
-                  onChange={(event) =>
-                    setEditorState((current) => ({
-                      ...(current ?? buildFormState(selectedRecord)),
-                      subtitle: event.target.value,
-                    }))
-                  }
-                />
-                <AdminSelect
-                  label="Section type"
-                  value={activeEditorState.type}
-                  disabled={!hasManagePermission}
-                  onChange={(event) =>
-                    setEditorState((current) => ({
-                      ...(current ?? buildFormState(selectedRecord)),
-                      type: event.target.value as CmsSectionType,
-                    }))
-                  }
-                >
-                  {CMS_SECTION_TYPE_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {getCmsSectionTypeLabel(option)}
-                    </option>
-                  ))}
-                </AdminSelect>
-                <AdminTextarea
-                  label="Body JSON"
-                  rows={7}
-                  value={activeEditorState.bodyJsonText}
-                  disabled={!hasManagePermission}
-                  onChange={(event) =>
-                    setEditorState((current) => ({
-                      ...(current ?? buildFormState(selectedRecord)),
-                      bodyJsonText: event.target.value,
-                    }))
-                  }
-                />
-                <AdminTextarea
-                  label="Config JSON"
-                  rows={6}
-                  value={activeEditorState.configJsonText}
-                  disabled={!hasManagePermission}
-                  onChange={(event) =>
-                    setEditorState((current) => ({
-                      ...(current ?? buildFormState(selectedRecord)),
-                      configJsonText: event.target.value,
-                    }))
-                  }
-                />
-              </>
-            ) : null}
-
-            <div className="grid gap-4 md:grid-cols-2">
+        {collection === "banners" ? (
+          <div className="mt-5 grid gap-5">
+            <div className="grid gap-4 lg:grid-cols-2">
               <AdminSelect
-                label="Visibility"
-                value={activeEditorState.visibility}
                 disabled={!hasManagePermission}
+                label="Placement"
+                value={form.placement}
                 onChange={(event) =>
-                  setEditorState((current) => ({
-                    ...(current ?? buildFormState(selectedRecord)),
-                    visibility: event.target.value as CmsVisibility,
+                  setForm((current) => ({
+                    ...current,
+                    placement: event.target.value as CmsBannerPlacement,
                   }))
                 }
               >
-                {CMS_VISIBILITY_OPTIONS.map((option) => (
+                {CMS_PLACEMENT_OPTIONS.map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>
                 ))}
               </AdminSelect>
-              <AdminInput
-                label="Order index"
-                type="number"
-                value={activeEditorState.orderIndex}
+              <AdminFontTextField
                 disabled={!hasManagePermission}
+                label="Subtitle / eyebrow"
+                storage="html"
+                value={form.subtitle}
+                onChange={(value) => setForm((current) => ({ ...current, subtitle: value }))}
+              />
+            </div>
+
+            <AdminRichHtmlField
+              disabled={!hasManagePermission}
+              label="Banner body"
+              value={form.bannerBodyHtml}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, bannerBodyHtml: value }))
+              }
+            />
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <AdminFontTextField
+                disabled={!hasManagePermission}
+                label="Primary CTA label"
+                storage="html"
+                value={form.ctaLabel}
+                onChange={(value) => setForm((current) => ({ ...current, ctaLabel: value }))}
+              />
+              <AdminInput
+                disabled={!hasManagePermission}
+                label="Primary CTA link"
+                value={form.ctaHref}
                 onChange={(event) =>
-                  setEditorState((current) => ({
-                    ...(current ?? buildFormState(selectedRecord)),
-                    orderIndex: event.target.value,
+                  setForm((current) => ({ ...current, ctaHref: event.target.value }))
+                }
+              />
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <AdminFontTextField
+                disabled={!hasManagePermission}
+                label="Secondary CTA label"
+                storage="html"
+                value={form.bannerSecondaryCtaLabel}
+                onChange={(value) =>
+                  setForm((current) => ({
+                    ...current,
+                    bannerSecondaryCtaLabel: value,
+                  }))
+                }
+              />
+              <AdminInput
+                disabled={!hasManagePermission}
+                label="Secondary CTA link"
+                value={form.bannerSecondaryCtaHref}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    bannerSecondaryCtaHref: event.target.value,
                   }))
                 }
               />
             </div>
 
-            {collection !== "announcements" ? (
-              <AdminAssetUploader
-                assetId={activeEditorState.imageAssetId}
-                currentAsset={activeEditorAsset}
-                label={collection === "pages" ? "Cover image" : "Image asset"}
-                onAssetChange={(asset) => {
-                  setEditorAsset(asset);
-                  setEditorState((current) => ({
-                    ...(current ?? buildFormState(selectedRecord)),
-                    imageAssetId: asset?.id ?? "",
-                  }));
-                }}
+            <div className="grid gap-4 lg:grid-cols-2">
+              <AdminInput
+                disabled={!hasManagePermission}
+                label="Starts at"
+                type="datetime-local"
+                value={form.startsAt}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, startsAt: event.target.value }))
+                }
+              />
+              <AdminInput
+                disabled={!hasManagePermission}
+                label="Ends at"
+                type="datetime-local"
+                value={form.endsAt}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, endsAt: event.target.value }))
+                }
+              />
+            </div>
+
+            <AdminCmsStatsEditor
+              disabled={!hasManagePermission}
+              hint="These values appear as the hero stat chips."
+              label="Hero highlights"
+              rows={form.bannerStatsRows}
+              onChange={(rows) => setForm((current) => ({ ...current, bannerStatsRows: rows }))}
+            />
+
+            <AdminKeyValueEditor
+              disabled={!hasManagePermission}
+              hint="Optional extra banner metadata beyond the built-in CTA and stats fields."
+              label="Extra banner fields"
+              rows={form.bannerMetaRows}
+              onChange={(rows) => setForm((current) => ({ ...current, bannerMetaRows: rows }))}
+            />
+          </div>
+        ) : null}
+
+        {collection === "announcements" ? (
+          <div className="mt-5 grid gap-5">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <AdminSelect
+                disabled={!hasManagePermission}
+                label="Level"
+                value={form.level}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    level: event.target.value as CmsAnnouncementLevel,
+                  }))
+                }
+              >
+                {ANNOUNCEMENT_LEVEL_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </AdminSelect>
+
+              <label className="flex items-center gap-3 rounded-[18px] border border-[rgba(0,30,64,0.08)] bg-white/72 px-4 py-3 text-sm font-medium text-[color:var(--brand)]">
+                <input
+                  checked={form.isPinned}
+                  disabled={!hasManagePermission}
+                  type="checkbox"
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      isPinned: event.target.checked,
+                    }))
+                  }
+                />
+                Pin this announcement above the rest.
+              </label>
+            </div>
+
+            <AdminRichHtmlField
+              disabled={!hasManagePermission}
+              label="Announcement body"
+              value={form.announcementBodyHtml}
+              onChange={(value) =>
+                setForm((current) => ({
+                  ...current,
+                  announcementBodyHtml: value,
+                }))
+              }
+            />
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <AdminFontTextField
+                disabled={!hasManagePermission}
+                label="Link label"
+                storage="html"
+                value={form.linkLabel}
+                onChange={(value) => setForm((current) => ({ ...current, linkLabel: value }))}
+              />
+              <AdminInput
+                disabled={!hasManagePermission}
+                label="Link"
+                value={form.linkHref}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, linkHref: event.target.value }))
+                }
+              />
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <AdminInput
+                disabled={!hasManagePermission}
+                label="Starts at"
+                type="datetime-local"
+                value={form.startsAt}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, startsAt: event.target.value }))
+                }
+              />
+              <AdminInput
+                disabled={!hasManagePermission}
+                label="Ends at"
+                type="datetime-local"
+                value={form.endsAt}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, endsAt: event.target.value }))
+                }
+              />
+            </div>
+
+            <AdminKeyValueEditor
+              disabled={!hasManagePermission}
+              hint="Optional delivery metadata like audience tags or internal notes."
+              label="Extra announcement fields"
+              rows={form.announcementMetaRows}
+              onChange={(rows) =>
+                setForm((current) => ({ ...current, announcementMetaRows: rows }))
+              }
+            />
+          </div>
+        ) : null}
+
+        {collection === "sections" ? (
+          <div className="mt-5 grid gap-5">
+            <div className="grid gap-4 lg:grid-cols-3">
+              <AdminInput
+                disabled={!hasManagePermission}
+                hint="Stable identifier used by the landing or student surfaces."
+                label="Code"
+                value={form.code}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, code: event.target.value }))
+                }
+              />
+              <AdminSelect
+                disabled={!hasManagePermission}
+                label="Surface"
+                value={form.surface}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    surface: event.target.value as CmsSectionSurface,
+                  }))
+                }
+              >
+                {CMS_SURFACE_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {getCmsSurfaceLabel(option)}
+                  </option>
+                ))}
+              </AdminSelect>
+              <AdminSelect
+                disabled={!hasManagePermission}
+                label="Section type"
+                value={form.type}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    type: event.target.value as CmsSectionType,
+                  }))
+                }
+              >
+                {CMS_SECTION_TYPE_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {getCmsSectionTypeLabel(option)}
+                  </option>
+                ))}
+              </AdminSelect>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <AdminFontTextField
+                disabled={!hasManagePermission}
+                label="Subtitle"
+                storage="html"
+                value={form.subtitle}
+                onChange={(value) => setForm((current) => ({ ...current, subtitle: value }))}
+              />
+              <AdminFontTextField
+                disabled={!hasManagePermission}
+                label="Eyebrow"
+                storage="html"
+                value={form.eyeBrow}
+                onChange={(value) => setForm((current) => ({ ...current, eyeBrow: value }))}
+              />
+            </div>
+
+            {form.type === "RICH_TEXT" ? (
+              <>
+                <AdminRichHtmlField
+                  disabled={!hasManagePermission}
+                  label="Section body"
+                  value={form.sectionRichTextHtml}
+                  onChange={(value) =>
+                    setForm((current) => ({ ...current, sectionRichTextHtml: value }))
+                  }
+                />
+                <AdminCmsStatsEditor
+                  disabled={!hasManagePermission}
+                  hint="Optional right-hand highlight boxes for rich text sections."
+                  label="Highlights"
+                  rows={form.sectionStatsRows}
+                  onChange={(rows) =>
+                    setForm((current) => ({ ...current, sectionStatsRows: rows }))
+                  }
+                />
+              </>
+            ) : null}
+
+            {form.type === "CONTENT_FEED" ? (
+              <>
+                <AdminInput
+                  disabled={!hasManagePermission}
+                  hint="Use 2 or 3 columns on desktop."
+                  label="Desktop columns"
+                  type="number"
+                  min={2}
+                  max={3}
+                  value={form.columns}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, columns: event.target.value }))
+                  }
+                />
+                <AdminCmsFeedItemsEditor
+                  disabled={!hasManagePermission}
+                  hint="These cards appear in the public section grid."
+                  label="Cards"
+                  rows={form.sectionFeedRows}
+                  onChange={(rows) =>
+                    setForm((current) => ({ ...current, sectionFeedRows: rows }))
+                  }
+                />
+              </>
+            ) : null}
+
+            {form.type === "PLAN_HIGHLIGHTS" ? (
+              <AdminFontTextField
+                disabled={!hasManagePermission}
+                hint="Support copy shown above the plan cards."
+                label="Plan note"
+                multiline
+                preserveParagraphs
+                rows={4}
+                storage="html"
+                value={form.note}
+                onChange={(value) => setForm((current) => ({ ...current, note: value }))}
               />
             ) : null}
 
-            <div className="flex flex-wrap gap-3 border-t border-[rgba(0,30,64,0.08)] pt-4">
-              <button
-                type="button"
-                className="tc-button-primary"
-                disabled={!hasManagePermission || saveMutation.isPending}
-                onClick={() => {
-                  setMessage(null);
-                  saveMutation.mutate(undefined);
-                }}
-              >
-                {saveMutation.isPending
-                  ? "Saving..."
-                  : selectedRecord
-                    ? "Save changes"
-                    : "Create record"}
-              </button>
-              <button
-                type="button"
-                className="tc-button-secondary"
-                disabled={!selectedRecord || !hasPublishPermission || publishMutation.isPending}
-                onClick={() => {
-                  setMessage(null);
-                  publishMutation.mutate(undefined);
-                }}
-              >
-                {publishMutation.isPending
-                  ? "Updating..."
-                  : selectedRecord && isCmsRecordPublished(selectedRecord)
-                    ? "Unpublish"
-                    : "Publish"}
-              </button>
-              <button
-                type="button"
-                className="tc-button-secondary"
-                onClick={() => {
-                  setMessage(null);
-                  setEditorState(buildFormState(selectedRecord));
-                  setEditorAsset(getCmsRecordAsset(selectedRecord) ?? null);
-                }}
-              >
-                Reset editor
-              </button>
-            </div>
+            {form.type === "CTA_GROUP" ? (
+              <AdminCmsCtaEditor
+                disabled={!hasManagePermission}
+                hint="Each action becomes a CTA card with a button."
+                label="Actions"
+                rows={form.sectionCtaRows}
+                onChange={(rows) =>
+                  setForm((current) => ({ ...current, sectionCtaRows: rows }))
+                }
+              />
+            ) : null}
+
+            <AdminKeyValueEditor
+              disabled={!hasManagePermission}
+              hint="Optional extra section config fields kept alongside the friendly controls."
+              label="Extra section config"
+              rows={form.sectionConfigRows}
+              onChange={(rows) =>
+                setForm((current) => ({ ...current, sectionConfigRows: rows }))
+              }
+            />
           </div>
-        </section>
-      </div>
+        ) : null}
+      </section>
+
+      <AdminAssetUploader
+        accessLevel="PUBLIC"
+        assetId={form.imageAssetId}
+        currentAsset={currentAsset}
+        label={collection === "pages" ? "Cover image" : "Display image"}
+        onAssetChange={(asset) => {
+          setCurrentAsset(asset)
+          setForm((current) => ({
+            ...current,
+            imageAssetId: asset?.id ?? "",
+          }))
+        }}
+      />
     </div>
-  );
+  )
 }

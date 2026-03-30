@@ -1,8 +1,10 @@
 import type {
   AssessmentAnswerDraft,
+  AssessmentAssetSummary,
   AssessmentDifficulty,
   AssessmentDocument,
   AssessmentQuestion,
+  AssessmentQuestionMediaReference,
   AssessmentQuestionOption,
   AssessmentQuestionType,
   AssessmentTaxonomySummary,
@@ -141,6 +143,72 @@ function readQuestionOptions(value: unknown): AssessmentQuestionOption[] {
   });
 }
 
+function readAssessmentAssetSummary(value: unknown): AssessmentAssetSummary | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  if (
+    typeof value.id !== "string" ||
+    typeof value.accessLevel !== "string" ||
+    typeof value.contentType !== "string" ||
+    typeof value.originalFileName !== "string" ||
+    typeof value.protectedDeliveryPath !== "string" ||
+    typeof value.publicDeliveryPath !== "string" ||
+    typeof value.purpose !== "string" ||
+    typeof value.status !== "string"
+  ) {
+    return null;
+  }
+
+  return {
+    accessLevel: value.accessLevel as AssessmentAssetSummary["accessLevel"],
+    contentType: value.contentType,
+    id: value.id,
+    originalFileName: value.originalFileName,
+    protectedDeliveryPath: value.protectedDeliveryPath,
+    publicDeliveryPath: value.publicDeliveryPath,
+    purpose: value.purpose as AssessmentAssetSummary["purpose"],
+    sizeBytes: typeof value.sizeBytes === "number" ? value.sizeBytes : null,
+    status: value.status as AssessmentAssetSummary["status"],
+  };
+}
+
+function readQuestionMediaReferences(value: unknown): AssessmentQuestionMediaReference[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item) => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    const fileAsset = readAssessmentAssetSummary(item.fileAsset);
+    if (
+      typeof item.id !== "string" ||
+      typeof item.fileAssetId !== "string" ||
+      typeof item.orderIndex !== "number" ||
+      typeof item.usage !== "string" ||
+      !fileAsset
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        fileAsset,
+        fileAssetId: item.fileAssetId,
+        id: item.id,
+        localeCode: typeof item.localeCode === "string" ? item.localeCode : null,
+        optionKey: typeof item.optionKey === "string" ? item.optionKey : null,
+        orderIndex: item.orderIndex,
+        usage: item.usage as AssessmentQuestionMediaReference["usage"],
+      },
+    ];
+  });
+}
+
 export function readAssessmentQuestion(
   value: unknown,
 ): AssessmentQuestion | null {
@@ -165,7 +233,7 @@ export function readAssessmentQuestion(
     difficulty: value.difficulty as AssessmentDifficulty,
     examTrack,
     id: value.id,
-    mediaReferences: [],
+    mediaReferences: readQuestionMediaReferences(value.mediaReferences),
     medium: readTaxonomySummary(value.medium),
     metadataJson: isRecord(value.metadataJson) ? value.metadataJson : null,
     options: readQuestionOptions(value.options),
@@ -174,6 +242,28 @@ export function readAssessmentQuestion(
     topic: readTaxonomySummary(value.topic),
     type: value.type as AssessmentQuestionType,
   };
+}
+
+export function getAssessmentQuestionMediaReferences(
+  question: AssessmentQuestion,
+  input: {
+    optionKey?: string | null;
+    usage: AssessmentQuestionMediaReference["usage"];
+  },
+) {
+  return question.mediaReferences
+    .filter((reference) => {
+      if (reference.usage !== input.usage) {
+        return false;
+      }
+
+      if (input.usage === "OPTION") {
+        return reference.optionKey === (input.optionKey ?? null);
+      }
+
+      return true;
+    })
+    .sort((left, right) => left.orderIndex - right.orderIndex);
 }
 
 export function getAssessmentPreferredLocaleKeys(mediumName?: string | null) {

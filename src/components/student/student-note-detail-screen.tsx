@@ -82,7 +82,7 @@ export function StudentNoteDetailScreen({
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="tc-hero rounded-[32px] p-6 md:p-7">
+      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
@@ -108,7 +108,7 @@ export function StudentNoteDetailScreen({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="tc-glass rounded-[24px] p-5">
+            <div className="tc-student-metric rounded-[24px] p-5">
               <p className="tc-overline">Last synced page</p>
               <p className="mt-4 text-3xl font-semibold text-white">
                 {getOptionalNumber(note.progress?.lastPageViewed) ?? 0}
@@ -117,7 +117,7 @@ export function StudentNoteDetailScreen({
                 updated {formatTimestamp(note.progress?.updatedAt ?? null)}
               </p>
             </div>
-            <div className="tc-glass rounded-[24px] p-5">
+            <div className="tc-student-metric rounded-[24px] p-5">
               <p className="tc-overline">Completion</p>
               <p className="mt-4 text-3xl font-semibold text-white">
                 {getOptionalNumber(note.progress?.completionPercent) ?? 0}%
@@ -130,9 +130,9 @@ export function StudentNoteDetailScreen({
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <div className="tc-panel rounded-[28px] p-6">
-          <div className="flex items-center justify-between gap-3">
+      <section className="grid items-start gap-6 xl:grid-cols-[21rem_minmax(0,1fr)] 2xl:grid-cols-[22rem_minmax(0,1fr)]">
+        <aside className="tc-student-panel rounded-[28px] p-5 lg:p-6 xl:sticky xl:top-6">
+          <div className="flex flex-col gap-4">
             <div>
               <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
                 Note summary
@@ -141,13 +141,13 @@ export function StudentNoteDetailScreen({
                 What you have in this note
               </h2>
             </div>
-            <Link href="/student/notes" className="tc-button-secondary">
+            <Link href="/student/notes" className="tc-button-secondary w-fit">
               Back to notes
             </Link>
           </div>
 
-          <div className="mt-6 grid gap-4">
-            <div className="tc-card rounded-[24px] p-5">
+          <div className="mt-5 grid gap-4">
+            <div className="tc-student-card rounded-[24px] p-5">
               <p className="tc-overline">Subject</p>
               <p className="mt-2 text-lg font-semibold text-[color:var(--brand)]">
                 {note.subject.name}
@@ -159,25 +159,46 @@ export function StudentNoteDetailScreen({
               </p>
             </div>
 
-            <div className="tc-card rounded-[24px] p-5">
+            <div className="tc-student-card rounded-[24px] p-5">
               <p className="tc-overline">Reading progress</p>
-              <div className="mt-3 flex flex-col gap-3 text-sm leading-6 text-[color:var(--brand)]">
-                <p>Last page viewed: {getOptionalNumber(note.progress?.lastPageViewed) ?? 0}</p>
-                <p>Max page reached: {getOptionalNumber(note.progress?.maxPageViewed) ?? 0}</p>
-                <p>Last viewed at: {formatTimestamp(note.progress?.lastViewedAt ?? null)}</p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                <div className="rounded-[20px] bg-white/72 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
+                    Last page
+                  </p>
+                  <p className="mt-2 text-lg font-semibold text-[color:var(--brand)]">
+                    {getOptionalNumber(note.progress?.lastPageViewed) ?? 0}
+                  </p>
+                </div>
+                <div className="rounded-[20px] bg-white/72 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
+                    Max reached
+                  </p>
+                  <p className="mt-2 text-lg font-semibold text-[color:var(--brand)]">
+                    {getOptionalNumber(note.progress?.maxPageViewed) ?? 0}
+                  </p>
+                </div>
+                <div className="rounded-[20px] bg-white/72 px-4 py-3 sm:col-span-2 xl:col-span-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
+                    Last viewed
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-[color:var(--brand)]">
+                    {formatTimestamp(note.progress?.lastViewedAt ?? null)}
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div className="tc-card rounded-[24px] p-5">
+            <div className="tc-student-card rounded-[24px] p-5">
               <p className="tc-overline">Reader tools</p>
-              <div className="mt-3 flex flex-col gap-3 text-sm leading-6 text-[color:var(--brand)]">
-                <p>Open the full-screen zen reader on mobile for a distraction-free flow.</p>
-                <p>Use the note index to jump directly to chapters or topics.</p>
-                <p>Bookmark pages while reading so you can return quickly later.</p>
+              <div className="mt-3 flex flex-col gap-2 text-sm leading-6 text-[color:var(--brand)]">
+                <p>Use zen mode on mobile for a distraction-free page view.</p>
+                <p>Open the index to jump straight to a chapter or topic.</p>
+                <p>Save bookmarks whenever you want to return quickly.</p>
               </div>
             </div>
           </div>
-        </div>
+        </aside>
 
         <SecureNoteReader note={note} />
       </section>

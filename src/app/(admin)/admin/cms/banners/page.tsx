@@ -6,7 +6,7 @@ export default function AdminCmsBannersPage() {
     <AdminPermissionGuard
       permissionKeys={["content.cms.read", "content.cms.manage", "content.cms.publish"]}
     >
-      <AdminCmsManagementScreen collection="banners" />
+      <AdminCmsManagementScreen collection="banners" view="list" />
     </AdminPermissionGuard>
   );
 }

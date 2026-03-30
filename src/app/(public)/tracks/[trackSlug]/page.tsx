@@ -68,7 +68,7 @@ export default async function PublicTrackPage({ params }: PublicTrackPageProps) 
       />
 
       <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
-        <article className="tc-card rounded-[30px] p-6">
+        <article className="tc-public-surface rounded-[30px] p-6">
           <p className="tc-overline">Audience</p>
           <h2 className="tc-display mt-3 text-3xl font-semibold tracking-tight text-[color:var(--brand)]">
             Who this path is for
@@ -81,7 +81,7 @@ export default async function PublicTrackPage({ params }: PublicTrackPageProps) 
           </ul>
         </article>
 
-        <article className="tc-panel rounded-[30px] p-6">
+        <article className="tc-public-surface-muted rounded-[30px] p-6">
           <p className="tc-overline">Expected outcomes</p>
           <h2 className="tc-display mt-3 text-3xl font-semibold tracking-tight text-[color:var(--brand)]">
             What students can expect

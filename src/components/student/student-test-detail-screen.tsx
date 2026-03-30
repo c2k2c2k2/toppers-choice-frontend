@@ -15,6 +15,7 @@ import {
   startTestAttempt,
 } from "@/lib/tests";
 import { StructuredContentRenderer } from "@/components/content/structured-content-renderer";
+import { TextContent } from "@/components/primitives/text-content";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
 import { LoadingState } from "@/components/primitives/loading-state";
@@ -130,19 +131,25 @@ export function StudentTestDetailScreen({
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="tc-hero rounded-[32px] p-6 md:p-7">
+      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
         <div className="grid gap-6 xl:grid-cols-[1.06fr_0.94fr]">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
               Timed test detail
             </p>
-            <h1 className="tc-display mt-4 text-3xl font-semibold tracking-tight md:text-4xl">
-              {test.title}
-            </h1>
-            <p className="tc-muted mt-4 max-w-3xl text-base leading-7">
-              {test.shortDescription ??
-                "Review the instructions and attempt rules before the timer starts."}
-            </p>
+            <TextContent
+              as="h1"
+              className="tc-display mt-4 text-3xl font-semibold tracking-tight md:text-4xl"
+              value={test.title}
+            />
+            <TextContent
+              as="p"
+              className="tc-muted mt-4 max-w-3xl text-base leading-7"
+              value={
+                test.shortDescription ??
+                "Review the instructions and attempt rules before the timer starts."
+              }
+            />
 
             <div className="mt-6 flex flex-wrap gap-3">
               <span className="tc-stat-chip">{getTestFamilyLabel(test.family)}</span>
@@ -188,7 +195,7 @@ export function StudentTestDetailScreen({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="tc-glass rounded-[24px] p-5">
+            <div className="tc-student-metric rounded-[24px] p-5">
               <p className="tc-overline">Max attempts</p>
               <p className="mt-4 text-3xl font-semibold text-white">
                 {test.maxAttempts}
@@ -197,7 +204,7 @@ export function StudentTestDetailScreen({
                 Available until {formatTimestamp(test.availableUntil)}
               </p>
             </div>
-            <div className="tc-glass rounded-[24px] p-5">
+            <div className="tc-student-metric rounded-[24px] p-5">
               <p className="tc-overline">Max score</p>
               <p className="mt-4 text-3xl font-semibold text-white">
                 {test.maxScore}
@@ -248,7 +255,7 @@ export function StudentTestDetailScreen({
       ) : null}
 
       <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <section className="tc-panel rounded-[28px] p-6">
+        <section className="tc-student-panel rounded-[28px] p-6">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -267,7 +274,7 @@ export function StudentTestDetailScreen({
                 showLocaleBadge={false}
               />
             ) : (
-              <div className="tc-card rounded-[24px] p-5">
+              <div className="tc-student-card rounded-[24px] p-5">
                 <p className="font-semibold text-[color:var(--brand)]">
                   No authored instruction body is published yet.
                 </p>
@@ -281,24 +288,24 @@ export function StudentTestDetailScreen({
         </section>
 
         <section className="grid gap-6">
-          <section className="tc-panel rounded-[28px] p-6">
+          <section className="tc-student-panel rounded-[28px] p-6">
             <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
               Attempt rules
             </p>
             <div className="mt-5 grid gap-4">
-              <div className="tc-card rounded-[22px] p-4">
+              <div className="tc-student-card rounded-[22px] p-4">
                 <p className="tc-overline">Availability</p>
                 <p className="mt-2 font-semibold text-[color:var(--brand)]">
                   {formatTimestamp(test.availableFrom)} to {formatTimestamp(test.availableUntil)}
                 </p>
               </div>
-              <div className="tc-card rounded-[22px] p-4">
+              <div className="tc-student-card rounded-[22px] p-4">
                 <p className="tc-overline">Attempt policy</p>
                 <p className="mt-2 font-semibold text-[color:var(--brand)]">
                   {test.maxAttempts} attempts, {test.durationMinutes} minutes
                 </p>
               </div>
-              <div className="tc-card rounded-[22px] p-4">
+              <div className="tc-student-card rounded-[22px] p-4">
                 <p className="tc-overline">Question order</p>
                 <p className="mt-2 font-semibold text-[color:var(--brand)]">
                   {test.randomizeQuestionOrder ? "Randomized" : "Fixed order"}
@@ -307,7 +314,7 @@ export function StudentTestDetailScreen({
             </div>
           </section>
 
-          <section className="tc-panel rounded-[28px] p-6">
+          <section className="tc-student-panel rounded-[28px] p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -322,7 +329,7 @@ export function StudentTestDetailScreen({
 
             <div className="mt-5 grid gap-4">
               {activeAttempt ? (
-                <article className="tc-card rounded-[24px] p-5">
+                <article className="tc-student-card rounded-[24px] p-5">
                   <p className="tc-overline">Active attempt</p>
                   <h3 className="mt-2 text-lg font-semibold text-[color:var(--brand)]">
                     Attempt {activeAttempt.attemptNumber}
@@ -341,7 +348,7 @@ export function StudentTestDetailScreen({
 
               {attemptHistory.length > 0 ? (
                 attemptHistory.map((attempt) => (
-                  <article key={attempt.id} className="tc-card rounded-[24px] p-5">
+                  <article key={attempt.id} className="tc-student-card rounded-[24px] p-5">
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="tc-overline">
@@ -366,7 +373,7 @@ export function StudentTestDetailScreen({
                   </article>
                 ))
               ) : (
-                <div className="tc-card rounded-[24px] p-5">
+                <div className="tc-student-card rounded-[24px] p-5">
                   <p className="font-semibold text-[color:var(--brand)]">
                     No completed attempts yet.
                   </p>

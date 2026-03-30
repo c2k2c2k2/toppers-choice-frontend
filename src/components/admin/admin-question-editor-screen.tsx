@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthenticatedMutation, useAuthenticatedQuery, useAuthSession } from "@/lib/auth";
@@ -19,28 +19,37 @@ import {
   type QuestionType,
   type UpdateQuestionInput,
 } from "@/lib/admin";
-import { getMarathiFontKeyFromValue } from "@/lib/marathi";
-import { StructuredContentRenderer } from "@/components/content/structured-content-renderer";
+import {
+  buildStructuredDocumentFromHtml,
+  htmlToPlainText,
+  readStructuredDocumentHtml,
+} from "@/lib/admin/rich-text";
 import {
   AdminInput,
   AdminSelect,
-  AdminTextarea,
 } from "@/components/admin/admin-form-field";
 import { AdminInlineNotice } from "@/components/admin/admin-inline-notice";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { AdminQuestionMediaField } from "@/components/admin/admin-question-media-field";
+import { AdminQuestionRichTextField } from "@/components/admin/admin-question-rich-text-field";
 import { AdminRouteTabs } from "@/components/admin/admin-route-tabs";
 import { useAdminTaxonomyReferenceData } from "@/components/admin/use-admin-taxonomy-reference-data";
+import { QuestionRichTextRenderer } from "@/components/questions/question-rich-text-renderer";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
 import { LoadingState } from "@/components/primitives/loading-state";
+import {
+  extractQuestionHtml,
+  hasQuestionRichContent,
+} from "@/lib/questions/rich-content";
 
 type QuestionLanguageMode = "ENGLISH" | "MARATHI" | "BILINGUAL";
-type MarathiFontChoice = "" | "shree-dev" | "surekh";
 
 interface QuestionOptionState {
-  englishText: string;
+  englishHtml: string;
+  imageAssetId: string;
   key: string;
-  marathiText: string;
+  marathiHtml: string;
 }
 
 interface QuestionFormState {
@@ -48,14 +57,15 @@ interface QuestionFormState {
   code: string;
   correctOptionKeys: string[];
   difficulty: QuestionDifficulty;
-  explanationEn: string;
-  explanationMr: string;
+  explanationEnHtml: string;
+  explanationImageAssetId: string;
+  explanationMrHtml: string;
   languageMode: QuestionLanguageMode;
-  marathiFontHint: MarathiFontChoice;
   mediumId: string;
   options: QuestionOptionState[];
-  statementEn: string;
-  statementMr: string;
+  statementEnHtml: string;
+  statementImageAssetId: string;
+  statementMrHtml: string;
   subjectId: string;
   topicId: string;
   type: QuestionType;
@@ -68,24 +78,51 @@ const QUESTION_TYPE_OPTIONS: QuestionType[] = [
   "TEXT_INPUT",
 ];
 const QUESTION_DIFFICULTY_OPTIONS: QuestionDifficulty[] = ["EASY", "MEDIUM", "HARD"];
+const QUESTION_LANGUAGE_OPTIONS: Array<{
+  description: string;
+  label: string;
+  value: QuestionLanguageMode;
+}> = [
+  {
+    value: "ENGLISH",
+    label: "English only",
+    description: "Store only English content.",
+  },
+  {
+    value: "MARATHI",
+    label: "Marathi only",
+    description: "Store only Marathi content.",
+  },
+  {
+    value: "BILINGUAL",
+    label: "English + Marathi",
+    description: "Store both language variants together.",
+  },
+];
+
+function joinClasses(...values: Array<string | null | undefined | false>) {
+  return values.filter(Boolean).join(" ");
+}
 
 const EMPTY_FORM: QuestionFormState = {
   acceptedAnswers: "",
   code: "",
   correctOptionKeys: [],
   difficulty: "MEDIUM",
-  explanationEn: "",
-  explanationMr: "",
-  languageMode: "ENGLISH",
-  marathiFontHint: "",
+  explanationEnHtml: "",
+  explanationImageAssetId: "",
+  explanationMrHtml: "",
+  languageMode: "MARATHI",
   mediumId: "",
   options: QUESTION_OPTION_KEYS.map((key) => ({
-    englishText: "",
+    englishHtml: "",
+    imageAssetId: "",
     key,
-    marathiText: "",
+    marathiHtml: "",
   })),
-  statementEn: "",
-  statementMr: "",
+  statementEnHtml: "",
+  statementImageAssetId: "",
+  statementMrHtml: "",
   subjectId: "",
   topicId: "",
   type: "SINGLE_CHOICE",
@@ -119,57 +156,7 @@ function getCandidateNode(document: unknown, locale: "en" | "mr") {
 }
 
 function readStructuredText(value: unknown): string {
-  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-    return String(value);
-  }
-
-  if (Array.isArray(value)) {
-    return value.map((entry) => readStructuredText(entry)).filter(Boolean).join("\n");
-  }
-
-  if (!isRecord(value)) {
-    return "";
-  }
-
-  if (typeof value.text === "string" && value.text.trim()) {
-    return value.text;
-  }
-
-  if (Array.isArray(value.blocks)) {
-    return value.blocks
-      .map((block) => {
-        if (typeof block === "string") {
-          return block;
-        }
-
-        if (!isRecord(block)) {
-          return "";
-        }
-
-        return [
-          typeof block.title === "string" ? block.title : "",
-          typeof block.text === "string" ? block.text : "",
-          typeof block.content === "string" ? block.content : "",
-        ]
-          .filter(Boolean)
-          .join(" ");
-      })
-      .filter(Boolean)
-      .join("\n");
-  }
-
-  if (typeof value.html === "string" && value.html.trim()) {
-    return value.html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  }
-
-  if (isRecord(value.translations)) {
-    return Object.values(value.translations)
-      .map((entry) => readStructuredText(entry))
-      .filter(Boolean)
-      .join("\n");
-  }
-
-  return "";
+  return htmlToPlainText(readStructuredDocumentHtml(value));
 }
 
 function readStringValue(value: unknown): string {
@@ -182,56 +169,80 @@ function readStringArray(value: unknown): string[] {
     : [];
 }
 
-function buildContentLeaf(text: string, fontHint: MarathiFontChoice) {
-  const normalized = text.trim();
-  if (!normalized) {
-    return null;
-  }
-
-  return {
-    ...(fontHint ? { fontHint } : {}),
-    text: normalized,
-  };
+function hasMeaningfulHtml(value: string) {
+  return htmlToPlainText(value).trim().length > 0;
 }
 
 function buildLocalizedDocument(input: {
-  englishText: string;
+  englishHtml: string;
   languageMode: QuestionLanguageMode;
-  marathiFontHint: MarathiFontChoice;
-  marathiText: string;
+  marathiHtml: string;
 }) {
-  const englishLeaf =
+  const englishDocument =
     input.languageMode === "MARATHI"
       ? null
-      : buildContentLeaf(input.englishText, "");
-  const marathiLeaf =
+      : buildStructuredDocumentFromHtml(input.englishHtml);
+  const marathiDocument =
     input.languageMode === "ENGLISH"
       ? null
-      : buildContentLeaf(input.marathiText, input.marathiFontHint);
+      : buildStructuredDocumentFromHtml(input.marathiHtml);
 
-  if (englishLeaf && marathiLeaf) {
+  if (englishDocument && marathiDocument) {
     return {
-      "en-IN": englishLeaf,
-      "mr-IN": marathiLeaf,
+      "en-IN": englishDocument,
+      "mr-IN": marathiDocument,
     };
   }
 
-  if (marathiLeaf) {
+  if (marathiDocument) {
     return {
-      "mr-IN": marathiLeaf,
+      "mr-IN": marathiDocument,
     };
   }
 
-  if (englishLeaf) {
+  if (englishDocument) {
     return {
-      "en-IN": englishLeaf,
+      "en-IN": englishDocument,
     };
   }
 
   return null;
 }
 
+function findMediaAssetId(
+  question: QuestionDetail,
+  usage: "EXPLANATION" | "OPTION" | "STATEMENT",
+  optionKey?: string,
+) {
+  return (
+    question.mediaReferences.find((reference) => {
+      if (reference.usage !== usage) {
+        return false;
+      }
+
+      if (usage === "OPTION") {
+        return reference.optionKey === optionKey;
+      }
+
+      return true;
+    })?.fileAssetId ?? ""
+  );
+}
+
 function detectLanguageMode(question: QuestionDetail): QuestionLanguageMode {
+  const metadataMode =
+    isRecord(question.metadataJson) && typeof question.metadataJson.languageMode === "string"
+      ? question.metadataJson.languageMode
+      : null;
+
+  if (
+    metadataMode === "ENGLISH" ||
+    metadataMode === "MARATHI" ||
+    metadataMode === "BILINGUAL"
+  ) {
+    return metadataMode;
+  }
+
   const hasEnglish = Boolean(readStructuredText(getCandidateNode(question.statementJson, "en")));
   const hasMarathi =
     Boolean(readStructuredText(getCandidateNode(question.statementJson, "mr"))) ||
@@ -260,33 +271,37 @@ function buildFormState(question: QuestionDetail | null): QuestionFormState {
   const correctAnswerJson = isRecord(question.correctAnswerJson)
     ? question.correctAnswerJson
     : {};
-  const marathiFontHint =
-    getMarathiFontKeyFromValue(question.statementJson) ??
-    getMarathiFontKeyFromValue(question.options.map((option) => option.contentJson)) ??
-    getMarathiFontKeyFromValue(question.explanationJson) ??
-    "";
-  const options = QUESTION_OPTION_KEYS.map((key) => {
-    const option = question.options.find((entry) => entry.optionKey === key);
-    return {
-      englishText: option ? readStructuredText(getCandidateNode(option.contentJson, "en")) : "",
-      key,
-      marathiText: option ? readStructuredText(getCandidateNode(option.contentJson, "mr")) : "",
-    };
-  });
 
   return {
     acceptedAnswers: readStringArray(correctAnswerJson.acceptedAnswers).join("\n"),
     code: readStringValue(question.code),
     correctOptionKeys: readStringArray(correctAnswerJson.optionKeys),
     difficulty: question.difficulty,
-    explanationEn: readStructuredText(getCandidateNode(question.explanationJson, "en")),
-    explanationMr: readStructuredText(getCandidateNode(question.explanationJson, "mr")),
+    explanationEnHtml: readStructuredDocumentHtml(
+      getCandidateNode(question.explanationJson, "en"),
+    ),
+    explanationImageAssetId: findMediaAssetId(question, "EXPLANATION"),
+    explanationMrHtml: readStructuredDocumentHtml(
+      getCandidateNode(question.explanationJson, "mr"),
+    ),
     languageMode: mode,
-    marathiFontHint,
     mediumId: readStringValue(question.mediumId),
-    options,
-    statementEn: readStructuredText(getCandidateNode(question.statementJson, "en")),
-    statementMr: readStructuredText(getCandidateNode(question.statementJson, "mr")),
+    options: QUESTION_OPTION_KEYS.map((key) => {
+      const option = question.options.find((entry) => entry.optionKey === key);
+      return {
+        englishHtml: option
+          ? readStructuredDocumentHtml(getCandidateNode(option.contentJson, "en"))
+          : "",
+        imageAssetId: findMediaAssetId(question, "OPTION", key),
+        key,
+        marathiHtml: option
+          ? readStructuredDocumentHtml(getCandidateNode(option.contentJson, "mr"))
+          : "",
+      };
+    }),
+    statementEnHtml: readStructuredDocumentHtml(getCandidateNode(question.statementJson, "en")),
+    statementImageAssetId: findMediaAssetId(question, "STATEMENT"),
+    statementMrHtml: readStructuredDocumentHtml(getCandidateNode(question.statementJson, "mr")),
     subjectId: readStringValue(question.subjectId),
     topicId: readStringValue(question.topicId),
     type: question.type,
@@ -311,22 +326,26 @@ function buildInitialQuestionForm(
 
 function countFilledOptions(form: QuestionFormState) {
   return form.options.filter((option) => {
+    if (option.imageAssetId.trim()) {
+      return true;
+    }
+
     if (form.languageMode === "MARATHI") {
-      return option.marathiText.trim().length > 0;
+      return hasMeaningfulHtml(option.marathiHtml);
     }
 
     if (form.languageMode === "BILINGUAL") {
-      return option.englishText.trim().length > 0 || option.marathiText.trim().length > 0;
+      return hasMeaningfulHtml(option.englishHtml) || hasMeaningfulHtml(option.marathiHtml);
     }
 
-    return option.englishText.trim().length > 0;
+    return hasMeaningfulHtml(option.englishHtml);
   }).length;
 }
 
 function canSaveQuestion(form: QuestionFormState) {
   const hasStatement =
-    (form.languageMode !== "MARATHI" && form.statementEn.trim().length > 0) ||
-    (form.languageMode !== "ENGLISH" && form.statementMr.trim().length > 0);
+    (form.languageMode !== "MARATHI" && hasMeaningfulHtml(form.statementEnHtml)) ||
+    (form.languageMode !== "ENGLISH" && hasMeaningfulHtml(form.statementMrHtml));
 
   if (!form.subjectId || !hasStatement) {
     return false;
@@ -342,19 +361,57 @@ function canSaveQuestion(form: QuestionFormState) {
   return countFilledOptions(form) >= 2 && form.correctOptionKeys.length > 0;
 }
 
+function buildQuestionMediaReferences(form: QuestionFormState) {
+  const mediaReferences: Array<{
+    fileAssetId: string;
+    optionKey?: string;
+    orderIndex: number;
+    usage: "EXPLANATION" | "OPTION" | "STATEMENT";
+  }> = [];
+
+  if (form.statementImageAssetId.trim()) {
+    mediaReferences.push({
+      fileAssetId: form.statementImageAssetId.trim(),
+      orderIndex: 10,
+      usage: "STATEMENT",
+    });
+  }
+
+  form.options.forEach((option, index) => {
+    if (!option.imageAssetId.trim()) {
+      return;
+    }
+
+    mediaReferences.push({
+      fileAssetId: option.imageAssetId.trim(),
+      optionKey: option.key,
+      orderIndex: (index + 1) * 10,
+      usage: "OPTION",
+    });
+  });
+
+  if (form.explanationImageAssetId.trim()) {
+    mediaReferences.push({
+      fileAssetId: form.explanationImageAssetId.trim(),
+      orderIndex: 10,
+      usage: "EXPLANATION",
+    });
+  }
+
+  return mediaReferences;
+}
+
 function buildQuestionPayload(form: QuestionFormState): CreateQuestionInput | UpdateQuestionInput {
   const statementJson = buildLocalizedDocument({
-    englishText: form.statementEn,
+    englishHtml: form.statementEnHtml,
     languageMode: form.languageMode,
-    marathiFontHint: form.marathiFontHint,
-    marathiText: form.statementMr,
+    marathiHtml: form.statementMrHtml,
   }) as Record<string, unknown> | null;
 
   const explanationJson = buildLocalizedDocument({
-    englishText: form.explanationEn,
+    englishHtml: form.explanationEnHtml,
     languageMode: form.languageMode,
-    marathiFontHint: form.marathiFontHint,
-    marathiText: form.explanationMr,
+    marathiHtml: form.explanationMrHtml,
   }) as Record<string, unknown> | null;
 
   const payload = {
@@ -373,10 +430,11 @@ function buildQuestionPayload(form: QuestionFormState): CreateQuestionInput | Up
     ) as Record<string, unknown>,
     difficulty: form.difficulty,
     explanationJson: explanationJson ?? undefined,
+    mediaReferences: buildQuestionMediaReferences(form),
     mediumId: form.mediumId || undefined,
     metadataJson: {
       languageMode: form.languageMode,
-      ...(form.marathiFontHint ? { marathiFontHint: form.marathiFontHint } : {}),
+      questionEditor: "admin-rich-html-v1",
     } as Record<string, unknown>,
     statementJson: statementJson ?? {},
     subjectId: form.subjectId,
@@ -386,18 +444,30 @@ function buildQuestionPayload(form: QuestionFormState): CreateQuestionInput | Up
       ? {}
       : {
           options: form.options
-            .map((option, index) => ({
-              contentJson: (buildLocalizedDocument({
-                  englishText: option.englishText,
+            .flatMap((option, index) => {
+              const contentJson =
+                buildLocalizedDocument({
+                  englishHtml: option.englishHtml,
                   languageMode: form.languageMode,
-                  marathiFontHint: form.marathiFontHint,
-                  marathiText: option.marathiText,
-                }) ?? {}) as Record<string, unknown>,
-              optionKey: option.key,
-              orderIndex: (index + 1) * 10,
-            }))
-            .filter((option) => {
-              return Object.keys(option.contentJson).length > 0;
+                  marathiHtml: option.marathiHtml,
+                }) ?? {};
+
+              const shouldKeep =
+                option.imageAssetId.trim().length > 0 ||
+                Object.keys(contentJson).length > 0 ||
+                form.correctOptionKeys.includes(option.key);
+
+              if (!shouldKeep) {
+                return [];
+              }
+
+              return [
+                {
+                  contentJson: contentJson as Record<string, unknown>,
+                  optionKey: option.key,
+                  orderIndex: (index + 1) * 10,
+                },
+              ];
             }),
         }),
   };
@@ -405,16 +475,168 @@ function buildQuestionPayload(form: QuestionFormState): CreateQuestionInput | Up
   return payload as unknown as CreateQuestionInput | UpdateQuestionInput;
 }
 
-function buildPreviewOptionDocument(
-  option: QuestionOptionState,
-  form: QuestionFormState,
-) {
+function buildPreviewOptionDocument(option: QuestionOptionState, form: QuestionFormState) {
   return buildLocalizedDocument({
-    englishText: option.englishText,
+    englishHtml: option.englishHtml,
     languageMode: form.languageMode,
-    marathiFontHint: form.marathiFontHint,
-    marathiText: option.marathiText,
+    marathiHtml: option.marathiHtml,
   });
+}
+
+function QuestionPreviewContent({
+  className,
+  content,
+  emptyText,
+  languageMode,
+}: Readonly<{
+  className?: string;
+  content: unknown;
+  emptyText: string;
+  languageMode: QuestionLanguageMode;
+}>) {
+  const previewItems =
+    languageMode === "BILINGUAL"
+      ? [
+          {
+            className: undefined,
+            label: "English",
+            localeKeys: ["en-IN", "en"],
+          },
+          {
+            className: "font-marathi-unicode",
+            label: "Marathi",
+            localeKeys: ["mr-IN", "mr"],
+          },
+        ].filter((item) => hasQuestionRichContent(content, item.localeKeys))
+      : [
+          {
+            className:
+              languageMode === "MARATHI" ? "font-marathi-unicode" : undefined,
+            label: null,
+            localeKeys:
+              languageMode === "MARATHI"
+                ? ["mr-IN", "mr"]
+                : ["en-IN", "en"],
+          },
+        ].filter((item) => hasQuestionRichContent(content, item.localeKeys));
+
+  if (previewItems.length === 0) {
+    return (
+      <p className="text-sm leading-6 text-[color:var(--muted)]">{emptyText}</p>
+    );
+  }
+
+  return (
+    <div className={joinClasses("space-y-4", className)}>
+      {previewItems.map((item) => (
+        <div key={item.label ?? item.localeKeys.join("-")} className="space-y-2">
+          {item.label ? (
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--muted)]">
+              {item.label}
+            </p>
+          ) : null}
+          <QuestionRichTextRenderer
+            className={item.className}
+            html={extractQuestionHtml(content, item.localeKeys)}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function QuestionLanguageSection({
+  disabled,
+  form,
+  languageKey,
+  onExplanationChange,
+  onOptionChange,
+  onStatementChange,
+}: Readonly<{
+  disabled: boolean;
+  form: QuestionFormState;
+  languageKey: "en" | "mr";
+  onExplanationChange: (value: string) => void;
+  onOptionChange: (optionKey: string, value: string) => void;
+  onStatementChange: (value: string) => void;
+}>) {
+  const label = languageKey === "mr" ? "Marathi" : "English";
+  const statementValue = languageKey === "mr" ? form.statementMrHtml : form.statementEnHtml;
+  const explanationValue =
+    languageKey === "mr" ? form.explanationMrHtml : form.explanationEnHtml;
+  const hint =
+    languageKey === "mr"
+      ? "Marathi editor supports Unicode, Shree-Dev, and Surekh together. Choose the typing font before entering or pasting content."
+      : "Use the toolbar to format text, add tables, and insert equations.";
+
+  return (
+    <section className="tc-card rounded-[28px] p-6">
+      <div className="flex items-center justify-between border-b border-[rgba(0,30,64,0.08)] pb-4">
+        <div>
+          <p className="tc-overline">Question content</p>
+          <h2 className="mt-2 text-xl font-semibold text-[color:var(--brand)]">{label}</h2>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-6">
+        <AdminQuestionRichTextField
+          disabled={disabled}
+          hint={hint}
+          language={languageKey}
+          label={`Statement (${label})`}
+          minHeight="14rem"
+          onChange={onStatementChange}
+          showPreview={false}
+          value={statementValue}
+        />
+
+        {form.type !== "TEXT_INPUT" ? (
+          <div className="grid gap-4">
+            <div>
+              <h3 className="text-base font-semibold text-[color:var(--brand)]">
+                Options ({label})
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
+                Add option text, tables, equations, and shared option images.
+              </p>
+            </div>
+
+            {form.options.map((option) => (
+              <div
+                key={`${languageKey}-${option.key}`}
+                className="rounded-[24px] border border-[rgba(0,30,64,0.08)] bg-white/78 p-4"
+              >
+                <div className="mb-4 flex items-center gap-3">
+                  <span className="tc-code-chip">Option {option.key}</span>
+                </div>
+                <AdminQuestionRichTextField
+                  disabled={disabled}
+                  hint={hint}
+                  language={languageKey}
+                  label={`Option ${option.key} (${label})`}
+                  minHeight="9rem"
+                  onChange={(value) => onOptionChange(option.key, value)}
+                  showPreview={false}
+                  value={languageKey === "mr" ? option.marathiHtml : option.englishHtml}
+                />
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        <AdminQuestionRichTextField
+          disabled={disabled}
+          hint="Optional explanation shown after answer submission."
+          language={languageKey}
+          label={`Explanation (${label})`}
+          minHeight="10rem"
+          onChange={onExplanationChange}
+          showPreview={false}
+          value={explanationValue}
+        />
+      </div>
+    </section>
+  );
 }
 
 export function AdminQuestionEditorScreen({
@@ -436,7 +658,7 @@ export function AdminQuestionEditorScreen({
     staleTime: 15_000,
   });
 
-  if (!canReadQuestions && isEdit) {
+  if ((!canReadQuestions && isEdit) || (!canManageQuestions && !isEdit)) {
     return (
       <EmptyState
         eyebrow="Question bank"
@@ -499,6 +721,7 @@ function AdminQuestionEditorForm({
 }>) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const previewSectionRef = useRef<HTMLElement | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<QuestionDetail | null>(question);
   const [form, setForm] = useState<QuestionFormState>(() =>
     buildInitialQuestionForm(question, taxonomy.subjects[0]?.id ?? ""),
@@ -510,14 +733,29 @@ function AdminQuestionEditorForm({
     [form.subjectId, taxonomy.topicsBySubjectId],
   );
 
+  const visibleLanguages = useMemo(() => {
+    if (form.languageMode === "BILINGUAL") {
+      return ["en", "mr"] as const;
+    }
+
+    return [form.languageMode === "MARATHI" ? "mr" : "en"] as const;
+  }, [form.languageMode]);
+
   const saveMutation = useAuthenticatedMutation({
-    mutationFn: (_unused: void, accessToken: string) => {
+    mutationFn: async (mode: "draft" | "publish", accessToken: string) => {
       const payload = buildQuestionPayload(form);
-      return isEdit && questionId
-        ? updateAdminQuestion(questionId, payload as UpdateQuestionInput, accessToken)
-        : createAdminQuestion(payload as CreateQuestionInput, accessToken);
+      const savedQuestion =
+        isEdit && questionId
+          ? await updateAdminQuestion(questionId, payload as UpdateQuestionInput, accessToken)
+          : await createAdminQuestion(payload as CreateQuestionInput, accessToken);
+
+      if (mode === "publish") {
+        return publishAdminQuestion(savedQuestion.id, accessToken);
+      }
+
+      return savedQuestion;
     },
-    onSuccess: async (savedQuestion) => {
+    onSuccess: async (savedQuestion, mode) => {
       await queryClient.invalidateQueries({
         queryKey: ["admin", "questions"],
       });
@@ -527,7 +765,7 @@ function AdminQuestionEditorForm({
         return;
       }
 
-      setMessage("Question saved.");
+      setMessage(mode === "publish" ? "Question saved and published." : "Question saved.");
       setCurrentQuestion(savedQuestion);
       setForm(buildFormState(savedQuestion));
       await queryClient.invalidateQueries({
@@ -536,7 +774,7 @@ function AdminQuestionEditorForm({
     },
   });
 
-  const publishMutation = useAuthenticatedMutation({
+  const statusMutation = useAuthenticatedMutation({
     mutationFn: (action: "publish" | "unpublish", accessToken: string) =>
       action === "publish"
         ? publishAdminQuestion(questionId!, accessToken)
@@ -557,58 +795,83 @@ function AdminQuestionEditorForm({
   });
 
   const statementPreview = buildLocalizedDocument({
-    englishText: form.statementEn,
+    englishHtml: form.statementEnHtml,
     languageMode: form.languageMode,
-    marathiFontHint: form.marathiFontHint,
-    marathiText: form.statementMr,
+    marathiHtml: form.statementMrHtml,
   });
   const explanationPreview = buildLocalizedDocument({
-    englishText: form.explanationEn,
+    englishHtml: form.explanationEnHtml,
     languageMode: form.languageMode,
-    marathiFontHint: form.marathiFontHint,
-    marathiText: form.explanationMr,
+    marathiHtml: form.explanationMrHtml,
   });
+  const isBusy = saveMutation.isPending || statusMutation.isPending;
 
   return (
     <div className="flex flex-col gap-6">
       <AdminPageHeader
         eyebrow="Assessment management"
         title={isEdit ? "Edit question" : "Create question"}
-        description="Keep question entry readable for admins: choose the type, write the statement, add options if needed, and save the structured payload automatically."
+        description="Compose multilingual question content, attach shared images, review the rendered payload, and publish when the record is ready for practice and tests."
         actions={
           <div className="flex flex-wrap gap-3">
             <Link href="/admin/questions" className="tc-button-secondary">
               Back to question bank
             </Link>
-            {isEdit ? (
+            <button
+              type="button"
+              className="tc-button-secondary"
+              onClick={() =>
+                previewSectionRef.current?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "start",
+                })
+              }
+            >
+              Preview question
+            </button>
+            {isEdit && currentQuestion?.status === "PUBLISHED" ? (
               <button
                 type="button"
                 className="tc-button-secondary"
-                disabled={!canPublishQuestions || publishMutation.isPending}
+                disabled={!canPublishQuestions || isBusy}
                 onClick={() => {
                   setMessage(null);
-                  publishMutation.mutate(
-                    currentQuestion?.status === "PUBLISHED" ? "unpublish" : "publish",
-                  );
+                  statusMutation.mutate("unpublish");
                 }}
               >
-                {currentQuestion?.status === "PUBLISHED" ? "Move to draft" : "Publish"}
+                Move to draft
               </button>
             ) : null}
             <button
               type="button"
-              className="tc-button-primary"
-              disabled={!canManageQuestions || !canSaveQuestion(form) || saveMutation.isPending}
+              className="tc-button-secondary"
+              disabled={!canManageQuestions || !canSaveQuestion(form) || isBusy}
               onClick={() => {
                 setMessage(null);
-                saveMutation.mutate();
+                saveMutation.mutate("draft");
+              }}
+            >
+              {saveMutation.isPending ? "Saving..." : isEdit ? "Save question" : "Create question"}
+            </button>
+            <button
+              type="button"
+              className="tc-button-primary"
+              disabled={
+                !canManageQuestions ||
+                !canPublishQuestions ||
+                !canSaveQuestion(form) ||
+                isBusy
+              }
+              onClick={() => {
+                setMessage(null);
+                saveMutation.mutate("publish");
               }}
             >
               {saveMutation.isPending
                 ? "Saving..."
-                : isEdit
-                  ? "Save question"
-                  : "Create question"}
+                : currentQuestion?.status === "PUBLISHED"
+                  ? "Save & keep published"
+                  : "Save & publish"}
             </button>
           </div>
         }
@@ -638,10 +901,10 @@ function AdminQuestionEditorForm({
         </AdminInlineNotice>
       ) : null}
 
-      {publishMutation.error ? (
+      {statusMutation.error ? (
         <AdminInlineNotice tone="warning">
           {getApiErrorMessage(
-            publishMutation.error,
+            statusMutation.error,
             "The question publication state could not be updated.",
           )}
         </AdminInlineNotice>
@@ -662,9 +925,9 @@ function AdminQuestionEditorForm({
             </p>
           </div>
           <div className="tc-glass rounded-[22px] p-4">
-            <p className="tc-overline">Difficulty</p>
+            <p className="tc-overline">Media</p>
             <p className="mt-3 text-sm font-semibold text-[color:var(--brand)]">
-              {currentQuestion.difficulty}
+              {currentQuestion.hasMedia ? "Attached" : "Text only"}
             </p>
           </div>
           <div className="tc-glass rounded-[22px] p-4">
@@ -676,381 +939,409 @@ function AdminQuestionEditorForm({
         </div>
       ) : null}
 
-      <section className="tc-card rounded-[28px] p-6">
-        <div className="grid gap-4 lg:grid-cols-3">
-          <AdminInput
-            label="Code"
-            value={form.code}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, code: event.target.value }))
-            }
-            placeholder="polity-fr-001"
-          />
-          <AdminSelect
-            label="Question type"
-            value={form.type}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                correctOptionKeys: [],
-                type: event.target.value as QuestionType,
-              }))
-            }
-          >
-            {QUESTION_TYPE_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option.replaceAll("_", " ")}
-              </option>
-            ))}
-          </AdminSelect>
-          <AdminSelect
-            label="Difficulty"
-            value={form.difficulty}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                difficulty: event.target.value as QuestionDifficulty,
-              }))
-            }
-          >
-            {QUESTION_DIFFICULTY_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </AdminSelect>
-          <AdminSelect
-            label="Subject"
-            value={form.subjectId}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                subjectId: event.target.value,
-                topicId: "",
-              }))
-            }
-          >
-            <option value="">Select subject</option>
-            {taxonomy.subjects.map((subject) => (
-              <option key={subject.id} value={subject.id}>
-                {subject.name}
-              </option>
-            ))}
-          </AdminSelect>
-          <AdminSelect
-            label="Topic"
-            value={form.topicId}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, topicId: event.target.value }))
-            }
-          >
-            <option value="">No topic</option>
-            {selectedSubjectTopics.map((topic) => (
-              <option key={topic.id} value={topic.id}>
-                {topic.name}
-              </option>
-            ))}
-          </AdminSelect>
-          <AdminSelect
-            label="Medium"
-            value={form.mediumId}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, mediumId: event.target.value }))
-            }
-          >
-            <option value="">All mediums</option>
-            {taxonomy.mediums.map((medium) => (
-              <option key={medium.id} value={medium.id}>
-                {medium.name}
-              </option>
-            ))}
-          </AdminSelect>
-          <AdminSelect
-            label="Language mode"
-            value={form.languageMode}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                languageMode: event.target.value as QuestionLanguageMode,
-              }))
-            }
-          >
-            <option value="ENGLISH">English only</option>
-            <option value="MARATHI">Marathi only</option>
-            <option value="BILINGUAL">English + Marathi</option>
-          </AdminSelect>
-          <AdminSelect
-            label="Marathi font"
-            value={form.marathiFontHint}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                marathiFontHint: event.target.value as MarathiFontChoice,
-              }))
-            }
-            disabled={form.languageMode === "ENGLISH"}
-          >
-            <option value="">Unicode / default</option>
-            <option value="shree-dev">Shree Dev</option>
-            <option value="surekh">Surekh / Sulekha</option>
-          </AdminSelect>
-        </div>
-      </section>
-
-      <section className="tc-card rounded-[28px] p-6">
-        <h2 className="tc-display text-2xl font-semibold tracking-tight">Question statement</h2>
-        <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          {form.languageMode !== "MARATHI" ? (
-            <AdminTextarea
-              label="English statement"
-              value={form.statementEn}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, statementEn: event.target.value }))
-              }
-              placeholder="What is the capital of India?"
-            />
-          ) : null}
-          {form.languageMode !== "ENGLISH" ? (
-            <AdminTextarea
-              label="Marathi statement"
-              value={form.statementMr}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, statementMr: event.target.value }))
-              }
-              placeholder="भारताची राजधानी कोणती?"
-              className={
-                form.marathiFontHint === "shree-dev"
-                  ? "font-marathi-shree-dev font-marathi-encoded"
-                  : form.marathiFontHint === "surekh"
-                    ? "font-marathi-surekh font-marathi-encoded"
-                    : "font-marathi-unicode"
-              }
-            />
-          ) : null}
-        </div>
-      </section>
-
-      {form.type === "TEXT_INPUT" ? (
-        <section className="tc-card rounded-[28px] p-6">
-          <h2 className="tc-display text-2xl font-semibold tracking-tight">Accepted answers</h2>
-          <p className="tc-muted mt-3 text-sm leading-7">
-            Add one accepted answer per line. The student answer will be checked against this list.
-          </p>
-          <div className="mt-5">
-            <AdminTextarea
-              label="Accepted answers"
-              value={form.acceptedAnswers}
-              onChange={(event) =>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="grid gap-6">
+          {visibleLanguages.map((languageKey) => (
+            <QuestionLanguageSection
+              disabled={!canManageQuestions || isBusy}
+              key={languageKey}
+              form={form}
+              languageKey={languageKey}
+              onExplanationChange={(value) =>
                 setForm((current) => ({
                   ...current,
-                  acceptedAnswers: event.target.value,
+                  ...(languageKey === "mr"
+                    ? { explanationMrHtml: value }
+                    : { explanationEnHtml: value }),
                 }))
               }
-              placeholder={"Delhi\nNew Delhi"}
+              onOptionChange={(optionKey, value) =>
+                setForm((current) => ({
+                  ...current,
+                  options: current.options.map((option) =>
+                    option.key === optionKey
+                      ? {
+                          ...option,
+                          ...(languageKey === "mr"
+                            ? { marathiHtml: value }
+                            : { englishHtml: value }),
+                        }
+                      : option,
+                  ),
+                }))
+              }
+              onStatementChange={(value) =>
+                setForm((current) => ({
+                  ...current,
+                  ...(languageKey === "mr"
+                    ? { statementMrHtml: value }
+                    : { statementEnHtml: value }),
+                }))
+              }
             />
-          </div>
-        </section>
-      ) : (
-        <section className="tc-card rounded-[28px] p-6">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h2 className="tc-display text-2xl font-semibold tracking-tight">Options</h2>
-              <p className="tc-muted mt-3 text-sm leading-7">
-                Fill at least two options and mark the correct answer below.
+          ))}
+
+          {form.type === "TEXT_INPUT" ? (
+            <section className="tc-card rounded-[28px] p-6">
+              <h2 className="text-xl font-semibold text-[color:var(--brand)]">Accepted answers</h2>
+              <p className="mt-3 text-sm leading-6 text-[color:var(--muted)]">
+                Add one accepted answer per line. The student answer will be checked against this
+                list.
               </p>
-            </div>
-            <span className="tc-code-chip">
-              Correct: {form.correctOptionKeys.length > 0 ? form.correctOptionKeys.join(", ") : "none"}
-            </span>
-          </div>
-          <div className="mt-5 grid gap-4">
-            {form.options.map((option) => {
-              const isCorrect = form.correctOptionKeys.includes(option.key);
-
-              return (
-                <div
-                  key={option.key}
-                  className="rounded-[24px] border border-[rgba(0,30,64,0.08)] bg-white/78 p-4"
-                >
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="tc-code-chip">{option.key}</span>
-                    <label className="flex items-center gap-2 text-sm font-semibold text-[color:var(--brand)]">
-                      <input
-                        type={form.type === "MULTIPLE_CHOICE" ? "checkbox" : "radio"}
-                        name="correct-option"
-                        checked={isCorrect}
-                        onChange={() => {
-                          setForm((current) => ({
-                            ...current,
-                            correctOptionKeys:
-                              current.type === "MULTIPLE_CHOICE"
-                                ? isCorrect
-                                  ? current.correctOptionKeys.filter((key) => key !== option.key)
-                                  : [...current.correctOptionKeys, option.key]
-                                : [option.key],
-                          }));
-                        }}
-                      />
-                      Correct answer
-                    </label>
-                  </div>
-
-                  <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                    {form.languageMode !== "MARATHI" ? (
-                      <AdminTextarea
-                        label={`English option ${option.key}`}
-                        value={option.englishText}
-                        onChange={(event) =>
-                          setForm((current) => ({
-                            ...current,
-                            options: current.options.map((entry) =>
-                              entry.key === option.key
-                                ? {
-                                    ...entry,
-                                    englishText: event.target.value,
-                                  }
-                                : entry,
-                            ),
-                          }))
-                        }
-                      />
-                    ) : null}
-                    {form.languageMode !== "ENGLISH" ? (
-                      <AdminTextarea
-                        label={`Marathi option ${option.key}`}
-                        value={option.marathiText}
-                        onChange={(event) =>
-                          setForm((current) => ({
-                            ...current,
-                            options: current.options.map((entry) =>
-                              entry.key === option.key
-                                ? {
-                                    ...entry,
-                                    marathiText: event.target.value,
-                                  }
-                                : entry,
-                            ),
-                          }))
-                        }
-                        className={
-                          form.marathiFontHint === "shree-dev"
-                            ? "font-marathi-shree-dev font-marathi-encoded"
-                            : form.marathiFontHint === "surekh"
-                              ? "font-marathi-surekh font-marathi-encoded"
-                              : "font-marathi-unicode"
-                        }
-                      />
-                    ) : null}
-                  </div>
+              <textarea
+                className="tc-input mt-5 min-h-36 resize-y"
+                disabled={!canManageQuestions || isBusy}
+                placeholder={"Delhi\nNew Delhi"}
+                value={form.acceptedAnswers}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    acceptedAnswers: event.target.value,
+                  }))
+                }
+              />
+            </section>
+          ) : (
+            <section className="tc-card rounded-[28px] p-6">
+              <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-[color:var(--brand)]">Correct answer</h2>
+                  <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
+                    {form.type === "MULTIPLE_CHOICE"
+                      ? "Select every correct option."
+                      : "Select the single correct option."}
+                  </p>
                 </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
+                <span className="tc-code-chip">
+                  {form.correctOptionKeys.length > 0
+                    ? `Selected: ${form.correctOptionKeys.join(", ")}`
+                    : "No option selected"}
+                </span>
+              </div>
 
-      <section className="tc-card rounded-[28px] p-6">
-        <h2 className="tc-display text-2xl font-semibold tracking-tight">Explanation</h2>
-        <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          {form.languageMode !== "MARATHI" ? (
-            <AdminTextarea
-              label="English explanation"
-              value={form.explanationEn}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, explanationEn: event.target.value }))
-              }
-              placeholder="Explain why the answer is correct."
-            />
-          ) : null}
-          {form.languageMode !== "ENGLISH" ? (
-            <AdminTextarea
-              label="Marathi explanation"
-              value={form.explanationMr}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, explanationMr: event.target.value }))
-              }
-              placeholder="योग्य उत्तर का आहे ते समजवा."
-              className={
-                form.marathiFontHint === "shree-dev"
-                  ? "font-marathi-shree-dev font-marathi-encoded"
-                  : form.marathiFontHint === "surekh"
-                    ? "font-marathi-surekh font-marathi-encoded"
-                    : "font-marathi-unicode"
-              }
-            />
-          ) : null}
-        </div>
-      </section>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                {form.options.map((option) => {
+                  const isSelected = form.correctOptionKeys.includes(option.key);
+                  return (
+                    <button
+                      key={`correct-${option.key}`}
+                      type="button"
+                      className={[
+                        "rounded-[22px] border px-4 py-4 text-left transition",
+                        isSelected
+                          ? "border-[rgba(0,51,102,0.28)] bg-[rgba(0,51,102,0.06)]"
+                          : "border-[rgba(0,30,64,0.08)] bg-white/78 hover:border-[rgba(0,51,102,0.2)]",
+                      ].join(" ")}
+                      disabled={!canManageQuestions || isBusy}
+                      onClick={() =>
+                        setForm((current) => ({
+                          ...current,
+                          correctOptionKeys:
+                            current.type === "MULTIPLE_CHOICE"
+                              ? isSelected
+                                ? current.correctOptionKeys.filter((key) => key !== option.key)
+                                : [...current.correctOptionKeys, option.key].sort()
+                              : [option.key],
+                        }))
+                      }
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="tc-code-chip">{option.key}</span>
+                        <span className="font-semibold text-[color:var(--brand)]">
+                          {isSelected ? "Marked correct" : "Mark as correct"}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
-      <section className="tc-card rounded-[28px] p-6">
-        <h2 className="tc-display text-2xl font-semibold tracking-tight">Preview</h2>
-        <div className="mt-5 grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
-          <div className="rounded-[24px] border border-[rgba(0,30,64,0.08)] bg-white/78 p-5">
-            <p className="tc-overline">Statement</p>
-            <div className="mt-3">
-              <StructuredContentRenderer
-                bodyJson={statementPreview ?? { text: "Add a statement to preview it." }}
-                preferredLocaleKeys={["mr-IN", "en-IN", "mr", "en"]}
-                showLocaleBadge={false}
+          <section className="tc-card rounded-[28px] p-6">
+            <h2 className="text-xl font-semibold text-[color:var(--brand)]">Shared images</h2>
+            <p className="mt-3 text-sm leading-6 text-[color:var(--muted)]">
+              Upload shared media once. The same image is reused across the active language
+              variants.
+            </p>
+
+            <div className="mt-5 grid gap-4 xl:grid-cols-2">
+              <AdminQuestionMediaField
+                description="Upload once. The same statement image is used for all language variants."
+                emptyDescription="No statement image is linked yet."
+                label="Statement image"
+                value={form.statementImageAssetId}
+                onChange={(assetId) =>
+                  setForm((current) => ({ ...current, statementImageAssetId: assetId }))
+                }
+              />
+              <AdminQuestionMediaField
+                description="Optional explanation image shared across the active language variants."
+                emptyDescription="No explanation image is linked yet."
+                label="Explanation image"
+                value={form.explanationImageAssetId}
+                onChange={(assetId) =>
+                  setForm((current) => ({ ...current, explanationImageAssetId: assetId }))
+                }
               />
             </div>
 
             {form.type !== "TEXT_INPUT" ? (
-              <div className="mt-5 grid gap-3">
-                {form.options.map((option) => {
-                  const previewDocument = buildPreviewOptionDocument(option, form);
-                  if (!previewDocument) {
-                    return null;
-                  }
-
-                  return (
-                    <div
-                      key={option.key}
-                      className="rounded-[20px] border border-[rgba(0,30,64,0.08)] bg-white px-4 py-3"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="tc-code-chip">{option.key}</span>
-                        {form.correctOptionKeys.includes(option.key) ? (
-                          <span className="tc-code-chip">Correct</span>
-                        ) : null}
-                      </div>
-                      <div className="mt-3">
-                        <StructuredContentRenderer
-                          bodyJson={previewDocument}
-                          preferredLocaleKeys={["mr-IN", "en-IN", "mr", "en"]}
-                          showLocaleBadge={false}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                {form.options.map((option) => (
+                  <AdminQuestionMediaField
+                    key={`option-image-${option.key}`}
+                    description={`Shared option ${option.key} image across the active language variants.`}
+                    emptyDescription={`No image is linked for option ${option.key} yet.`}
+                    label={`Option ${option.key} image`}
+                    value={option.imageAssetId}
+                    onChange={(assetId) =>
+                      setForm((current) => ({
+                        ...current,
+                        options: current.options.map((entry) =>
+                          entry.key === option.key
+                            ? { ...entry, imageAssetId: assetId }
+                            : entry,
+                        ),
+                      }))
+                    }
+                  />
+                ))}
               </div>
             ) : null}
-          </div>
+          </section>
 
-          <div className="rounded-[24px] border border-[rgba(0,30,64,0.08)] bg-white/78 p-5">
-            <p className="tc-overline">Explanation</p>
-            <div className="mt-3">
-              <StructuredContentRenderer
-                bodyJson={explanationPreview ?? { text: "Add an explanation if you want one." }}
-                preferredLocaleKeys={["mr-IN", "en-IN", "mr", "en"]}
-                showLocaleBadge={false}
-              />
+          <section ref={previewSectionRef} className="tc-card rounded-[28px] p-6">
+            <h2 className="text-xl font-semibold text-[color:var(--brand)]">Preview</h2>
+            <div className="mt-5 grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
+              <div className="rounded-[24px] border border-[rgba(0,30,64,0.08)] bg-white/78 p-5">
+                <p className="tc-overline">Statement</p>
+                <div className="mt-3">
+                  <QuestionPreviewContent
+                    content={statementPreview}
+                    emptyText="Add a statement to preview it."
+                    languageMode={form.languageMode}
+                  />
+                </div>
+
+                {form.statementImageAssetId ? (
+                  <p className="mt-4 text-sm leading-6 text-[color:var(--muted)]">
+                    A shared statement image is linked and will render with this question.
+                  </p>
+                ) : null}
+
+                {form.type !== "TEXT_INPUT" ? (
+                  <div className="mt-5 grid gap-3">
+                    {form.options.map((option) => {
+                      const previewDocument = buildPreviewOptionDocument(option, form);
+                      const hasOptionBody = Boolean(
+                        previewDocument && Object.keys(previewDocument).length > 0,
+                      );
+
+                      if (!hasOptionBody && !option.imageAssetId) {
+                        return null;
+                      }
+
+                      return (
+                        <div
+                          key={option.key}
+                          className="rounded-[20px] border border-[rgba(0,30,64,0.08)] bg-white px-4 py-3"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="tc-code-chip">{option.key}</span>
+                            {form.correctOptionKeys.includes(option.key) ? (
+                              <span className="tc-code-chip">Correct</span>
+                            ) : null}
+                          </div>
+                          {hasOptionBody ? (
+                            <div className="mt-3">
+                              <QuestionPreviewContent
+                                content={previewDocument}
+                                emptyText="Add option content to preview it."
+                                languageMode={form.languageMode}
+                              />
+                            </div>
+                          ) : null}
+                          {option.imageAssetId ? (
+                            <p className="mt-3 text-sm leading-6 text-[color:var(--muted)]">
+                              A shared option image is linked for this answer choice.
+                            </p>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="rounded-[24px] border border-[rgba(0,30,64,0.08)] bg-white/78 p-5">
+                <p className="tc-overline">Explanation</p>
+                <div className="mt-3">
+                  <QuestionPreviewContent
+                    content={explanationPreview}
+                    emptyText="Add an explanation if you want one."
+                    languageMode={form.languageMode}
+                  />
+                </div>
+                {form.explanationImageAssetId ? (
+                  <p className="mt-4 text-sm leading-6 text-[color:var(--muted)]">
+                    A shared explanation image is linked and will render in review mode.
+                  </p>
+                ) : null}
+                <div className="mt-5 rounded-[20px] border border-[rgba(0,30,64,0.08)] bg-[rgba(0,51,102,0.03)] p-4 text-sm leading-7 text-[color:var(--brand)]">
+                  {form.type === "TEXT_INPUT"
+                    ? `Accepted answers: ${
+                        form.acceptedAnswers
+                          .split("\n")
+                          .map((value) => value.trim())
+                          .filter(Boolean)
+                          .join(", ") || "none"
+                      }`
+                    : `Correct option keys: ${form.correctOptionKeys.join(", ") || "none"}`}
+                </div>
+              </div>
             </div>
-            <div className="mt-5 rounded-[20px] border border-[rgba(0,30,64,0.08)] bg-[rgba(0,51,102,0.03)] p-4 text-sm leading-7 text-[color:var(--brand)]">
-              {form.type === "TEXT_INPUT"
-                ? `Accepted answers: ${
-                    form.acceptedAnswers
-                      .split("\n")
-                      .map((value) => value.trim())
-                      .filter(Boolean)
-                      .join(", ") || "none"
-                  }`
-                : `Correct option keys: ${form.correctOptionKeys.join(", ") || "none"}`}
-            </div>
-          </div>
+          </section>
         </div>
-      </section>
+
+        <aside className="grid gap-6">
+          <section className="tc-card rounded-[28px] p-6">
+            <h2 className="text-xl font-semibold text-[color:var(--brand)]">Question settings</h2>
+            <div className="mt-5 grid gap-4">
+              <AdminInput
+                disabled={!canManageQuestions || isBusy}
+                label="Code"
+                placeholder="polity-fr-001"
+                value={form.code}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, code: event.target.value }))
+                }
+              />
+              <AdminSelect
+                disabled={!canManageQuestions || isBusy}
+                label="Question type"
+                value={form.type}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    acceptedAnswers: "",
+                    correctOptionKeys: [],
+                    type: event.target.value as QuestionType,
+                  }))
+                }
+              >
+                {QUESTION_TYPE_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option.replaceAll("_", " ")}
+                  </option>
+                ))}
+              </AdminSelect>
+              <AdminSelect
+                disabled={!canManageQuestions || isBusy}
+                label="Difficulty"
+                value={form.difficulty}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    difficulty: event.target.value as QuestionDifficulty,
+                  }))
+                }
+              >
+                {QUESTION_DIFFICULTY_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </AdminSelect>
+              <AdminSelect
+                disabled={!canManageQuestions || isBusy}
+                label="Subject"
+                value={form.subjectId}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    subjectId: event.target.value,
+                    topicId: "",
+                  }))
+                }
+              >
+                <option value="">Select subject</option>
+                {taxonomy.subjects.map((subject) => (
+                  <option key={subject.id} value={subject.id}>
+                    {subject.name}
+                  </option>
+                ))}
+              </AdminSelect>
+              <AdminSelect
+                disabled={!canManageQuestions || isBusy}
+                label="Topic"
+                value={form.topicId}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, topicId: event.target.value }))
+                }
+              >
+                <option value="">Optional topic</option>
+                {selectedSubjectTopics.map((topic) => (
+                  <option key={topic.id} value={topic.id}>
+                    {topic.name}
+                  </option>
+                ))}
+              </AdminSelect>
+              <AdminSelect
+                disabled={!canManageQuestions || isBusy}
+                label="Medium"
+                value={form.mediumId}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, mediumId: event.target.value }))
+                }
+              >
+                <option value="">All mediums</option>
+                {taxonomy.mediums.map((medium) => (
+                  <option key={medium.id} value={medium.id}>
+                    {medium.name}
+                  </option>
+                ))}
+              </AdminSelect>
+            </div>
+          </section>
+
+          <section className="tc-card rounded-[28px] p-6">
+            <h2 className="text-xl font-semibold text-[color:var(--brand)]">Question languages</h2>
+            <p className="mt-3 text-sm leading-6 text-[color:var(--muted)]">
+              Choose whether the admin enters English, Marathi, or both.
+            </p>
+            <div className="mt-5 grid gap-3">
+              {QUESTION_LANGUAGE_OPTIONS.map((option) => {
+                const isActive = form.languageMode === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={[
+                      "rounded-[22px] border px-4 py-4 text-left transition",
+                      isActive
+                        ? "border-[rgba(0,51,102,0.28)] bg-[rgba(0,51,102,0.06)]"
+                        : "border-[rgba(0,30,64,0.08)] bg-white/78 hover:border-[rgba(0,51,102,0.2)]",
+                    ].join(" ")}
+                    disabled={!canManageQuestions || isBusy}
+                    onClick={() =>
+                      setForm((current) => ({
+                        ...current,
+                        languageMode: option.value,
+                      }))
+                    }
+                  >
+                    <p className="font-semibold text-[color:var(--brand)]">{option.label}</p>
+                    <p className="mt-1 text-sm leading-6 text-[color:var(--muted)]">
+                      {option.description}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        </aside>
+      </div>
     </div>
   );
 }

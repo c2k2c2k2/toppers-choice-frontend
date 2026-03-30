@@ -10,7 +10,7 @@ export default function AdminTestsPage() {
         "academics.tests.publish",
       ]}
     >
-      <AdminAssessmentsScreen initialTab="tests" />
+      <AdminAssessmentsScreen initialTab="tests" testView="list" />
     </AdminPermissionGuard>
   );
 }

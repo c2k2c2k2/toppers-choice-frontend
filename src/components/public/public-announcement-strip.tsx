@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TextContent } from "@/components/primitives/text-content";
 import type { CmsAnnouncement } from "@/lib/cms";
 
 const levelAccentMap: Record<string, string> = {
@@ -22,7 +23,7 @@ export function PublicAnnouncementStrip({
       {announcements.slice(0, 3).map((announcement) => (
         <article
           key={announcement.id}
-          className="tc-panel tc-motion-rise rounded-[28px] p-5"
+          className="tc-public-surface-muted tc-motion-rise rounded-[28px] p-5"
         >
           <p
             className="tc-overline"
@@ -33,13 +34,20 @@ export function PublicAnnouncementStrip({
           >
             {announcement.level.toLowerCase()}
           </p>
-          <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight text-[color:var(--brand)]">
-            {announcement.title}
-          </h2>
-          <p className="tc-muted mt-3 text-sm leading-6">{announcement.body}</p>
+          <TextContent
+            as="h2"
+            className="tc-display mt-3 text-2xl font-semibold tracking-tight text-[color:var(--brand)]"
+            value={announcement.title}
+          />
+          <TextContent
+            as="p"
+            className="tc-muted mt-3 text-sm leading-6"
+            preserveLineBreaks
+            value={announcement.body}
+          />
           {announcement.linkHref && announcement.linkLabel ? (
             <Link href={announcement.linkHref} className="tc-button-secondary mt-5">
-              {announcement.linkLabel}
+              <TextContent as="span" value={announcement.linkLabel} />
             </Link>
           ) : null}
         </article>

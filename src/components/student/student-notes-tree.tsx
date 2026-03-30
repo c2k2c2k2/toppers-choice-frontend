@@ -31,10 +31,10 @@ function TopicBranch({
       <button
         type="button"
         onClick={() => onSelectTopic(topic.id)}
-        className="flex w-full items-center justify-between gap-3 rounded-[18px] px-3 py-3 text-left transition-colors duration-200 hover:bg-[rgba(255,255,255,0.76)]"
+        className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-transparent px-3 py-3 text-left transition-colors duration-200 hover:border-[rgba(0,30,64,0.08)] hover:bg-white/84"
         data-active={isActive}
         style={{
-          background: isActive ? "rgba(0, 51, 102, 0.08)" : "transparent",
+          background: isActive ? "rgba(0, 51, 102, 0.06)" : "transparent",
         }}
       >
         <span className="min-w-0">
@@ -94,7 +94,7 @@ export function StudentNotesTree({
       <button
         type="button"
         onClick={onSelectAll}
-        className="tc-rail-link"
+        className="tc-student-nav-link"
         data-active={activeSubjectId === null && activeTopicId === null}
       >
         <span className="flex min-w-0 flex-1 flex-col gap-1">
@@ -112,11 +112,11 @@ export function StudentNotesTree({
           activeSubjectId === subject.id && activeTopicId === null;
 
         return (
-          <section key={subject.id} className="rounded-[24px] bg-[rgba(255,255,255,0.62)] p-3">
+          <section key={subject.id} className="tc-student-card-muted rounded-[24px] p-3">
             <button
               type="button"
               onClick={() => onSelectSubject(subject.id)}
-              className="tc-rail-link w-full"
+              className="tc-student-nav-link w-full"
               data-active={isSubjectActive}
             >
               <span className="flex min-w-0 flex-1 flex-col gap-1">

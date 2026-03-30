@@ -24,16 +24,16 @@ export function AdminDataTable<Row>({
   }
 
   return (
-    <div className="overflow-hidden rounded-[24px] border border-[rgba(0,30,64,0.08)] bg-white/88 shadow-[var(--shadow-soft)]">
+    <div className="tc-admin-frame overflow-hidden rounded-[24px]">
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse">
-          <thead>
-            <tr className="bg-[rgba(0,30,64,0.03)] text-left">
+          <thead className="bg-[rgba(245,248,251,0.96)]">
+            <tr className="text-left">
               {columns.map((column) => (
                 <th
                   key={column.header}
                   className={[
-                    "px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--muted)]",
+                    "px-5 py-4 text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--muted)]",
                     column.className ?? "",
                   ].join(" ")}
                   scope="col"
@@ -52,8 +52,8 @@ export function AdminDataTable<Row>({
                   key={rowId}
                   aria-selected={selectedRowId === rowId}
                   className={[
-                    "border-t border-[rgba(0,30,64,0.06)] align-top transition-colors hover:bg-[rgba(255,255,255,0.86)]",
-                    onRowClick ? "cursor-pointer focus-within:bg-[rgba(0,51,102,0.06)]" : "",
+                    "border-t border-[rgba(0,30,64,0.06)] align-top transition-colors hover:bg-[rgba(0,51,102,0.02)]",
+                    onRowClick ? "cursor-pointer focus-within:bg-[rgba(0,51,102,0.04)]" : "",
                   ].join(" ")}
                   data-selected={selectedRowId === rowId}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
@@ -73,7 +73,7 @@ export function AdminDataTable<Row>({
                     <td
                       key={`${rowId}-${column.header}`}
                       className={[
-                        "px-4 py-4 text-sm text-[color:var(--foreground)]",
+                        "px-5 py-4 text-sm text-[color:var(--foreground)]",
                         onRowClick && index === 0 ? "font-medium" : "",
                         selectedRowId === rowId ? "bg-[rgba(0,51,102,0.04)]" : "",
                         column.className ?? "",

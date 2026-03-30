@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TextContent } from "@/components/primitives/text-content";
 import {
   buildStudentPlansHref,
   formatPlanDuration,
@@ -61,33 +62,46 @@ export function PublicPlanCard({
   card: PublicPlanCardData;
 }>) {
   return (
-    <article className="tc-card tc-motion-rise rounded-[28px] p-5">
+    <article className="tc-public-surface tc-motion-rise rounded-[30px] p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          {card.badge ? <p className="tc-overline">{card.badge}</p> : null}
-          <h3 className="tc-display mt-2 text-2xl font-semibold tracking-tight text-[color:var(--brand)]">
-            {card.title}
-          </h3>
+          {card.badge ? (
+            <span className="tc-public-badge" data-tone="accent">
+              {card.badge}
+            </span>
+          ) : null}
+          <TextContent
+            as="h3"
+            className="tc-display mt-2 text-2xl font-semibold tracking-tight text-[color:var(--brand)]"
+            value={card.title}
+          />
         </div>
-        <span className="tc-code-chip">{card.durationLabel}</span>
+        <span className="tc-public-badge" data-tone="soft">
+          {card.durationLabel}
+        </span>
       </div>
 
       <p className="mt-4 text-3xl font-semibold tracking-tight text-[color:var(--brand)]">
         {card.priceLabel}
       </p>
-      <p className="tc-muted mt-3 text-sm leading-6">{card.description}</p>
+      <TextContent
+        as="p"
+        className="tc-muted mt-3 text-sm leading-6"
+        preserveLineBreaks
+        value={card.description}
+      />
 
       <ul className="tc-muted mt-5 space-y-2 text-sm leading-6">
         {card.features.map((feature) => (
           <li key={feature} className="flex items-start gap-2">
             <span className="tc-dot mt-2 text-[color:var(--accent-public)]" />
-            <span>{feature}</span>
+            <TextContent as="span" value={feature} />
           </li>
         ))}
       </ul>
 
       <Link href={card.ctaHref} className="tc-button-primary mt-6">
-        {card.ctaLabel}
+        <TextContent as="span" value={card.ctaLabel} />
       </Link>
     </article>
   );

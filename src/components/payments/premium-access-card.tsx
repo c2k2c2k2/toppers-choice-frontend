@@ -37,7 +37,7 @@ export function PremiumAccessCard({
   });
 
   return (
-    <section className="tc-panel rounded-[28px] p-6 md:p-7">
+    <section className="tc-student-panel rounded-[28px] p-6 md:p-7">
       <p className="tc-kicker" style={{ color: "var(--accent-public)" }}>
         {badgeLabel ?? "Premium access"}
       </p>
@@ -47,10 +47,12 @@ export function PremiumAccessCard({
       <p className="tc-muted mt-3 text-base leading-7">{description}</p>
 
       <div className="mt-5 flex flex-wrap gap-3">
-        <span className="tc-stat-chip">
+        <span className="tc-student-chip" data-tone="accent">
           Unlock {getPremiumIntentLabel(intent)}
         </span>
-        <span className="tc-stat-chip">Checkout and entitlement refresh live</span>
+        <span className="tc-student-chip" data-tone="soft">
+          Checkout and entitlement refresh live
+        </span>
       </div>
 
       {hints.length > 0 ? (
@@ -58,7 +60,7 @@ export function PremiumAccessCard({
           {hints.map((hint) => (
             <div
               key={hint}
-              className="rounded-[22px] bg-[rgba(0,30,64,0.05)] px-4 py-3 text-sm leading-6 text-[color:var(--brand)]"
+              className="tc-student-card-muted rounded-[22px] px-4 py-3 text-sm leading-6 text-[color:var(--brand)]"
             >
               {hint}
             </div>

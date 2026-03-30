@@ -10,8 +10,8 @@ export function AdminPageHeader({
   title: string;
 }>) {
   return (
-    <section className="tc-card rounded-[28px] p-6">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <section className="tc-admin-frame rounded-[28px] p-5 md:p-6">
+      <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
         <div className="max-w-3xl">
           <p className="tc-kicker" style={{ color: "var(--accent-admin)" }}>
             {eyebrow ?? "Admin workspace"}
@@ -19,12 +19,12 @@ export function AdminPageHeader({
           <h1 className="tc-display mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
             {title}
           </h1>
-          <p className="tc-muted mt-3 text-sm leading-7 md:text-base">
+          <p className="tc-muted mt-3 max-w-3xl text-sm leading-7 md:text-base">
             {description}
           </p>
         </div>
         {actions ? (
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="tc-admin-toolbar xl:justify-end">
             {actions}
           </div>
         ) : null}

@@ -4,7 +4,7 @@ import { AdminCommerceScreen } from "@/components/admin/admin-commerce-screen";
 export default function AdminPlansPage() {
   return (
     <AdminPermissionGuard permissionKeys={["payments.read", "payments.manage"]}>
-      <AdminCommerceScreen initialTab="plans" />
+      <AdminCommerceScreen initialTab="plans" planView="list" />
     </AdminPermissionGuard>
   );
 }

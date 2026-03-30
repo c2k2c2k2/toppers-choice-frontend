@@ -120,6 +120,170 @@ function formatExpiry(value: string) {
   }).format(new Date(value));
 }
 
+type ReaderActionIcon =
+  | "bookmark"
+  | "bookmarks"
+  | "close"
+  | "expand"
+  | "index"
+  | "refresh";
+
+function ReaderActionGlyph({
+  icon,
+}: Readonly<{
+  icon: ReaderActionIcon;
+}>) {
+  if (icon === "bookmark" || icon === "bookmarks") {
+    return (
+      <svg
+        aria-hidden="true"
+        className="h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+        viewBox="0 0 24 24"
+      >
+        {icon === "bookmark" ? (
+          <path d="M7 5.75A1.75 1.75 0 0 1 8.75 4h6.5A1.75 1.75 0 0 1 17 5.75V20l-5-3-5 3z" />
+        ) : (
+          <>
+            <path d="M6 7.25A1.25 1.25 0 0 1 7.25 6h5.5A1.25 1.25 0 0 1 14 7.25V18l-4-2.4L6 18z" />
+            <path d="M13 5.5h3.75A1.25 1.25 0 0 1 18 6.75V17l-3-1.8" />
+          </>
+        )}
+      </svg>
+    );
+  }
+
+  if (icon === "close") {
+    return (
+      <svg
+        aria-hidden="true"
+        className="h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+        viewBox="0 0 24 24"
+      >
+        <path d="M6 6L18 18" />
+        <path d="M18 6L6 18" />
+      </svg>
+    );
+  }
+
+  if (icon === "expand") {
+    return (
+      <svg
+        aria-hidden="true"
+        className="h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+        viewBox="0 0 24 24"
+      >
+        <path d="M8 4H4v4" />
+        <path d="M16 4h4v4" />
+        <path d="M8 20H4v-4" />
+        <path d="M16 20h4v-4" />
+        <path d="M4 8l5-5" />
+        <path d="M20 8l-5-5" />
+        <path d="M4 16l5 5" />
+        <path d="M20 16l-5 5" />
+      </svg>
+    );
+  }
+
+  if (icon === "index") {
+    return (
+      <svg
+        aria-hidden="true"
+        className="h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+        viewBox="0 0 24 24"
+      >
+        <path d="M8 7h11" />
+        <path d="M8 12h11" />
+        <path d="M8 17h11" />
+        <path d="M4.5 7h.01" />
+        <path d="M4.5 12h.01" />
+        <path d="M4.5 17h.01" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.8"
+      viewBox="0 0 24 24"
+    >
+      <path d="M20 12a8 8 0 1 1-2.34-5.66" />
+      <path d="M20 4v6h-6" />
+    </svg>
+  );
+}
+
+function ReaderActionButton({
+  active = false,
+  disabled = false,
+  icon,
+  inverted = false,
+  label,
+  onClick,
+}: Readonly<{
+  active?: boolean;
+  disabled?: boolean;
+  icon: ReaderActionIcon;
+  inverted?: boolean;
+  label: string;
+  onClick: () => void;
+}>) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-pressed={active || undefined}
+      className={[
+        "flex h-11 w-11 items-center justify-center rounded-[18px] border text-sm transition",
+        inverted
+          ? [
+              active
+                ? "border-white/22 bg-white/18 text-white"
+                : "border-white/12 bg-white/10 text-white/88",
+              "hover:-translate-y-0.5 hover:bg-white/16 disabled:translate-y-0 disabled:bg-white/8 disabled:text-white/45",
+            ].join(" ")
+          : [
+              active
+                ? "border-[rgba(0,51,102,0.18)] bg-[rgba(0,51,102,0.1)] text-[color:var(--brand)]"
+                : "border-[rgba(0,30,64,0.08)] bg-white/90 text-[color:var(--brand)]",
+              "shadow-[var(--shadow-soft)] hover:-translate-y-0.5 hover:border-[rgba(0,51,102,0.18)] hover:bg-white disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-45",
+            ].join(" "),
+      ].join(" ")}
+      disabled={disabled}
+      onClick={onClick}
+      title={label}
+    >
+      <ReaderActionGlyph icon={icon} />
+      <span className="sr-only">{label}</span>
+    </button>
+  );
+}
+
 export function SecureNoteReader({
   note,
 }: Readonly<{
@@ -141,7 +305,7 @@ export function SecureNoteReader({
     (state) => state.setBottomNavVisible,
   );
   const [activePanel, setActivePanel] = useState<"bookmarks" | "index" | null>(
-    null,
+    "index",
   );
   const [currentPage, setCurrentPage] = useState(initialStartPage);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
@@ -341,7 +505,10 @@ export function SecureNoteReader({
     returnTo: `/student/notes/${note.id}`,
     source: isLocked ? "note-reader-locked" : "note-reader",
   });
-  const indexItems = useMemo(() => noteIndexQuery.data?.items ?? [], [noteIndexQuery.data?.items]);
+  const indexItems = useMemo(
+    () => noteIndexQuery.data?.items ?? [],
+    [noteIndexQuery.data?.items],
+  );
   const indexEntriesById = useMemo(
     () => new Map(indexItems.map((entry) => [entry.id, entry])),
     [indexItems],
@@ -359,6 +526,18 @@ export function SecureNoteReader({
     }
 
     return [entry.serialLabel, entry.title].filter(Boolean).join(" ");
+  }
+
+  function handleTogglePanel(panel: "bookmarks" | "index") {
+    setActivePanel((current) => (current === panel ? null : panel));
+  }
+
+  function handleSaveBookmark() {
+    createBookmarkMutation.mutate({
+      label: buildBookmarkLabel(nearestIndexEntry),
+      noteIndexEntryId: nearestIndexEntry?.id,
+      pageNumber: currentPage,
+    });
   }
 
   function renderIndexEntryTitle(entry: NoteIndexEntry) {
@@ -488,17 +667,19 @@ export function SecureNoteReader({
   }
 
   const panelShellClasses =
-    "rounded-[24px] border border-[rgba(0,30,64,0.08)] bg-white/88 p-4";
+    "tc-student-card-muted rounded-[24px] p-4";
 
   return (
     <section
       className={
         focusMode && readerState === "ready"
           ? "fixed inset-0 z-50 bg-[rgba(7,17,31,0.98)] p-3 sm:p-4"
-          : "tc-panel rounded-[32px] p-6"
+          : "tc-student-panel rounded-[32px] p-4 sm:p-5 lg:p-6"
       }
     >
-      <div className={`flex flex-col gap-6 ${focusMode && readerState === "ready" ? "h-full" : ""}`}>
+      <div
+        className={`flex flex-col gap-6 ${focusMode && readerState === "ready" ? "h-full" : ""}`}
+      >
         {!(focusMode && readerState === "ready") ? (
           <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div>
@@ -515,23 +696,19 @@ export function SecureNoteReader({
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               {readerState === "ready" ? (
                 <>
-                  <button
-                    type="button"
-                    onClick={() => setFocusMode(!focusMode)}
-                    className="tc-button-secondary"
-                  >
-                    {focusMode ? "Exit zen mode" : "Open zen mode"}
-                  </button>
-                  <button
-                    type="button"
+                  <ReaderActionButton
+                    icon="expand"
+                    label="Open zen mode"
+                    onClick={() => setFocusMode(true)}
+                  />
+                  <ReaderActionButton
+                    icon="refresh"
+                    label="Refresh reader session"
                     onClick={() => void startSession(currentPage)}
-                    className="tc-button-secondary"
-                  >
-                    Refresh session
-                  </button>
+                  />
                 </>
               ) : null}
               {note.access.requiresEntitlement ? (
@@ -555,47 +732,33 @@ export function SecureNoteReader({
               <span className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold">
                 Page {currentPage}
               </span>
-              <button
-                type="button"
-                className="tc-button-secondary"
-                onClick={() =>
-                  setActivePanel((current) => (current === "index" ? null : "index"))
-                }
-              >
-                Index
-              </button>
-              <button
-                type="button"
-                className="tc-button-secondary"
-                onClick={() =>
-                  setActivePanel((current) =>
-                    current === "bookmarks" ? null : "bookmarks",
-                  )
-                }
-              >
-                Bookmarks
-              </button>
-              <button
-                type="button"
-                className="tc-button-secondary"
+              <ReaderActionButton
+                active={activePanel === "index"}
+                icon="index"
+                inverted
+                label="Toggle note index"
+                onClick={() => handleTogglePanel("index")}
+              />
+              <ReaderActionButton
+                active={activePanel === "bookmarks"}
+                icon="bookmarks"
+                inverted
+                label="Toggle bookmarks"
+                onClick={() => handleTogglePanel("bookmarks")}
+              />
+              <ReaderActionButton
                 disabled={createBookmarkMutation.isPending}
-                onClick={() =>
-                  createBookmarkMutation.mutate({
-                    label: buildBookmarkLabel(nearestIndexEntry),
-                    noteIndexEntryId: nearestIndexEntry?.id,
-                    pageNumber: currentPage,
-                  })
-                }
-              >
-                Save spot
-              </button>
-              <button
-                type="button"
-                className="tc-button-secondary"
+                icon="bookmark"
+                inverted
+                label="Save this page"
+                onClick={handleSaveBookmark}
+              />
+              <ReaderActionButton
+                icon="close"
+                inverted
+                label="Exit zen mode"
                 onClick={() => setFocusMode(false)}
-              >
-                Exit
-              </button>
+              />
             </div>
           </div>
         )}
@@ -705,13 +868,11 @@ export function SecureNoteReader({
                     <p className="tc-overline">
                       {activePanel === "index" ? "Note index" : "Bookmarks"}
                     </p>
-                    <button
-                      type="button"
-                      className="tc-button-secondary"
+                    <ReaderActionButton
+                      icon="close"
+                      label="Hide reader panel"
                       onClick={() => setActivePanel(null)}
-                    >
-                      Close
-                    </button>
+                    />
                   </div>
                   {activePanel === "index" ? renderIndexPanel() : renderBookmarkPanel()}
                 </div>
@@ -745,87 +906,105 @@ export function SecureNoteReader({
               </div>
             </div>
           ) : (
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className="tc-stat-chip">
-                    {session.accessMode === "PREVIEW" ? "Preview" : "Full note"}
-                  </span>
-                  <span className="tc-stat-chip">Page {currentPage}</span>
-                  <span className="tc-stat-chip">Expires {formatExpiry(session.expiresAt)}</span>
-                  {progressMutation.isPending ? (
-                    <span className="tc-stat-chip">Saving progress...</span>
-                  ) : null}
-                </div>
+            <div className="flex flex-col gap-4">
+              <div className="rounded-[28px] border border-[rgba(0,30,64,0.08)] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(244,247,250,0.96)_100%)] p-4 shadow-[var(--shadow-soft)]">
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="tc-stat-chip">
+                      {session.accessMode === "PREVIEW" ? "Preview" : "Full note"}
+                    </span>
+                    <span className="tc-stat-chip">Page {currentPage}</span>
+                    <span className="tc-stat-chip">
+                      Expires {formatExpiry(session.expiresAt)}
+                    </span>
+                    {progressMutation.isPending ? (
+                      <span className="tc-stat-chip">Saving progress...</span>
+                    ) : null}
+                  </div>
 
-                <PdfCanvasViewer
-                  key={`${session.noteViewSessionId}:${sessionStartPage}`}
-                  initialPage={sessionStartPage}
-                  initialZoom={preferredZoom}
-                  noteViewSessionId={session.noteViewSessionId}
-                  noteViewToken={session.noteViewToken}
-                  onError={handleViewerError}
-                  onPageChange={(page) => setCurrentPage(page)}
-                  onZoomChange={setPreferredZoom}
-                  requestedPage={currentPage}
-                  watermarkPayload={watermarkPayload}
-                />
-              </div>
-
-              <div className="flex flex-col gap-4">
-                <div className={panelShellClasses}>
-                  <p className="tc-overline">Reader actions</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      className="tc-button-secondary"
-                      onClick={() =>
-                        setActivePanel((current) =>
-                          current === "index" ? null : "index",
-                        )
-                      }
-                    >
-                      {activePanel === "index" ? "Hide index" : "Show index"}
-                    </button>
-                    <button
-                      type="button"
-                      className="tc-button-secondary"
-                      onClick={() =>
-                        setActivePanel((current) =>
-                          current === "bookmarks" ? null : "bookmarks",
-                        )
-                      }
-                    >
-                      {activePanel === "bookmarks"
-                        ? "Hide bookmarks"
-                        : "Show bookmarks"}
-                    </button>
-                    <button
-                      type="button"
-                      className="tc-button-secondary"
+                  <div className="flex flex-wrap items-center gap-2">
+                    <ReaderActionButton
+                      active={activePanel === "index"}
+                      icon="index"
+                      label="Toggle note index"
+                      onClick={() => handleTogglePanel("index")}
+                    />
+                    <ReaderActionButton
+                      active={activePanel === "bookmarks"}
+                      icon="bookmarks"
+                      label="Toggle bookmarks"
+                      onClick={() => handleTogglePanel("bookmarks")}
+                    />
+                    <ReaderActionButton
                       disabled={createBookmarkMutation.isPending}
-                      onClick={() =>
-                        createBookmarkMutation.mutate({
-                          label: buildBookmarkLabel(nearestIndexEntry),
-                          noteIndexEntryId: nearestIndexEntry?.id,
-                          pageNumber: currentPage,
-                        })
-                      }
-                    >
-                      Save this page
-                    </button>
+                      icon="bookmark"
+                      label="Save this page"
+                      onClick={handleSaveBookmark}
+                    />
+                    <ReaderActionButton
+                      icon="expand"
+                      label="Open zen mode"
+                      onClick={() => setFocusMode(true)}
+                    />
+                    <ReaderActionButton
+                      icon="refresh"
+                      label="Refresh reader session"
+                      onClick={() => void startSession(currentPage)}
+                    />
                   </div>
                 </div>
 
+                {nearestIndexEntry ? (
+                  <div className="mt-4 rounded-[20px] border border-[rgba(0,30,64,0.06)] bg-white/78 px-4 py-3">
+                    <p className="tc-overline">Reading now</p>
+                    <div className="mt-2 text-sm font-semibold text-[color:var(--brand)]">
+                      {renderIndexEntryTitle(nearestIndexEntry)}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              <PdfCanvasViewer
+                key={`${session.noteViewSessionId}:${sessionStartPage}`}
+                initialPage={sessionStartPage}
+                initialZoom={preferredZoom}
+                noteViewSessionId={session.noteViewSessionId}
+                noteViewToken={session.noteViewToken}
+                onError={handleViewerError}
+                onPageChange={(page) => setCurrentPage(page)}
+                onZoomChange={setPreferredZoom}
+                requestedPage={currentPage}
+                watermarkPayload={watermarkPayload}
+              />
+
+              {activePanel ? (
                 <div className={panelShellClasses}>
-                  <p className="tc-overline">
-                    {activePanel === "bookmarks" ? "Bookmarks" : "Note index"}
-                  </p>
-                  <div className="mt-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="tc-overline">
+                        {activePanel === "bookmarks" ? "Bookmarks" : "Note index"}
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
+                        {activePanel === "bookmarks"
+                          ? "Jump back to the pages you marked during this reading session."
+                          : "Use the topic map to jump directly to the right chapter or section."}
+                      </p>
+                    </div>
+                    <ReaderActionButton
+                      icon="close"
+                      label="Hide reader panel"
+                      onClick={() => setActivePanel(null)}
+                    />
+                  </div>
+                  <div className="mt-4">
                     {activePanel === "bookmarks" ? renderBookmarkPanel() : renderIndexPanel()}
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="rounded-[24px] border border-dashed border-[rgba(0,30,64,0.12)] bg-[rgba(255,255,255,0.68)] px-4 py-3 text-sm text-[color:var(--muted)]">
+                  Use the compact actions above to open the note index, bookmarks, or zen mode without squeezing the page.
+                </div>
+              )}
             </div>
           )
         ) : null}

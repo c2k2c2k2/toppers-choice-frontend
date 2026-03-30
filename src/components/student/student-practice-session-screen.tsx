@@ -62,7 +62,7 @@ function PracticeSummaryMetric({
   value: string;
 }>) {
   return (
-    <div className="tc-card rounded-[22px] p-4">
+    <div className="tc-student-card rounded-[22px] p-4">
       <p className="tc-overline">{label}</p>
       <p className="mt-3 text-2xl font-semibold text-[color:var(--brand)]">
         {value}
@@ -306,7 +306,7 @@ export function StudentPracticeSessionScreen({
   if (session.status !== "ACTIVE") {
     return (
       <div className="flex flex-col gap-6">
-        <section className="tc-hero rounded-[32px] p-6 md:p-7">
+        <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
           <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
             <div>
               <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
@@ -355,7 +355,7 @@ export function StudentPracticeSessionScreen({
           </div>
         </section>
 
-        <section className="tc-panel rounded-[28px] p-6">
+        <section className="tc-student-panel rounded-[28px] p-6">
           <div className="grid gap-4 md:grid-cols-3">
             <PracticeSummaryMetric
               label="Started"
@@ -412,7 +412,7 @@ export function StudentPracticeSessionScreen({
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="tc-hero rounded-[32px] p-6 md:p-7">
+      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
         <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
@@ -615,7 +615,7 @@ export function StudentPracticeSessionScreen({
         </div>
 
         <div className="grid gap-6">
-          <section className="tc-panel rounded-[28px] p-6">
+          <section className="tc-student-panel rounded-[28px] p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -654,7 +654,7 @@ export function StudentPracticeSessionScreen({
             </div>
           </section>
 
-          <section className="tc-panel rounded-[28px] p-6">
+          <section className="tc-student-panel rounded-[28px] p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -667,19 +667,19 @@ export function StudentPracticeSessionScreen({
             </div>
 
             <div className="mt-5 grid gap-4">
-              <div className="tc-card rounded-[22px] p-4">
+              <div className="tc-student-card rounded-[22px] p-4">
                 <p className="tc-overline">Started</p>
                 <p className="mt-2 font-semibold text-[color:var(--brand)]">
                   {formatAssessmentDate(session.startedAt)}
                 </p>
               </div>
-              <div className="tc-card rounded-[22px] p-4">
+              <div className="tc-student-card rounded-[22px] p-4">
                 <p className="tc-overline">Current scope</p>
                 <p className="mt-2 font-semibold text-[color:var(--brand)]">
                   {session.topic?.name ?? session.subject?.name ?? "Mixed scope"}
                 </p>
               </div>
-              <div className="tc-card rounded-[22px] p-4">
+              <div className="tc-student-card rounded-[22px] p-4">
                 <p className="tc-overline">Last activity</p>
                 <p className="mt-2 font-semibold text-[color:var(--brand)]">
                   {formatAssessmentDate(session.lastActivityAt)}

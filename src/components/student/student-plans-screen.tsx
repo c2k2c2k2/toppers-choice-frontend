@@ -30,6 +30,7 @@ import { StudentPlanCard } from "@/components/payments/student-plan-card";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
 import { LoadingState } from "@/components/primitives/loading-state";
+import { TextContent } from "@/components/primitives/text-content";
 import { usePaymentCheckoutStore } from "@/stores";
 
 function formatTimestamp(value: string | null) {
@@ -238,7 +239,7 @@ export function StudentPlansScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="tc-hero rounded-[32px] p-6 md:p-7">
+      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
         <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
@@ -286,7 +287,7 @@ export function StudentPlansScreen() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="tc-glass rounded-[24px] p-5">
+            <div className="tc-student-metric rounded-[24px] p-5">
               <p className="tc-overline">Current access</p>
               <p className="mt-4 text-lg font-semibold text-white">
                 {hasIntentAccess(activeEntitlements, intent)
@@ -297,11 +298,13 @@ export function StudentPlansScreen() {
                 Active access respects backend starts, expiry, and revoke timestamps.
               </p>
             </div>
-            <div className="tc-glass rounded-[24px] p-5">
+            <div className="tc-student-metric rounded-[24px] p-5">
               <p className="tc-overline">Selected plan</p>
-              <p className="mt-4 text-lg font-semibold text-white">
-                {selectedPlan?.name ?? "Choose a live plan"}
-              </p>
+              <TextContent
+                as="p"
+                className="mt-4 text-lg font-semibold text-white"
+                value={selectedPlan?.name ?? "Choose a live plan"}
+              />
               <p className="mt-2 text-sm text-white/72">
                 {selectedPlan ? formatPlanPrice(selectedPlan) : "Plans remain backend-managed."}
               </p>
@@ -317,14 +320,15 @@ export function StudentPlansScreen() {
       ) : null}
 
       {pendingOrder ? (
-        <section className="tc-panel rounded-[28px] p-6">
+        <section className="tc-student-panel rounded-[28px] p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
                 Payment tracker
               </p>
               <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-                {pendingOrder.plan.name} is {getPaymentStatusLabel(pendingOrder.status).toLowerCase()}.
+                <TextContent as="span" value={pendingOrder.plan.name} />{" "}
+                is {getPaymentStatusLabel(pendingOrder.status).toLowerCase()}.
               </h2>
               <p className="tc-muted mt-3 text-sm leading-6">
                 Order {pendingOrder.merchantOrderCode} stays attached to this
@@ -353,7 +357,7 @@ export function StudentPlansScreen() {
       ) : null}
 
       {manualEntitlements.length > 0 ? (
-        <section className="tc-panel rounded-[28px] p-6">
+        <section className="tc-student-panel rounded-[28px] p-6">
           <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
             Access already granted
           </p>
@@ -362,7 +366,7 @@ export function StudentPlansScreen() {
           </h2>
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
             {manualEntitlements.map((entitlement) => (
-              <div key={entitlement.id} className="tc-card rounded-[24px] p-5">
+              <div key={entitlement.id} className="tc-student-card rounded-[24px] p-5">
                 <p className="tc-overline">{entitlement.kind}</p>
                 <p className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
                   {entitlement.sourceType.replace(/_/g, " ")}
@@ -405,7 +409,7 @@ export function StudentPlansScreen() {
       )}
 
       {plansQuery.data.items.length > 0 && !selectedPlan ? (
-        <section className="tc-card rounded-[28px] p-6">
+        <section className="tc-student-card rounded-[28px] p-6">
           <p className="tc-overline">Plan selection</p>
           <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight text-[color:var(--brand)]">
             Plan choice can be preselected from public pricing or any locked student route.

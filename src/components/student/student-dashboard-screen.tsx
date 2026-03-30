@@ -16,6 +16,7 @@ import {
 } from "@/lib/student";
 import { ErrorState } from "@/components/primitives/error-state";
 import { LoadingState } from "@/components/primitives/loading-state";
+import { TextContent } from "@/components/primitives/text-content";
 import { useStudentShellStore } from "@/stores";
 
 function buildCatalogHref(
@@ -56,7 +57,7 @@ function StudentMetricCard({
   value: string;
 }>) {
   return (
-    <article className="tc-glass rounded-[24px] p-5">
+    <article className="tc-student-metric rounded-[24px] p-5">
       <p className="tc-overline">{label}</p>
       <p className="tc-display mt-4 text-3xl font-semibold tracking-tight text-white">
         {value}
@@ -169,7 +170,7 @@ export function StudentDashboardScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="tc-hero rounded-[32px] p-6 md:p-7">
+      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
         <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
@@ -234,7 +235,7 @@ export function StudentDashboardScreen() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="tc-panel rounded-[28px] p-6">
+        <div className="tc-student-panel rounded-[28px] p-6">
           <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
             Catalog focus
           </p>
@@ -269,12 +270,12 @@ export function StudentDashboardScreen() {
           </div>
         </div>
 
-        <div className="tc-panel rounded-[28px] p-6">
+        <div className="tc-student-panel rounded-[28px] p-6">
           <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
             Student account
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div className="tc-card rounded-[22px] p-4">
+            <div className="tc-student-card rounded-[22px] p-4">
               <p className="tc-overline">Unread updates</p>
               <p className="mt-3 text-3xl font-semibold text-[color:var(--brand)]">
                 {dashboardData.analytics.unreadNotifications}
@@ -283,7 +284,7 @@ export function StudentDashboardScreen() {
                 Academy announcements and personal messages appear here.
               </p>
             </div>
-            <div className="tc-card rounded-[22px] p-4">
+            <div className="tc-student-card rounded-[22px] p-4">
               <p className="tc-overline">Entitlements</p>
               <p className="mt-3 text-3xl font-semibold text-[color:var(--brand)]">
                 {dashboardData.analytics.activeEntitlements}
@@ -294,7 +295,7 @@ export function StudentDashboardScreen() {
                 )}
               </p>
             </div>
-            <div className="tc-card rounded-[22px] p-4">
+            <div className="tc-student-card rounded-[22px] p-4">
               <p className="tc-overline">Best test score</p>
               <p className="mt-3 text-3xl font-semibold text-[color:var(--brand)]">
                 {dashboardData.analytics.tests.bestPercentage}%
@@ -303,7 +304,7 @@ export function StudentDashboardScreen() {
                 {dashboardData.analytics.tests.submittedAttempts} submitted attempts
               </p>
             </div>
-            <div className="tc-card rounded-[22px] p-4">
+            <div className="tc-student-card rounded-[22px] p-4">
               <p className="tc-overline">Quick action path</p>
               <p className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
                 Open catalog
@@ -317,7 +318,7 @@ export function StudentDashboardScreen() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
-        <div className="tc-panel rounded-[28px] p-6">
+        <div className="tc-student-panel rounded-[28px] p-6">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -339,31 +340,36 @@ export function StudentDashboardScreen() {
                 const linkLabel = getOptionalText(announcement.linkLabel);
 
                 return (
-                  <article key={announcement.id} className="tc-card rounded-[24px] p-5">
+                  <article key={announcement.id} className="tc-student-card rounded-[24px] p-5">
                     <div className="flex flex-wrap items-center gap-3">
-                      <h3 className="text-lg font-semibold text-[color:var(--brand)]">
-                        {announcement.title}
-                      </h3>
+                      <TextContent
+                        as="h3"
+                        className="text-lg font-semibold text-[color:var(--brand)]"
+                        value={announcement.title}
+                      />
                       <span className="tc-nav-badge" data-status="live">
                         {announcement.level.toLowerCase()}
                       </span>
                     </div>
-                    <p className="tc-muted mt-3 text-sm leading-6">
-                      {announcement.body}
-                    </p>
+                    <TextContent
+                      as="p"
+                      className="tc-muted mt-3 text-sm leading-6"
+                      preserveLineBreaks
+                      value={announcement.body}
+                    />
                     {linkHref && linkLabel ? (
                       <Link
                         href={linkHref}
                         className="tc-button-secondary mt-4"
                       >
-                        {linkLabel}
+                        <TextContent as="span" value={linkLabel} />
                       </Link>
                     ) : null}
                   </article>
                 );
               })
             ) : (
-              <div className="tc-card rounded-[24px] p-5">
+              <div className="tc-student-card rounded-[24px] p-5">
                 <p className="font-semibold text-[color:var(--brand)]">
                   No student announcements are published yet.
                 </p>
@@ -375,7 +381,7 @@ export function StudentDashboardScreen() {
           </div>
         </div>
 
-        <div className="tc-panel rounded-[28px] p-6">
+        <div className="tc-student-panel rounded-[28px] p-6">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -393,20 +399,25 @@ export function StudentDashboardScreen() {
           <div className="mt-5 flex flex-col gap-4">
             {dashboardData.notifications.items.length > 0 ? (
               dashboardData.notifications.items.slice(0, 4).map((message) => (
-                <article key={message.id} className="tc-card rounded-[24px] p-5">
+                <article key={message.id} className="tc-student-card rounded-[24px] p-5">
                   <div className="flex flex-wrap items-center gap-3">
-                    <h3 className="text-lg font-semibold text-[color:var(--brand)]">
-                      {message.title}
-                    </h3>
+                    <TextContent
+                      as="h3"
+                      className="text-lg font-semibold text-[color:var(--brand)]"
+                      value={message.title}
+                    />
                     <span className="tc-code-chip">{message.channel}</span>
                   </div>
-                  <p className="tc-muted mt-3 text-sm leading-6">
-                    {message.body}
-                  </p>
+                  <TextContent
+                    as="p"
+                    className="tc-muted mt-3 text-sm leading-6"
+                    preserveLineBreaks
+                    value={message.body}
+                  />
                 </article>
               ))
             ) : (
-              <div className="tc-card rounded-[24px] p-5">
+              <div className="tc-student-card rounded-[24px] p-5">
                 <p className="font-semibold text-[color:var(--brand)]">
                   Your notification inbox is clear for now.
                 </p>
@@ -419,7 +430,7 @@ export function StudentDashboardScreen() {
         </div>
       </section>
 
-      <section className="tc-panel rounded-[28px] p-6">
+      <section className="tc-student-panel rounded-[28px] p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -440,7 +451,7 @@ export function StudentDashboardScreen() {
         </div>
 
         <div className="mt-5 grid gap-4 xl:grid-cols-3">
-          <article className="tc-card rounded-[24px] p-5">
+          <article className="tc-student-card rounded-[24px] p-5">
             <p className="tc-overline">Practice mode</p>
             <h3 className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
               Practice mode
@@ -450,7 +461,7 @@ export function StudentDashboardScreen() {
             </p>
           </article>
 
-          <article className="tc-card rounded-[24px] p-5">
+          <article className="tc-student-card rounded-[24px] p-5">
             <p className="tc-overline">Timed mode</p>
             <h3 className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
               Timed tests
@@ -460,7 +471,7 @@ export function StudentDashboardScreen() {
             </p>
           </article>
 
-          <article className="tc-card rounded-[24px] p-5">
+          <article className="tc-student-card rounded-[24px] p-5">
             <p className="tc-overline">Shared scope</p>
             <h3 className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
               One study setup
@@ -472,7 +483,7 @@ export function StudentDashboardScreen() {
         </div>
       </section>
 
-      <section className="tc-panel rounded-[28px] p-6">
+      <section className="tc-student-panel rounded-[28px] p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -492,7 +503,7 @@ export function StudentDashboardScreen() {
             <Link
               key={surface.href}
               href={surface.href}
-              className="tc-card rounded-[24px] p-5 transition-transform duration-200 hover:-translate-y-1"
+              className="tc-student-card rounded-[24px] p-5 transition-transform duration-200 hover:-translate-y-1"
             >
               <p className="tc-overline">Student route</p>
               <h3 className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
@@ -506,7 +517,7 @@ export function StudentDashboardScreen() {
         </div>
       </section>
 
-      <section className="tc-panel rounded-[28px] p-6">
+      <section className="tc-student-panel rounded-[28px] p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -536,7 +547,7 @@ export function StudentDashboardScreen() {
                   examTrackCode: snapshot.selectedTrack?.code ?? null,
                   mediumCode: snapshot.selectedMedium?.code ?? null,
                 })}
-                className="tc-card rounded-[24px] p-5 transition-transform duration-200 hover:-translate-y-1"
+                className="tc-student-card rounded-[24px] p-5 transition-transform duration-200 hover:-translate-y-1"
               >
                 <div className="flex flex-wrap items-center gap-3">
                   <h3 className="text-lg font-semibold text-[color:var(--brand)]">
@@ -557,7 +568,7 @@ export function StudentDashboardScreen() {
             ))}
           </div>
         ) : (
-          <div className="tc-card mt-5 rounded-[24px] p-5">
+          <div className="tc-student-card mt-5 rounded-[24px] p-5">
             <p className="font-semibold text-[color:var(--brand)]">
               No subjects are published for the current selection yet.
             </p>

@@ -154,7 +154,7 @@ export function PaymentResultScreen() {
 
   if (!authSession.isAuthenticated || authSession.user?.userType !== "STUDENT") {
     return (
-      <section className="tc-card rounded-[32px] p-6 md:p-7">
+      <section className="tc-student-panel rounded-[32px] p-6 md:p-7">
         <p className="tc-kicker" style={{ color: "var(--accent-public)" }}>
           Payment result
         </p>
@@ -212,7 +212,7 @@ export function PaymentResultScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="tc-hero rounded-[32px] p-6 md:p-7">
+      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
         <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
@@ -234,11 +234,19 @@ export function PaymentResultScreen() {
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <span className="tc-stat-chip">{getPaymentStatusLabel(order.status)}</span>
-              <span className="tc-stat-chip">{order.plan.name}</span>
-              <span className="tc-stat-chip">{formatPlanPrice(order.plan)}</span>
+              <span className="tc-student-chip" data-tone="hero">
+                {getPaymentStatusLabel(order.status)}
+              </span>
+              <span className="tc-student-chip" data-tone="hero">
+                {order.plan.name}
+              </span>
+              <span className="tc-student-chip" data-tone="hero">
+                {formatPlanPrice(order.plan)}
+              </span>
               {merchantOrderCode ? (
-                <span className="tc-stat-chip">{merchantOrderCode}</span>
+                <span className="tc-student-chip" data-tone="hero">
+                  {merchantOrderCode}
+                </span>
               ) : null}
             </div>
 
@@ -272,7 +280,7 @@ export function PaymentResultScreen() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="tc-glass rounded-[24px] p-5">
+            <div className="tc-student-metric rounded-[24px] p-5">
               <p className="tc-overline">Plan</p>
               <p className="mt-4 text-lg font-semibold text-white">
                 {order.plan.name}
@@ -281,7 +289,7 @@ export function PaymentResultScreen() {
                 {formatPlanPrice(order.plan)} for {order.plan.durationDays} days
               </p>
             </div>
-            <div className="tc-glass rounded-[24px] p-5">
+            <div className="tc-student-metric rounded-[24px] p-5">
               <p className="tc-overline">Provider state</p>
               <p className="mt-4 text-lg font-semibold text-white">
                 {order.providerStatus ?? order.status}
@@ -295,7 +303,7 @@ export function PaymentResultScreen() {
       </section>
 
       {order.status === "SUCCEEDED" ? (
-        <section className="tc-panel rounded-[28px] p-6">
+        <section className="tc-student-panel rounded-[28px] p-6">
           <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
             Next
           </p>
@@ -310,7 +318,7 @@ export function PaymentResultScreen() {
             ].map((item) => (
               <div
                 key={item}
-                className="rounded-[22px] bg-[rgba(0,30,64,0.05)] px-4 py-3 text-sm leading-6 text-[color:var(--brand)]"
+                className="tc-student-card-muted rounded-[22px] px-4 py-3 text-sm leading-6 text-[color:var(--brand)]"
               >
                 {item}
               </div>

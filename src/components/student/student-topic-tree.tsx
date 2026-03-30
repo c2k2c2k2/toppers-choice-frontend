@@ -23,7 +23,7 @@ function TopicBranch({
             className="tc-topic-branch"
             style={{ marginLeft: `${depth * 1.05}rem` }}
           >
-            <div className="tc-card rounded-[24px] p-4">
+            <div className="tc-student-card rounded-[24px] p-4">
               <div className="flex flex-wrap items-center gap-3">
                 <h3 className="text-base font-semibold text-[color:var(--brand)]">
                   {topic.name}
@@ -60,7 +60,7 @@ export function StudentTopicTree({
 }>) {
   if (topics.length === 0) {
     return (
-      <div className="tc-panel rounded-[28px] p-6">
+      <div className="tc-student-panel rounded-[28px] p-6">
         <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
           Topic map
         </p>

@@ -17,6 +17,7 @@ import {
   getStudentCatalog,
   getTrackLabel,
 } from "@/lib/student";
+import { TextContent } from "@/components/primitives/text-content";
 import { ErrorState } from "@/components/primitives/error-state";
 import { LoadingState } from "@/components/primitives/loading-state";
 import { useStudentShellStore } from "@/stores";
@@ -35,7 +36,7 @@ function FamilyDiscoveryCard({
   return (
     <Link
       href={definition.collectionHref}
-      className="tc-card rounded-[24px] p-5 transition-transform duration-200 hover:-translate-y-1"
+      className="tc-student-card rounded-[24px] p-5 transition-transform duration-200 hover:-translate-y-1"
     >
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -55,9 +56,13 @@ function FamilyDiscoveryCard({
 
       <div className="mt-4 rounded-[20px] bg-[rgba(0,30,64,0.04)] px-4 py-3">
         <p className="tc-overline">Current lead</p>
-        <p className="mt-2 text-sm font-semibold leading-6 text-[color:var(--brand)]">
-          {firstTitle ?? "Published items will appear here as soon as this family goes live."}
-        </p>
+        <TextContent
+          as="p"
+          className="mt-2 text-sm font-semibold leading-6 text-[color:var(--brand)]"
+          value={
+            firstTitle ?? "Published items will appear here as soon as this family goes live."
+          }
+        />
       </div>
     </Link>
   );
@@ -156,7 +161,7 @@ export function StudentStructuredContentHubScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="tc-hero rounded-[32px] p-6 md:p-7">
+      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
         <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
@@ -191,23 +196,27 @@ export function StudentStructuredContentHubScreen() {
                   <Link
                     key={item.id}
                     href={definition.detailHref(item.slug)}
-                    className="tc-glass rounded-[24px] p-5"
+                    className="tc-student-metric rounded-[24px] p-5"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <p className="tc-overline">{definition.shortLabel}</p>
                       <span className="tc-code-chip">{item.access.mode}</span>
                     </div>
-                    <h2 className="mt-3 text-lg font-semibold text-white">
-                      {item.title}
-                    </h2>
-                    <p className="mt-2 text-sm leading-6 text-white/74">
-                      {getContentExcerpt(item)}
-                    </p>
+                    <TextContent
+                      as="h2"
+                      className="mt-3 text-lg font-semibold text-white"
+                      value={item.title}
+                    />
+                    <TextContent
+                      as="p"
+                      className="mt-2 text-sm leading-6 text-white/74"
+                      value={getContentExcerpt(item)}
+                    />
                   </Link>
                 );
               })
             ) : (
-              <div className="tc-glass rounded-[24px] p-5">
+              <div className="tc-student-metric rounded-[24px] p-5">
                 <p className="tc-overline">Publishing status</p>
                 <p className="mt-3 text-lg font-semibold text-white">
                   Structured content will appear here as soon as the first items are published.
@@ -218,7 +227,7 @@ export function StudentStructuredContentHubScreen() {
         </div>
       </section>
 
-      <section className="tc-panel rounded-[28px] p-6">
+      <section className="tc-student-panel rounded-[28px] p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -254,7 +263,7 @@ export function StudentStructuredContentHubScreen() {
         </div>
       </section>
 
-      <section className="tc-panel rounded-[28px] p-6">
+      <section className="tc-student-panel rounded-[28px] p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-public)" }}>

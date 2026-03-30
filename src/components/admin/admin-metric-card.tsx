@@ -8,7 +8,7 @@ export function AdminMetricCard({
   value: string | number;
 }>) {
   return (
-    <section className="tc-glass rounded-[24px] p-5">
+    <section className="tc-admin-frame-subtle rounded-[24px] p-5">
       <p className="tc-overline">{label}</p>
       <p className="mt-4 text-3xl font-semibold text-[color:var(--brand)]">
         {value}

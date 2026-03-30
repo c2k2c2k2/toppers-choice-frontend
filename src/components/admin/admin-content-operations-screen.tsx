@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { adminQueryKeys } from "@/lib/api/query-keys";
@@ -16,9 +18,6 @@ import {
   parseOptionalInteger,
   publishAdminContent,
   publishAdminNote,
-  safeJsonParse,
-  safeJsonParseArray,
-  stringifyJsonInput,
   unfeatureAdminContent,
   unpublishAdminContent,
   unpublishAdminNote,
@@ -32,17 +31,38 @@ import {
   type NoteAccessType,
   type NoteStatus,
 } from "@/lib/admin";
+import {
+  AdminAttachmentsEditor,
+  buildAttachmentRows,
+  serializeAttachmentRows,
+  type AdminAttachmentRow,
+} from "@/components/admin/admin-attachments-editor";
 import { AdminDataTable } from "@/components/admin/admin-data-table";
 import { AdminFilterBar } from "@/components/admin/admin-filter-bar";
+import { AdminFontTextField } from "@/components/admin/admin-font-text-field";
 import { AdminInlineNotice } from "@/components/admin/admin-inline-notice";
+import {
+  AdminKeyValueEditor,
+  parseKeyValueObject,
+  serializeKeyValueRows,
+  type AdminKeyValueRow,
+} from "@/components/admin/admin-key-value-editor";
+import {
+  AdminRichHtmlField,
+} from "@/components/admin/admin-rich-html-field";
 import { AdminInput, AdminSelect, AdminTextarea } from "@/components/admin/admin-form-field";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import {
+  buildStructuredDocumentFromHtml,
+  readStructuredDocumentHtml,
+} from "@/lib/admin/rich-text";
 import { AdminRouteTabs } from "@/components/admin/admin-route-tabs";
 import { AdminToneBadge, AdminVisibilityBadge } from "@/components/admin/admin-status-badge";
 import { useAdminTaxonomyReferenceData } from "@/components/admin/use-admin-taxonomy-reference-data";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
 import { LoadingState } from "@/components/primitives/loading-state";
+import { TextContent } from "@/components/primitives/text-content";
 
 type ContentWorkspaceTab = "notes" | "content";
 
@@ -65,16 +85,16 @@ interface NoteFormState {
 
 interface StructuredContentFormState {
   accessType: ContentAccessType;
-  attachmentsJson: string;
-  bodyJson: string;
+  attachments: AdminAttachmentRow[];
+  bodyHtml: string;
   coverImageAssetId: string;
-  examTrackIds: string;
+  examTrackIds: string[];
   excerpt: string;
   family: ContentFamily;
   featuredOrderIndex: string;
   format: ContentFormat;
-  mediumIds: string;
-  metaJson: string;
+  mediumIds: string[];
+  metaRows: AdminKeyValueRow[];
   orderIndex: string;
   readingTimeMinutes: string;
   slug: string;
@@ -118,22 +138,44 @@ const EMPTY_NOTE_FORM_STATE: NoteFormState = {
 
 const EMPTY_CONTENT_FORM_STATE: StructuredContentFormState = {
   accessType: "FREE",
-  attachmentsJson: "",
-  bodyJson: "",
+  attachments: [],
+  bodyHtml: "",
   coverImageAssetId: "",
-  examTrackIds: "",
+  examTrackIds: [],
   excerpt: "",
   family: "CAREER_GUIDANCE",
   featuredOrderIndex: "",
   format: "ARTICLE",
-  mediumIds: "",
-  metaJson: "",
+  mediumIds: [],
+  metaRows: [],
   orderIndex: "",
   readingTimeMinutes: "",
   slug: "",
   title: "",
   visibility: "PUBLIC",
 };
+
+function WorkspaceStatCard({
+  detail,
+  label,
+  value,
+}: Readonly<{
+  detail: string;
+  label: string;
+  value: string | number;
+}>) {
+  return (
+    <section className="tc-admin-frame-subtle rounded-[24px] p-5">
+      <p className="tc-overline">{label}</p>
+      <p className="mt-4 text-3xl font-semibold text-[color:var(--brand)]">
+        {value}
+      </p>
+      <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
+        {detail}
+      </p>
+    </section>
+  );
+}
 
 function buildNoteFormState(
   note: Awaited<ReturnType<typeof listAdminNotes>>["items"][number] | null,
@@ -173,17 +215,11 @@ function buildContentFormState(
 
   return {
     accessType: content.accessType,
-    attachmentsJson: stringifyJsonInput(
-      content.attachments.map((attachment) => ({
-        fileAssetId: attachment.fileAssetId,
-        label: attachment.label,
-        orderIndex: attachment.orderIndex,
-      })),
-    ),
-    bodyJson: stringifyJsonInput(content.bodyJson),
+    attachments: buildAttachmentRows(content.attachments),
+    bodyHtml: readStructuredDocumentHtml(content.bodyJson),
     coverImageAssetId:
       typeof content.coverImage?.id === "string" ? content.coverImage.id : "",
-    examTrackIds: content.examTracks.map((track) => track.id).join(", "),
+    examTrackIds: content.examTracks.map((track) => track.id),
     excerpt: typeof content.excerpt === "string" ? content.excerpt : "",
     family: content.family,
     featuredOrderIndex:
@@ -191,8 +227,8 @@ function buildContentFormState(
         ? String(content.featuredOrderIndex)
         : "",
     format: content.format,
-    mediumIds: content.mediums.map((medium) => medium.id).join(", "),
-    metaJson: stringifyJsonInput(content.metaJson),
+    mediumIds: content.mediums.map((medium) => medium.id),
+    metaRows: parseKeyValueObject(content.metaJson),
     orderIndex: String(content.orderIndex),
     readingTimeMinutes:
       typeof content.readingTimeMinutes === "number"
@@ -206,10 +242,15 @@ function buildContentFormState(
 
 export function AdminContentOperationsScreen({
   initialTab,
+  contentId = null,
+  contentView = "workspace",
 }: Readonly<{
   initialTab: ContentWorkspaceTab;
+  contentId?: string | null;
+  contentView?: "editor" | "list" | "workspace";
 }>) {
   const authSession = useAuthSession();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const taxonomy = useAdminTaxonomyReferenceData();
   const canReadNotes = authSession.hasPermission("content.notes.read");
@@ -236,6 +277,9 @@ export function AdminContentOperationsScreen({
     EMPTY_CONTENT_FORM_STATE,
   );
   const [message, setMessage] = useState<string | null>(null);
+  const isContentEditorMode = initialTab === "content" && contentView === "editor";
+  const isContentListMode = initialTab === "content" && contentView === "list";
+  const isCreatingContent = isContentEditorMode && !contentId;
 
   const notesQuery = useAuthenticatedQuery({
     enabled: initialTab === "notes" && canReadNotes,
@@ -280,9 +324,18 @@ export function AdminContentOperationsScreen({
   });
 
   const contentDetailQuery = useAuthenticatedQuery({
-    enabled: initialTab === "content" && canReadContent && Boolean(selectedContentId),
-    queryFn: (accessToken) => getAdminContent(selectedContentId ?? "", accessToken),
-    queryKey: ["admin", "content", "detail", selectedContentId ?? "new"],
+    enabled:
+      initialTab === "content" &&
+      canReadContent &&
+      Boolean(isContentEditorMode ? contentId : selectedContentId),
+    queryFn: (accessToken) =>
+      getAdminContent(isContentEditorMode ? (contentId ?? "") : (selectedContentId ?? ""), accessToken),
+    queryKey: [
+      "admin",
+      "content",
+      "detail",
+      isContentEditorMode ? (contentId ?? "new") : (selectedContentId ?? "new"),
+    ],
     staleTime: 30_000,
   });
 
@@ -314,8 +367,9 @@ export function AdminContentOperationsScreen({
       setSelectedContentId(null);
     } else {
       setSelectedNoteId(null);
+      setSelectedContentId(contentId ?? null);
     }
-  }, [initialTab]);
+  }, [contentId, initialTab]);
 
   const noteSaveMutation = useAuthenticatedMutation({
     mutationFn: async (_: void, accessToken) => {
@@ -376,42 +430,34 @@ export function AdminContentOperationsScreen({
 
   const contentSaveMutation = useAuthenticatedMutation({
     mutationFn: async (_: void, accessToken) => {
+      const title = contentForm.title.trim();
+      const bodyJson = buildStructuredDocumentFromHtml(contentForm.bodyHtml);
       const input = {
         accessType: contentForm.accessType,
-        attachments: (safeJsonParseArray(contentForm.attachmentsJson, {
-          allowEmpty: true,
-          label: "Attachments",
-        }) ?? []) as Array<{
-          fileAssetId: string;
-          label?: string;
-          orderIndex?: number;
-        }>,
-        bodyJson: safeJsonParse(contentForm.bodyJson, {
-          label: "Body JSON",
-        }) as Record<string, never>,
+        attachments: serializeAttachmentRows(contentForm.attachments),
+        bodyJson: bodyJson as unknown as Record<string, never>,
         coverImageAssetId: contentForm.coverImageAssetId.trim() || undefined,
-        examTrackIds: parseIdListInput(contentForm.examTrackIds),
+        examTrackIds: contentForm.examTrackIds,
         excerpt: contentForm.excerpt.trim() || undefined,
         family: contentForm.family,
         format: contentForm.format,
-        mediumIds: parseIdListInput(contentForm.mediumIds),
-        metaJson: safeJsonParse(contentForm.metaJson, {
-          allowEmpty: true,
-          label: "Meta JSON",
-        }) as Record<string, never> | undefined,
+        mediumIds: contentForm.mediumIds,
+        metaJson: serializeKeyValueRows(contentForm.metaRows) as
+          | Record<string, never>
+          | undefined,
         orderIndex: parseOptionalInteger(contentForm.orderIndex),
         readingTimeMinutes: parseOptionalInteger(contentForm.readingTimeMinutes),
         slug: contentForm.slug.trim() || undefined,
-        title: contentForm.title.trim(),
+        title,
         visibility: contentForm.visibility,
       };
 
-      if (!input.title) {
-        throw new Error("A title is required.");
+      if (!input.title || !bodyJson) {
+        throw new Error("A title and body are required.");
       }
 
-      if (selectedContentId) {
-        return updateAdminContent(selectedContentId, input, accessToken);
+      if (selectedContentId || contentId) {
+        return updateAdminContent(selectedContentId ?? contentId ?? "", input, accessToken);
       }
 
       return createAdminContent(input, accessToken);
@@ -425,26 +471,32 @@ export function AdminContentOperationsScreen({
           queryKey: ["admin", "content", "detail", content.id],
         }),
       ]);
+
+      if (isContentEditorMode) {
+        router.replace(`/admin/content/${content.id}`);
+      }
     },
   });
 
   const contentPublishMutation = useAuthenticatedMutation({
     mutationFn: async (action: "publish" | "unpublish" | "feature" | "unfeature", accessToken) => {
-      if (!selectedContentId) {
+      if (!(selectedContentId || contentId)) {
         throw new Error("Select a structured content record first.");
       }
 
+      const activeContentId = selectedContentId ?? contentId ?? "";
+
       if (action === "publish") {
-        return publishAdminContent(selectedContentId, accessToken, {});
+        return publishAdminContent(activeContentId, accessToken, {});
       }
 
       if (action === "unpublish") {
-        return unpublishAdminContent(selectedContentId, accessToken);
+        return unpublishAdminContent(activeContentId, accessToken);
       }
 
       if (action === "feature") {
         return featureAdminContent(
-          selectedContentId,
+          activeContentId,
           {
             featuredOrderIndex: parseOptionalInteger(contentForm.featuredOrderIndex),
           },
@@ -452,14 +504,19 @@ export function AdminContentOperationsScreen({
         );
       }
 
-      return unfeatureAdminContent(selectedContentId, accessToken);
+      return unfeatureAdminContent(activeContentId, accessToken);
     },
     onSuccess: async () => {
       setMessage("Structured content state updated.");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin", "content"] }),
         queryClient.invalidateQueries({
-          queryKey: ["admin", "content", "detail", selectedContentId ?? "new"],
+          queryKey: [
+            "admin",
+            "content",
+            "detail",
+            selectedContentId ?? contentId ?? "new",
+          ],
         }),
       ]);
     },
@@ -479,7 +536,8 @@ export function AdminContentOperationsScreen({
 
   if (
     (initialTab === "notes" && notesQuery.isLoading) ||
-    (initialTab === "content" && (contentQuery.isLoading || contentDetailQuery.isLoading))
+    (initialTab === "content" &&
+      (contentQuery.isLoading || (Boolean(selectedContentId || contentId) && contentDetailQuery.isLoading)))
   ) {
     return (
       <LoadingState
@@ -491,7 +549,8 @@ export function AdminContentOperationsScreen({
 
   if (
     (initialTab === "notes" && notesQuery.error) ||
-    (initialTab === "content" && (contentQuery.error || contentDetailQuery.error))
+    (initialTab === "content" &&
+      (contentQuery.error || (Boolean(selectedContentId || contentId) && contentDetailQuery.error)))
   ) {
     return (
       <ErrorState
@@ -512,6 +571,35 @@ export function AdminContentOperationsScreen({
 
   const noteRows = notesQuery.data?.items ?? [];
   const contentRows = contentQuery.data?.items ?? [];
+  const notePublishedCount = noteRows.filter((row) => row.status === "PUBLISHED").length;
+  const notePremiumCount = noteRows.filter((row) => row.accessType !== "FREE").length;
+  const uniqueNoteSubjects = new Set(noteRows.map((row) => row.subjectId)).size;
+  const contentPublishedCount = contentRows.filter((row) => row.status === "PUBLISHED").length;
+  const contentDraftCount = contentRows.filter((row) => row.status === "DRAFT").length;
+  const contentFeaturedCount = contentRows.filter((row) => row.isFeatured).length;
+  const contentFamilyCount = new Set(contentRows.map((row) => row.family)).size;
+  const activeFilterCount =
+    initialTab === "notes"
+      ? [searchValue.trim(), noteStatus, noteAccessType, noteSubjectId, noteTopicId].filter(
+          Boolean,
+        ).length
+      : [
+          searchValue.trim(),
+          contentStatus,
+          contentAccessType,
+          contentFamily,
+          contentMediumId,
+        ].filter(Boolean).length;
+  const contentFamilyBreakdown = CONTENT_FAMILY_OPTIONS.map((family) => ({
+    family,
+    count: contentRows.filter((row) => row.family === family).length,
+  })).filter((item) => item.count > 0);
+  const workspaceGridClass =
+    initialTab === "content"
+      ? isContentListMode
+        ? "grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_22rem]"
+        : "grid gap-6"
+      : "grid gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(24rem,0.92fr)]";
 
   return (
     <div className="flex flex-col gap-6">
@@ -519,34 +607,49 @@ export function AdminContentOperationsScreen({
         eyebrow="Authoring"
         title={
           initialTab === "notes"
-            ? "Notes"
-            : "Structured content"
+            ? "Notes manager"
+            : isContentEditorMode
+              ? isCreatingContent
+                ? "Create content entry"
+                : "Edit content entry"
+              : "Content manager"
         }
         description={
           initialTab === "notes"
-            ? "Create, update, and publish note records for students."
-            : "Manage guidance, English speaking, current affairs, and monthly updates from one editor."
+            ? "Create, update, and publish note records without leaving the main workspace."
+            : isContentEditorMode
+              ? "Focus on one content record at a time with Marathi-ready fields and guided editors."
+              : "Review the full structured-content library, trim noise with filters, and open focused editor pages only when needed."
         }
         actions={
-          <>
+          initialTab === "content" ? (
+            isContentEditorMode ? (
+              <Link href="/admin/content" className="tc-button-secondary">
+                Back to content
+              </Link>
+            ) : (
+              <Link
+                href="/admin/content/new"
+                className="tc-button-primary"
+                aria-disabled={!activeCanManage}
+              >
+                New content entry
+              </Link>
+            )
+          ) : (
             <button
               type="button"
               className="tc-button-primary"
               disabled={!activeCanManage}
               onClick={() => {
                 setMessage(null);
-                if (initialTab === "notes") {
-                  setSelectedNoteId(null);
-                  setNoteForm(EMPTY_NOTE_FORM_STATE);
-                } else {
-                  setSelectedContentId(null);
-                  setContentForm(EMPTY_CONTENT_FORM_STATE);
-                }
+                setSelectedNoteId(null);
+                setNoteForm(EMPTY_NOTE_FORM_STATE);
               }}
             >
-              New {initialTab === "notes" ? "note" : "content entry"}
+              New note
             </button>
-          </>
+          )
         }
       />
 
@@ -566,19 +669,72 @@ export function AdminContentOperationsScreen({
         ]}
       />
 
-      <AdminFilterBar
-        searchValue={searchValue}
-        onSearchValueChange={setSearchValue}
-        searchPlaceholder={
-          initialTab === "notes"
-            ? "Search notes by title, slug, description, or metadata"
-            : "Search structured content by title, slug, excerpt, or body"
-        }
-        resultSummary={`${initialTab === "notes" ? noteRows.length : contentRows.length} ${
-          initialTab === "notes" ? "notes" : "content entries"
-        } visible.`}
-      >
-        {initialTab === "notes" ? (
+      {!isContentEditorMode ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {initialTab === "notes" ? (
+            <>
+              <WorkspaceStatCard
+                label="Visible notes"
+                value={noteRows.length}
+                detail="Records matching the current search and filter state."
+              />
+              <WorkspaceStatCard
+                label="Published"
+                value={notePublishedCount}
+                detail="Notes currently ready for students."
+              />
+              <WorkspaceStatCard
+                label="Premium access"
+                value={notePremiumCount}
+                detail="Notes restricted to previewable or premium access."
+              />
+              <WorkspaceStatCard
+                label="Subjects"
+                value={uniqueNoteSubjects}
+                detail="Subjects represented in the filtered note list."
+              />
+            </>
+          ) : (
+            <>
+              <WorkspaceStatCard
+                label="Visible entries"
+                value={contentRows.length}
+                detail="Structured content records matching the current filters."
+              />
+              <WorkspaceStatCard
+                label="Published"
+                value={contentPublishedCount}
+                detail="Entries already available to students."
+              />
+              <WorkspaceStatCard
+                label="Featured"
+                value={contentFeaturedCount}
+                detail="Records currently pinned for higher visibility."
+              />
+              <WorkspaceStatCard
+                label="Families"
+                value={contentFamilyCount}
+                detail="Content families represented in this filtered view."
+              />
+            </>
+          )}
+        </div>
+      ) : null}
+
+      {initialTab === "notes" || !isContentEditorMode ? (
+        <AdminFilterBar
+          searchValue={searchValue}
+          onSearchValueChange={setSearchValue}
+          searchPlaceholder={
+            initialTab === "notes"
+              ? "Search notes by title, slug, description, or metadata"
+              : "Search structured content by title, slug, excerpt, or body"
+          }
+          resultSummary={`${initialTab === "notes" ? noteRows.length : contentRows.length} ${
+            initialTab === "notes" ? "notes" : "content entries"
+          } visible.`}
+        >
+          {initialTab === "notes" ? (
           <>
             <label className="tc-form-field min-w-[12rem]">
               <span className="tc-form-label">Status</span>
@@ -643,7 +799,7 @@ export function AdminContentOperationsScreen({
               </select>
             </label>
           </>
-        ) : (
+          ) : (
           <>
             <label className="tc-form-field min-w-[12rem]">
               <span className="tc-form-label">Status</span>
@@ -712,8 +868,9 @@ export function AdminContentOperationsScreen({
               </select>
             </label>
           </>
-        )}
-      </AdminFilterBar>
+          )}
+        </AdminFilterBar>
+      ) : null}
 
       {message ? <AdminInlineNotice tone="success">{message}</AdminInlineNotice> : null}
       {taxonomy.isLoading ? (
@@ -752,8 +909,9 @@ export function AdminContentOperationsScreen({
         </AdminInlineNotice>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(24rem,0.9fr)]">
-        <section>
+      <div className={workspaceGridClass}>
+        {(initialTab === "notes" || !isContentEditorMode) ? (
+          <section>
           {initialTab === "notes" ? (
             <AdminDataTable
               rows={noteRows}
@@ -811,8 +969,10 @@ export function AdminContentOperationsScreen({
             <AdminDataTable
               rows={contentRows}
               getRowId={(row) => row.id}
-              selectedRowId={selectedContentId}
-              onRowClick={(row) => setSelectedContentId(row.id)}
+              selectedRowId={isContentListMode ? null : selectedContentId}
+              onRowClick={(row) =>
+                isContentListMode ? router.push(`/admin/content/${row.id}`) : setSelectedContentId(row.id)
+              }
               emptyState={
                 <EmptyState
                   eyebrow="Structured content"
@@ -825,7 +985,11 @@ export function AdminContentOperationsScreen({
                   header: "Entry",
                   render: (row) => (
                     <div className="space-y-1">
-                      <p className="font-semibold text-[color:var(--brand)]">{row.title}</p>
+                      <TextContent
+                        as="p"
+                        className="font-semibold text-[color:var(--brand)]"
+                        value={row.title}
+                      />
                       <p className="text-xs text-[color:var(--muted)]">
                         {row.family} · {row.slug}
                       </p>
@@ -864,9 +1028,117 @@ export function AdminContentOperationsScreen({
               ]}
             />
           )}
-        </section>
+          </section>
+        ) : null}
 
-        <section className="tc-card rounded-[28px] p-6">
+        {initialTab === "content" && isContentListMode ? (
+          <section className="tc-admin-frame rounded-[28px] p-5 xl:sticky xl:top-4 xl:h-fit">
+            <p className="tc-kicker" style={{ color: "var(--accent-admin)" }}>
+              Publishing overview
+            </p>
+            <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
+              Use the space for review, not clutter.
+            </h2>
+            <p className="tc-muted mt-3 text-sm leading-7">
+              This layout keeps the library wide for scanning, then moves secondary guidance and quick actions into a compact side panel.
+            </p>
+
+            <div className="tc-admin-stat mt-5">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--muted)]">
+                Current filters
+              </p>
+              <p className="mt-3 text-2xl font-semibold text-[color:var(--brand)]">
+                {activeFilterCount === 0
+                  ? "All entries visible"
+                  : `${activeFilterCount} active filter${activeFilterCount === 1 ? "" : "s"}`}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
+                {activeFilterCount === 0
+                  ? "Use the search and filter bar when you want to narrow the review to one family, status, access type, or medium."
+                  : "Clear filters to return to the full content library and spot issues across the whole catalog."}
+              </p>
+            </div>
+
+            <div className="mt-5 grid gap-3">
+              {contentFamilyBreakdown.length > 0 ? (
+                contentFamilyBreakdown.map((item) => (
+                  <div
+                    key={item.family}
+                    className="tc-admin-frame-subtle rounded-[20px] px-4 py-3"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-[color:var(--brand)]">
+                        {item.family.replaceAll("_", " ")}
+                      </p>
+                      <span className="tc-admin-chip" data-tone="subtle">
+                        {item.count}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="tc-admin-frame-subtle rounded-[20px] px-4 py-4">
+                  <p className="text-sm leading-6 text-[color:var(--muted)]">
+                    No content families are visible yet. Create the first content entry to begin building this library.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 flex flex-col gap-3">
+              <Link href="/admin/content/new" className="tc-button-primary text-center">
+                Create content entry
+              </Link>
+              <button
+                type="button"
+                className="tc-button-secondary"
+                onClick={() => {
+                  setSearchValue("");
+                  setContentStatus("");
+                  setContentAccessType("");
+                  setContentFamily("");
+                  setContentMediumId("");
+                }}
+              >
+                Clear filters
+              </button>
+            </div>
+
+            <div className="tc-admin-stat mt-5">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--muted)]">
+                Library health
+              </p>
+              <div className="mt-3 grid gap-3">
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-[color:var(--muted)]">Draft entries</span>
+                  <span className="font-semibold text-[color:var(--brand)]">
+                    {contentDraftCount}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-[color:var(--muted)]">Featured entries</span>
+                  <span className="font-semibold text-[color:var(--brand)]">
+                    {contentFeaturedCount}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-[color:var(--muted)]">Published entries</span>
+                  <span className="font-semibold text-[color:var(--brand)]">
+                    {contentPublishedCount}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {initialTab === "notes" || !isContentListMode ? (
+          <section
+            className={[
+              "tc-admin-frame rounded-[28px] p-5 md:p-6",
+              initialTab === "notes" ? "xl:sticky xl:top-4 xl:h-fit" : "",
+            ].join(" ")}
+          >
           {initialTab === "notes" ? (
             <div className="grid gap-4">
               <div>
@@ -1052,19 +1324,30 @@ export function AdminContentOperationsScreen({
             </div>
           ) : (
             <div className="grid gap-4">
+              {isContentEditorMode && !isCreatingContent && !selectedContent ? (
+                <EmptyState
+                  eyebrow="Structured content"
+                  title="That content record could not be found."
+                  description="Return to the content library and choose another record."
+                />
+              ) : (
+                <>
               <div>
                 <p className="tc-kicker" style={{ color: "var(--accent-admin)" }}>
                   Structured content editor
                 </p>
                 <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-                  {selectedContentId ? "Update structured content" : "Create structured content"}
+                  {selectedContentId || contentId
+                    ? "Update structured content"
+                    : "Create structured content"}
                 </h2>
               </div>
-              <AdminInput
+              <AdminFontTextField
                 label="Title"
+                storage="html"
                 value={contentForm.title}
-                onChange={(event) =>
-                  setContentForm((current) => ({ ...current, title: event.target.value }))
+                onChange={(value) =>
+                  setContentForm((current) => ({ ...current, title: value }))
                 }
               />
               <div className="grid gap-4 md:grid-cols-2">
@@ -1151,26 +1434,66 @@ export function AdminContentOperationsScreen({
                 </AdminSelect>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
-                <AdminInput
-                  label="Exam track IDs"
-                  value={contentForm.examTrackIds}
-                  onChange={(event) =>
-                    setContentForm((current) => ({
-                      ...current,
-                      examTrackIds: event.target.value,
-                    }))
-                  }
-                />
-                <AdminInput
-                  label="Medium IDs"
-                  value={contentForm.mediumIds}
-                  onChange={(event) =>
-                    setContentForm((current) => ({
-                      ...current,
-                      mediumIds: event.target.value,
-                    }))
-                  }
-                />
+                <div className="grid gap-3">
+                  <div className="flex flex-col gap-1">
+                    <span className="tc-form-label">Exam tracks</span>
+                    <span className="text-xs leading-5 text-[color:var(--muted)]">
+                      Choose the tracks that should surface this content.
+                    </span>
+                  </div>
+                  <div className="grid gap-2">
+                    {taxonomy.examTracks.map((track) => (
+                      <label
+                        key={track.id}
+                        className="flex items-center gap-3 rounded-[18px] border border-[rgba(0,30,64,0.08)] bg-white/72 px-4 py-3 text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={contentForm.examTrackIds.includes(track.id)}
+                          onChange={(event) =>
+                            setContentForm((current) => ({
+                              ...current,
+                              examTrackIds: event.target.checked
+                                ? [...current.examTrackIds, track.id]
+                                : current.examTrackIds.filter((id) => id !== track.id),
+                            }))
+                          }
+                        />
+                        <span>{track.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid gap-3">
+                  <div className="flex flex-col gap-1">
+                    <span className="tc-form-label">Mediums</span>
+                    <span className="text-xs leading-5 text-[color:var(--muted)]">
+                      Select one or more study mediums for this entry.
+                    </span>
+                  </div>
+                  <div className="grid gap-2">
+                    {taxonomy.mediums.map((medium) => (
+                      <label
+                        key={medium.id}
+                        className="flex items-center gap-3 rounded-[18px] border border-[rgba(0,30,64,0.08)] bg-white/72 px-4 py-3 text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={contentForm.mediumIds.includes(medium.id)}
+                          onChange={(event) =>
+                            setContentForm((current) => ({
+                              ...current,
+                              mediumIds: event.target.checked
+                                ? [...current.mediumIds, medium.id]
+                                : current.mediumIds.filter((id) => id !== medium.id),
+                            }))
+                          }
+                        />
+                        <span>{medium.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <AdminInput
@@ -1207,35 +1530,42 @@ export function AdminContentOperationsScreen({
                   }))
                 }
               />
-              <AdminTextarea
+              <AdminFontTextField
                 label="Excerpt"
+                multiline
+                preserveParagraphs
+                rows={4}
+                storage="html"
                 value={contentForm.excerpt}
-                onChange={(event) =>
-                  setContentForm((current) => ({ ...current, excerpt: event.target.value }))
+                onChange={(value) =>
+                  setContentForm((current) => ({ ...current, excerpt: value }))
                 }
               />
-              <AdminTextarea
-                label="Body JSON"
-                value={contentForm.bodyJson}
-                onChange={(event) =>
-                  setContentForm((current) => ({ ...current, bodyJson: event.target.value }))
+              <AdminRichHtmlField
+                label="Lesson body"
+                hint="Write the student-facing lesson content here. Formatting and Marathi font hints will be preserved."
+                minHeight="18rem"
+                value={contentForm.bodyHtml}
+                onChange={(value) =>
+                  setContentForm((current) => ({ ...current, bodyHtml: value }))
                 }
               />
-              <AdminTextarea
-                label="Meta JSON"
-                value={contentForm.metaJson}
-                onChange={(event) =>
-                  setContentForm((current) => ({ ...current, metaJson: event.target.value }))
+              <AdminKeyValueEditor
+                hint="Optional content metadata such as month, lesson level, or campaign tags."
+                label="Metadata"
+                rows={contentForm.metaRows}
+                onChange={(rows) =>
+                  setContentForm((current) => ({ ...current, metaRows: rows }))
                 }
               />
-              <AdminTextarea
-                label="Attachments JSON"
-                hint='Example: [{"fileAssetId":"asset-id","label":"Worksheet","orderIndex":10}]'
-                value={contentForm.attachmentsJson}
-                onChange={(event) =>
+              <AdminAttachmentsEditor
+                hint="Attach worksheets, PDFs, or supporting downloads in the order students should see them."
+                label="Attachments"
+                rows={contentForm.attachments}
+                onChange={(rows) =>
                   setContentForm((current) => ({
                     ...current,
-                    attachmentsJson: event.target.value,
+                    attachments: rows,
                   }))
                 }
               />
@@ -1248,14 +1578,14 @@ export function AdminContentOperationsScreen({
                 >
                   {contentSaveMutation.isPending
                     ? "Saving..."
-                    : selectedContentId
+                    : selectedContentId || contentId
                       ? "Save content"
                       : "Create content"}
                 </button>
                 <button
                   type="button"
                   className="tc-button-secondary"
-                  disabled={!selectedContentId || !canPublishContent || contentPublishMutation.isPending}
+                  disabled={!(selectedContentId || contentId) || !canPublishContent || contentPublishMutation.isPending}
                   onClick={() =>
                     contentPublishMutation.mutate(
                       selectedContent?.status === "PUBLISHED" ? "unpublish" : "publish",
@@ -1267,7 +1597,7 @@ export function AdminContentOperationsScreen({
                 <button
                   type="button"
                   className="tc-button-secondary"
-                  disabled={!selectedContentId || !canPublishContent || contentPublishMutation.isPending}
+                  disabled={!(selectedContentId || contentId) || !canPublishContent || contentPublishMutation.isPending}
                   onClick={() =>
                     contentPublishMutation.mutate(
                       selectedContent?.isFeatured ? "unfeature" : "feature",
@@ -1277,9 +1607,12 @@ export function AdminContentOperationsScreen({
                   {selectedContent?.isFeatured ? "Remove feature" : "Feature entry"}
                 </button>
               </div>
+                </>
+              )}
             </div>
           )}
-        </section>
+          </section>
+        ) : null}
       </div>
     </div>
   );

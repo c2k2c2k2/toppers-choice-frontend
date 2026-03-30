@@ -41,7 +41,7 @@ export function StudentNoteCard({
           : "Start reading";
 
   return (
-    <article className="tc-card rounded-[28px] p-5 transition-transform duration-200 hover:-translate-y-1">
+    <article className="tc-student-card rounded-[28px] p-5 transition-transform duration-200 hover:-translate-y-1">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
@@ -57,7 +57,7 @@ export function StudentNoteCard({
           </h2>
         </div>
 
-        <div className="rounded-[20px] bg-[rgba(0,30,64,0.05)] px-4 py-3 text-right">
+        <div className="tc-student-card-muted rounded-[20px] px-4 py-3 text-right">
           <p className="tc-overline">Pages</p>
           <p className="mt-2 text-2xl font-semibold text-[color:var(--brand)]">
             {note.pageCount}
@@ -83,13 +83,13 @@ export function StudentNoteCard({
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-[22px] bg-[rgba(255,255,255,0.78)] px-4 py-3">
+        <div className="tc-student-card-muted rounded-[22px] px-4 py-3">
           <p className="tc-overline">Reader progress</p>
           <p className="mt-2 text-sm font-semibold text-[color:var(--brand)]">
             {buildNoteProgressLabel(note)}
           </p>
         </div>
-        <div className="rounded-[22px] bg-[rgba(255,255,255,0.78)] px-4 py-3">
+        <div className="tc-student-card-muted rounded-[22px] px-4 py-3">
           <p className="tc-overline">Entitlement state</p>
           <p className="mt-2 text-sm font-semibold text-[color:var(--brand)]">
             {previewPageCount

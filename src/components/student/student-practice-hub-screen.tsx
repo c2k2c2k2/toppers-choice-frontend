@@ -76,7 +76,7 @@ function PracticeMetricCard({
   value: string;
 }>) {
   return (
-    <div className="tc-glass rounded-[24px] p-5">
+    <div className="tc-student-metric rounded-[24px] p-5">
       <p className="tc-overline">{label}</p>
       <p className="mt-4 text-3xl font-semibold text-white">{value}</p>
       <p className="mt-2 text-sm text-white/72">{detail}</p>
@@ -302,7 +302,7 @@ export function StudentPracticeHubScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="tc-hero rounded-[32px] p-6 md:p-7">
+      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
         <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
@@ -369,7 +369,7 @@ export function StudentPracticeHubScreen() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-        <section className="tc-panel rounded-[28px] p-6">
+        <section className="tc-student-panel rounded-[28px] p-6">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -390,7 +390,7 @@ export function StudentPracticeHubScreen() {
                   <button
                     key={option.value}
                     type="button"
-                    className="tc-card rounded-[24px] p-4 text-left transition-transform duration-200 hover:-translate-y-0.5"
+                    className="tc-student-card rounded-[24px] p-4 text-left transition-transform duration-200 hover:-translate-y-0.5"
                     onClick={() => setMode(option.value)}
                     style={{
                       border:
@@ -526,7 +526,7 @@ export function StudentPracticeHubScreen() {
         </section>
 
         <section className="grid gap-6">
-          <section className="tc-panel rounded-[28px] p-6">
+          <section className="tc-student-panel rounded-[28px] p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -541,7 +541,7 @@ export function StudentPracticeHubScreen() {
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               {subjectProgressQuery.isError ? (
-                <div className="tc-card rounded-[24px] p-5">
+                <div className="tc-student-card rounded-[24px] p-5">
                   <p className="font-semibold text-[color:var(--brand)]">
                     Subject progress is temporarily unavailable.
                   </p>
@@ -551,7 +551,7 @@ export function StudentPracticeHubScreen() {
                   <button
                     key={item.subject.id}
                     type="button"
-                    className="tc-card rounded-[24px] p-5 text-left transition-transform duration-200 hover:-translate-y-0.5"
+                    className="tc-student-card rounded-[24px] p-5 text-left transition-transform duration-200 hover:-translate-y-0.5"
                     onClick={() => setSelectedSubjectId(item.subject.id)}
                   >
                     <div className="flex items-center justify-between gap-3">
@@ -567,7 +567,7 @@ export function StudentPracticeHubScreen() {
                   </button>
                 ))
               ) : (
-                <div className="tc-card rounded-[24px] p-5">
+                <div className="tc-student-card rounded-[24px] p-5">
                   <p className="font-semibold text-[color:var(--brand)]">
                     No practice history yet.
                   </p>
@@ -585,7 +585,7 @@ export function StudentPracticeHubScreen() {
                   <button
                     key={item.topic.id}
                     type="button"
-                    className="tc-card rounded-[24px] p-5 text-left transition-transform duration-200 hover:-translate-y-0.5"
+                    className="tc-student-card rounded-[24px] p-5 text-left transition-transform duration-200 hover:-translate-y-0.5"
                     onClick={() => {
                       setMode("TOPIC_WISE");
                       setSelectedSubjectId(item.subject.id);
@@ -603,7 +603,7 @@ export function StudentPracticeHubScreen() {
                   </button>
                 ))
               ) : (
-                <div className="tc-card rounded-[24px] p-5 md:col-span-2">
+                <div className="tc-student-card rounded-[24px] p-5 md:col-span-2">
                   <p className="font-semibold text-[color:var(--brand)]">
                     Topic trends will appear after subject-focused sessions.
                   </p>
@@ -619,7 +619,7 @@ export function StudentPracticeHubScreen() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
-        <section className="tc-panel rounded-[28px] p-6">
+        <section className="tc-student-panel rounded-[28px] p-6">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -634,14 +634,14 @@ export function StudentPracticeHubScreen() {
 
           <div className="mt-5 grid gap-4">
             {weakQuestionsQuery.isError ? (
-              <div className="tc-card rounded-[24px] p-5">
+              <div className="tc-student-card rounded-[24px] p-5">
                 <p className="font-semibold text-[color:var(--brand)]">
                   Weak-question analysis is temporarily unavailable.
                 </p>
               </div>
             ) : weakQuestions.length > 0 ? (
               weakQuestions.map((question) => (
-                <article key={question.questionId} className="tc-card rounded-[24px] p-5">
+                <article key={question.questionId} className="tc-student-card rounded-[24px] p-5">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap gap-2">
                       <span className="tc-code-chip">{question.subject.name}</span>
@@ -680,7 +680,7 @@ export function StudentPracticeHubScreen() {
                 </article>
               ))
             ) : (
-              <div className="tc-card rounded-[24px] p-5">
+              <div className="tc-student-card rounded-[24px] p-5">
                 <p className="font-semibold text-[color:var(--brand)]">
                   No weak-question queue yet.
                 </p>
@@ -694,7 +694,7 @@ export function StudentPracticeHubScreen() {
         </section>
 
         <section className="grid gap-6">
-          <section className="tc-panel rounded-[28px] p-6">
+          <section className="tc-student-panel rounded-[28px] p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -709,7 +709,7 @@ export function StudentPracticeHubScreen() {
 
             <div className="mt-5 grid gap-3">
               {trendsQuery.isError ? (
-                <div className="tc-card rounded-[24px] p-5">
+                <div className="tc-student-card rounded-[24px] p-5">
                   <p className="font-semibold text-[color:var(--brand)]">
                     Practice trend analytics are temporarily unavailable.
                   </p>
@@ -718,7 +718,7 @@ export function StudentPracticeHubScreen() {
                 trends.map((item) => (
                   <div
                     key={item.date}
-                    className="tc-card rounded-[22px] px-4 py-4"
+                    className="tc-student-card rounded-[22px] px-4 py-4"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
@@ -735,7 +735,7 @@ export function StudentPracticeHubScreen() {
                   </div>
                 ))
               ) : (
-                <div className="tc-card rounded-[24px] p-5">
+                <div className="tc-student-card rounded-[24px] p-5">
                   <p className="font-semibold text-[color:var(--brand)]">
                     Trend cards will appear after the first session.
                   </p>
@@ -744,7 +744,7 @@ export function StudentPracticeHubScreen() {
             </div>
           </section>
 
-          <section className="tc-panel rounded-[28px] p-6">
+          <section className="tc-student-panel rounded-[28px] p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -761,7 +761,7 @@ export function StudentPracticeHubScreen() {
 
             <div className="mt-5 grid gap-4">
               {activeSession ? (
-                <article className="tc-card rounded-[24px] p-5">
+                <article className="tc-student-card rounded-[24px] p-5">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="tc-overline">Active session</p>
@@ -786,7 +786,7 @@ export function StudentPracticeHubScreen() {
 
               {completedSessions.length > 0 ? (
                 completedSessions.slice(0, 3).map((session) => (
-                  <article key={session.id} className="tc-card rounded-[24px] p-5">
+                  <article key={session.id} className="tc-student-card rounded-[24px] p-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="tc-overline">{session.status.toLowerCase()}</p>
@@ -809,7 +809,7 @@ export function StudentPracticeHubScreen() {
                   </article>
                 ))
               ) : (
-                <div className="tc-card rounded-[24px] p-5">
+                <div className="tc-student-card rounded-[24px] p-5">
                   <p className="font-semibold text-[color:var(--brand)]">
                     No completed practice sessions yet.
                   </p>

@@ -101,7 +101,7 @@ export function StudentSubjectCatalogScreen({
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="tc-hero rounded-[32px] p-6 md:p-7">
+      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <div>
             <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
@@ -126,13 +126,13 @@ export function StudentSubjectCatalogScreen({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="tc-glass rounded-[24px] p-5">
+            <div className="tc-student-metric rounded-[24px] p-5">
               <p className="tc-overline">Subject code</p>
               <p className="mt-4 text-2xl font-semibold text-white">
                 {subject.code}
               </p>
             </div>
-            <div className="tc-glass rounded-[24px] p-5">
+            <div className="tc-student-metric rounded-[24px] p-5">
               <p className="tc-overline">Top-level topics</p>
               <p className="mt-4 text-2xl font-semibold text-white">
                 {subject.topics.length}
@@ -143,7 +143,7 @@ export function StudentSubjectCatalogScreen({
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="tc-panel rounded-[28px] p-6">
+        <div className="tc-student-panel rounded-[28px] p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -162,7 +162,7 @@ export function StudentSubjectCatalogScreen({
           </div>
         </div>
 
-        <div className="tc-panel rounded-[28px] p-6">
+        <div className="tc-student-panel rounded-[28px] p-6">
           <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
             Next student modules
           </p>
@@ -176,7 +176,7 @@ export function StudentSubjectCatalogScreen({
               "Practice sets and weak-area flows",
               "Timed tests and result review",
             ].map((label) => (
-              <div key={label} className="tc-card rounded-[24px] p-5">
+              <div key={label} className="tc-student-card rounded-[24px] p-5">
                 <p className="font-semibold text-[color:var(--brand)]">{label}</p>
                 <p className="tc-muted mt-2 text-sm leading-6">
                   The selected track, medium, subject, and topic map are already

@@ -10,7 +10,7 @@ export default function AdminContentPage() {
         "content.structured.publish",
       ]}
     >
-      <AdminContentOperationsScreen initialTab="content" />
+      <AdminContentOperationsScreen initialTab="content" contentView="list" />
     </AdminPermissionGuard>
   );
 }

@@ -32,9 +32,16 @@ import {
 } from "@/lib/admin";
 import { AdminDataTable } from "@/components/admin/admin-data-table";
 import { AdminFilterBar } from "@/components/admin/admin-filter-bar";
+import { AdminFontTextField } from "@/components/admin/admin-font-text-field";
 import { AdminInlineNotice } from "@/components/admin/admin-inline-notice";
+import {
+  AdminKeyValueEditor,
+  parseKeyValueObject,
+  serializeKeyValueRows,
+  type AdminKeyValueRow,
+} from "@/components/admin/admin-key-value-editor";
 import { AdminMetricCard } from "@/components/admin/admin-metric-card";
-import { AdminInput, AdminSelect, AdminTextarea } from "@/components/admin/admin-form-field";
+import { AdminInput, AdminSelect } from "@/components/admin/admin-form-field";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminRouteTabs } from "@/components/admin/admin-route-tabs";
 import { AdminToneBadge } from "@/components/admin/admin-status-badge";
@@ -48,7 +55,7 @@ interface NotificationTemplateFormState {
   bodyTemplate: string;
   channel: NotificationChannel;
   key: string;
-  metaJson: string;
+  metaRows: AdminKeyValueRow[];
   name: string;
   status: NotificationTemplateStatus;
   subjectTemplate: string;
@@ -59,8 +66,8 @@ interface NotificationBroadcastFormState {
   audienceType: NotificationBroadcastAudience;
   body: string;
   channel: NotificationChannel;
-  filtersJson: string;
-  payloadJson: string;
+  filtersRows: AdminKeyValueRow[];
+  payloadRows: AdminKeyValueRow[];
   scheduledAt: string;
   templateId: string;
   title: string;
@@ -100,7 +107,7 @@ const EMPTY_TEMPLATE_FORM_STATE: NotificationTemplateFormState = {
   bodyTemplate: "",
   channel: "IN_APP",
   key: "",
-  metaJson: "",
+  metaRows: [],
   name: "",
   status: "ACTIVE",
   subjectTemplate: "",
@@ -111,8 +118,8 @@ const EMPTY_BROADCAST_FORM_STATE: NotificationBroadcastFormState = {
   audienceType: "ALL_STUDENTS",
   body: "",
   channel: "IN_APP",
-  filtersJson: "",
-  payloadJson: "",
+  filtersRows: [],
+  payloadRows: [],
   scheduledAt: "",
   templateId: "",
   title: "",
@@ -153,7 +160,7 @@ function buildTemplateFormState(
     bodyTemplate: template.bodyTemplate,
     channel: template.channel,
     key: template.key,
-    metaJson: JSON.stringify(template.metaJson ?? {}, null, 2),
+    metaRows: parseKeyValueObject(template.metaJson),
     name: template.name,
     status: template.status,
     subjectTemplate:
@@ -175,8 +182,8 @@ function buildBroadcastFormState(
     audienceType: broadcast.audienceType,
     body: broadcast.body,
     channel: broadcast.channel,
-    filtersJson: JSON.stringify(broadcast.filtersJson ?? {}, null, 2),
-    payloadJson: JSON.stringify(broadcast.payloadJson ?? {}, null, 2),
+    filtersRows: parseKeyValueObject(broadcast.filtersJson),
+    payloadRows: parseKeyValueObject(broadcast.payloadJson),
     scheduledAt: toDatetimeLocalValue(
       typeof broadcast.scheduledAt === "string" ? broadcast.scheduledAt : null,
     ),
@@ -378,9 +385,9 @@ export function AdminInsightsScreen({
         bodyTemplate: templateForm.bodyTemplate.trim(),
         channel: templateForm.channel,
         key: templateForm.key.trim(),
-        metaJson: templateForm.metaJson.trim()
-          ? (JSON.parse(templateForm.metaJson) as Record<string, never>)
-          : undefined,
+        metaJson: serializeKeyValueRows(templateForm.metaRows) as
+          | Record<string, never>
+          | undefined,
         name: templateForm.name.trim(),
         status: templateForm.status,
         subjectTemplate: templateForm.subjectTemplate.trim() || undefined,
@@ -416,12 +423,12 @@ export function AdminInsightsScreen({
         audienceType: broadcastForm.audienceType,
         body: broadcastForm.body.trim(),
         channel: broadcastForm.channel,
-        filtersJson: broadcastForm.filtersJson.trim()
-          ? (JSON.parse(broadcastForm.filtersJson) as Record<string, never>)
-          : undefined,
-        payloadJson: broadcastForm.payloadJson.trim()
-          ? (JSON.parse(broadcastForm.payloadJson) as Record<string, never>)
-          : undefined,
+        filtersJson: serializeKeyValueRows(broadcastForm.filtersRows) as
+          | Record<string, never>
+          | undefined,
+        payloadJson: serializeKeyValueRows(broadcastForm.payloadRows) as
+          | Record<string, never>
+          | undefined,
         scheduledAt: toIsoDateTime(broadcastForm.scheduledAt),
         templateId: broadcastForm.templateId.trim() || undefined,
         title: broadcastForm.title.trim(),
@@ -965,33 +972,39 @@ export function AdminInsightsScreen({
                     }))
                   }
                 />
-                <AdminInput
+                <AdminFontTextField
                   label="Title template"
+                  storage="plain"
                   value={templateForm.titleTemplate}
-                  onChange={(event) =>
+                  onChange={(value) =>
                     updateTemplateForm((current) => ({
                       ...current,
-                      titleTemplate: event.target.value,
+                      titleTemplate: value,
                     }))
                   }
                 />
-                <AdminTextarea
+                <AdminFontTextField
                   label="Body template"
+                  multiline
+                  preserveParagraphs
+                  rows={5}
+                  storage="plain"
                   value={templateForm.bodyTemplate}
-                  onChange={(event) =>
+                  onChange={(value) =>
                     updateTemplateForm((current) => ({
                       ...current,
-                      bodyTemplate: event.target.value,
+                      bodyTemplate: value,
                     }))
                   }
                 />
-                <AdminTextarea
-                  label="Meta JSON"
-                  value={templateForm.metaJson}
-                  onChange={(event) =>
+                <AdminKeyValueEditor
+                  label="Metadata"
+                  hint="Optional template metadata such as tone, campaign key, or deep-link hints."
+                  rows={templateForm.metaRows}
+                  onChange={(rows) =>
                     updateTemplateForm((current) => ({
                       ...current,
-                      metaJson: event.target.value,
+                      metaRows: rows,
                     }))
                   }
                 />
@@ -1078,23 +1091,28 @@ export function AdminInsightsScreen({
                     ))}
                   </AdminSelect>
                 </div>
-                <AdminInput
+                <AdminFontTextField
                   label="Title"
+                  storage="plain"
                   value={broadcastForm.title}
-                  onChange={(event) =>
+                  onChange={(value) =>
                     updateBroadcastForm((current) => ({
                       ...current,
-                      title: event.target.value,
+                      title: value,
                     }))
                   }
                 />
-                <AdminTextarea
+                <AdminFontTextField
                   label="Body"
+                  multiline
+                  preserveParagraphs
+                  rows={5}
+                  storage="plain"
                   value={broadcastForm.body}
-                  onChange={(event) =>
+                  onChange={(value) =>
                     updateBroadcastForm((current) => ({
                       ...current,
-                      body: event.target.value,
+                      body: value,
                     }))
                   }
                 />
@@ -1109,23 +1127,25 @@ export function AdminInsightsScreen({
                     }))
                   }
                 />
-                <AdminTextarea
-                  label="Filters JSON"
-                  value={broadcastForm.filtersJson}
-                  onChange={(event) =>
+                <AdminKeyValueEditor
+                  label="Audience filters"
+                  hint="Optional targeting fields such as user IDs, plan IDs, or support cohort tags."
+                  rows={broadcastForm.filtersRows}
+                  onChange={(rows) =>
                     updateBroadcastForm((current) => ({
                       ...current,
-                      filtersJson: event.target.value,
+                      filtersRows: rows,
                     }))
                   }
                 />
-                <AdminTextarea
-                  label="Payload JSON"
-                  value={broadcastForm.payloadJson}
-                  onChange={(event) =>
+                <AdminKeyValueEditor
+                  label="Payload"
+                  hint="Optional message payload fields that the frontend can inspect while rendering."
+                  rows={broadcastForm.payloadRows}
+                  onChange={(rows) =>
                     updateBroadcastForm((current) => ({
                       ...current,
-                      payloadJson: event.target.value,
+                      payloadRows: rows,
                     }))
                   }
                 />

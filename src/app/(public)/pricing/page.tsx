@@ -57,7 +57,7 @@ export default async function PricingPage() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <article className="tc-panel rounded-[30px] p-6">
+        <article className="tc-public-surface-muted rounded-[30px] p-6">
           <p className="tc-overline">How enrollment works</p>
           <h2 className="tc-display mt-3 text-3xl font-semibold tracking-tight text-[color:var(--brand)]">
             Compare first, enroll after sign-in.
@@ -69,7 +69,7 @@ export default async function PricingPage() {
           </ul>
         </article>
 
-        <article className="tc-card rounded-[30px] p-6">
+        <article className="tc-public-surface rounded-[30px] p-6">
           <p className="tc-overline">Need help choosing?</p>
           <h2 className="tc-display mt-3 text-3xl font-semibold tracking-tight text-[color:var(--brand)]">
             Talk to the academy before you enroll.

@@ -20,14 +20,25 @@ import {
   revokeAdminEntitlement,
   revokeAdminUserSessions,
   setAdminUserAccess,
-  stringifyJsonInput,
   updateAdminRole,
   updateAdminUserStatus,
   type AdminRole,
 } from "@/lib/admin";
 import { AdminDataTable } from "@/components/admin/admin-data-table";
 import { AdminFilterBar } from "@/components/admin/admin-filter-bar";
+import { AdminFontTextField } from "@/components/admin/admin-font-text-field";
 import { AdminInlineNotice } from "@/components/admin/admin-inline-notice";
+import {
+  AdminKeyValueEditor,
+  serializeKeyValueRows,
+  type AdminKeyValueRow,
+} from "@/components/admin/admin-key-value-editor";
+import {
+  AdminPermissionOverridesEditor,
+  buildPermissionOverrideRows,
+  serializePermissionOverrideRows,
+  type AdminPermissionOverrideRow,
+} from "@/components/admin/admin-permission-overrides-editor";
 import { AdminInput, AdminSelect, AdminTextarea } from "@/components/admin/admin-form-field";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminRouteTabs } from "@/components/admin/admin-route-tabs";
@@ -46,7 +57,7 @@ interface CreateUserFormState {
 }
 
 interface AccessFormState {
-  permissionOverridesJson: string;
+  permissionOverrides: AdminPermissionOverrideRow[];
   roleIds: string[];
 }
 
@@ -55,13 +66,13 @@ interface RoleFormState {
   description: string;
   isActive: boolean;
   name: string;
-  permissionKeysText: string;
+  permissionKeys: string[];
 }
 
 interface GrantEntitlementFormState {
   endsAt: string;
   kind: "NOTES_PREMIUM" | "CONTENT_PREMIUM" | "PRACTICE_PREMIUM" | "TESTS_PREMIUM" | "ALL_PREMIUM";
-  metadataJson: string;
+  metadataRows: AdminKeyValueRow[];
   planId: string;
   startsAt: string;
 }
@@ -74,7 +85,7 @@ const EMPTY_CREATE_USER_FORM_STATE: CreateUserFormState = {
 };
 
 const EMPTY_ACCESS_FORM_STATE: AccessFormState = {
-  permissionOverridesJson: "",
+  permissionOverrides: [],
   roleIds: [],
 };
 
@@ -83,13 +94,13 @@ const EMPTY_ROLE_FORM_STATE: RoleFormState = {
   description: "",
   isActive: true,
   name: "",
-  permissionKeysText: "",
+  permissionKeys: [],
 };
 
 const EMPTY_GRANT_FORM_STATE: GrantEntitlementFormState = {
   endsAt: "",
   kind: "ALL_PREMIUM",
-  metadataJson: "",
+  metadataRows: [],
   planId: "",
   startsAt: "",
 };
@@ -120,7 +131,7 @@ function buildRoleFormState(role: AdminRole | null): RoleFormState {
     description: typeof role.description === "string" ? role.description : "",
     isActive: role.isActive,
     name: role.name,
-    permissionKeysText: role.permissionKeys.join(", "),
+    permissionKeys: role.permissionKeys,
   };
 }
 
@@ -260,13 +271,7 @@ export function AdminPeopleScreen({
   useEffect(() => {
     if (accessQuery.data) {
       setAccessForm({
-        permissionOverridesJson: stringifyJsonInput(
-          accessQuery.data.directOverrides.map((override) => ({
-            isAllowed: override.isAllowed,
-            permissionKey: override.permissionKey,
-            reason: override.reason,
-          })),
-        ),
+        permissionOverrides: buildPermissionOverrideRows(accessQuery.data.directOverrides),
         roleIds: accessQuery.data.roles.map((role) => role.id),
       });
     } else {
@@ -336,13 +341,7 @@ export function AdminPeopleScreen({
       return setAdminUserAccess(
         selectedUser.id,
         {
-          permissionOverrides: accessForm.permissionOverridesJson.trim()
-            ? (JSON.parse(accessForm.permissionOverridesJson) as Array<{
-                isAllowed: boolean;
-                permissionKey: string;
-                reason?: string | null;
-              }>)
-            : undefined,
+          permissionOverrides: serializePermissionOverrideRows(accessForm.permissionOverrides),
           roleIds: accessForm.roleIds,
         },
         accessToken,
@@ -363,10 +362,7 @@ export function AdminPeopleScreen({
         description: roleForm.description.trim() || undefined,
         isActive: roleForm.isActive,
         name: roleForm.name.trim(),
-        permissionKeys: roleForm.permissionKeysText
-          .split(/[,\n]/)
-          .map((item) => item.trim())
-          .filter(Boolean),
+        permissionKeys: roleForm.permissionKeys,
       };
 
       if (!input.code || !input.name) {
@@ -396,9 +392,9 @@ export function AdminPeopleScreen({
         {
           endsAt: toIsoDateTime(grantForm.endsAt),
           kind: grantForm.planId ? undefined : grantForm.kind,
-          metadataJson: grantForm.metadataJson.trim()
-            ? (JSON.parse(grantForm.metadataJson) as Record<string, never>)
-            : undefined,
+          metadataJson: serializeKeyValueRows(grantForm.metadataRows) as
+            | Record<string, never>
+            | undefined,
           planId: grantForm.planId || undefined,
           startsAt: toIsoDateTime(grantForm.startsAt),
           userId: selectedUser.id,
@@ -678,13 +674,14 @@ export function AdminPeopleScreen({
                   <option value="STUDENT">STUDENT</option>
                   <option value="ADMIN">ADMIN</option>
                 </AdminSelect>
-                <AdminInput
+                <AdminFontTextField
                   label="Full name"
+                  storage="plain"
                   value={createUserForm.fullName}
-                  onChange={(event) =>
+                  onChange={(value) =>
                     setCreateUserForm((current) => ({
                       ...current,
-                      fullName: event.target.value,
+                      fullName: value,
                     }))
                   }
                 />
@@ -795,13 +792,17 @@ export function AdminPeopleScreen({
                         </label>
                       ))}
                     </div>
-                    <AdminTextarea
-                      label="Permission overrides JSON"
-                      value={accessForm.permissionOverridesJson}
-                      onChange={(event) =>
+                    <AdminPermissionOverridesEditor
+                      hint="Use overrides only when this user needs an exception beyond their assigned roles."
+                      label="Permission overrides"
+                      permissionOptions={(permissionsQuery.data ?? []).map(
+                        (permission) => permission.key,
+                      )}
+                      rows={accessForm.permissionOverrides}
+                      onChange={(rows) =>
                         setAccessForm((current) => ({
                           ...current,
-                          permissionOverridesJson: event.target.value,
+                          permissionOverrides: rows,
                         }))
                       }
                     />
@@ -906,13 +907,14 @@ export function AdminPeopleScreen({
                         }
                       />
                     </div>
-                    <AdminTextarea
-                      label="Grant metadata JSON"
-                      value={grantForm.metadataJson}
-                      onChange={(event) =>
+                    <AdminKeyValueEditor
+                      label="Grant metadata"
+                      hint="Optional support notes like source, reason, or campaign reference."
+                      rows={grantForm.metadataRows}
+                      onChange={(rows) =>
                         setGrantForm((current) => ({
                           ...current,
-                          metadataJson: event.target.value,
+                          metadataRows: rows,
                         }))
                       }
                     />
@@ -965,11 +967,12 @@ export function AdminPeopleScreen({
                       setRoleForm((current) => ({ ...current, code: event.target.value }))
                     }
                   />
-                  <AdminInput
+                  <AdminFontTextField
                     label="Role name"
+                    storage="plain"
                     value={roleForm.name}
-                    onChange={(event) =>
-                      setRoleForm((current) => ({ ...current, name: event.target.value }))
+                    onChange={(value) =>
+                      setRoleForm((current) => ({ ...current, name: value }))
                     }
                   />
                   <AdminTextarea
@@ -982,17 +985,38 @@ export function AdminPeopleScreen({
                       }))
                     }
                   />
-                  <AdminTextarea
-                    label="Permission keys"
-                    hint={`Available definitions: ${(permissionsQuery.data ?? []).length}`}
-                    value={roleForm.permissionKeysText}
-                    onChange={(event) =>
-                      setRoleForm((current) => ({
-                        ...current,
-                        permissionKeysText: event.target.value,
-                      }))
-                    }
-                  />
+                  <div className="grid gap-3">
+                    <div className="flex flex-col gap-1">
+                      <span className="tc-form-label">Permission keys</span>
+                      <span className="text-xs leading-5 text-[color:var(--muted)]">
+                        Available definitions: {(permissionsQuery.data ?? []).length}
+                      </span>
+                    </div>
+                    <div className="grid gap-2">
+                      {(permissionsQuery.data ?? []).map((permission) => (
+                        <label
+                          key={permission.key}
+                          className="flex items-center gap-3 rounded-[18px] border border-[rgba(0,30,64,0.08)] bg-white/72 px-4 py-3 text-sm"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={roleForm.permissionKeys.includes(permission.key)}
+                            onChange={(event) =>
+                              setRoleForm((current) => ({
+                                ...current,
+                                permissionKeys: event.target.checked
+                                  ? [...current.permissionKeys, permission.key]
+                                  : current.permissionKeys.filter(
+                                      (currentKey) => currentKey !== permission.key,
+                                    ),
+                              }))
+                            }
+                          />
+                          <span>{permission.key}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                   <label className="flex items-center gap-3 rounded-[18px] border border-[rgba(0,30,64,0.08)] bg-white/72 px-4 py-3 text-sm font-medium text-[color:var(--brand)]">
                     <input
                       type="checkbox"

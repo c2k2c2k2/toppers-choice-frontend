@@ -38,7 +38,7 @@ export function StudentPlanCard({
 
   return (
     <article
-      className="tc-card rounded-[30px] p-6"
+      className="tc-student-card rounded-[30px] p-6"
       style={
         isSelected
           ? {
@@ -89,7 +89,7 @@ export function StudentPlanCard({
         {featureLabels.map((feature) => (
           <div
             key={feature}
-            className="rounded-[22px] bg-[rgba(0,30,64,0.05)] px-4 py-3 text-sm leading-6 text-[color:var(--brand)]"
+            className="tc-student-card-muted rounded-[22px] px-4 py-3 text-sm leading-6 text-[color:var(--brand)]"
           >
             {feature}
           </div>

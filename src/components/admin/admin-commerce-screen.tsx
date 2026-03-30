@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { adminQueryKeys } from "@/lib/api/query-keys";
@@ -14,32 +16,51 @@ import {
   listAdminPlans,
   parseOptionalInteger,
   reconcileAdminPaymentOrder,
-  safeJsonParseArray,
-  stringifyJsonInput,
   updateAdminPlan,
   type PaymentOrderStatus,
   type PlanStatus,
 } from "@/lib/admin";
 import { AdminDataTable } from "@/components/admin/admin-data-table";
 import { AdminFilterBar } from "@/components/admin/admin-filter-bar";
+import {
+  AdminKeyValueEditor,
+  parseKeyValueObject,
+  serializeKeyValueRows,
+  type AdminKeyValueRow,
+} from "@/components/admin/admin-key-value-editor";
+import { AdminFontTextField } from "@/components/admin/admin-font-text-field";
 import { AdminInlineNotice } from "@/components/admin/admin-inline-notice";
-import { AdminInput, AdminSelect, AdminTextarea } from "@/components/admin/admin-form-field";
+import { AdminInput, AdminSelect } from "@/components/admin/admin-form-field";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminRouteTabs } from "@/components/admin/admin-route-tabs";
 import { AdminToneBadge } from "@/components/admin/admin-status-badge";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
 import { LoadingState } from "@/components/primitives/loading-state";
+import { TextContent } from "@/components/primitives/text-content";
 
 type CommerceTab = "plans" | "payments";
+type PlanEntitlementKind =
+  | "NOTES_PREMIUM"
+  | "CONTENT_PREMIUM"
+  | "PRACTICE_PREMIUM"
+  | "TESTS_PREMIUM"
+  | "ALL_PREMIUM";
+
+interface PlanEntitlementFormRow {
+  entitlementKind: PlanEntitlementKind;
+  id: string;
+  orderIndex: string;
+  scopeRows: AdminKeyValueRow[];
+}
 
 interface PlanFormState {
   code: string;
   currencyCode: string;
   description: string;
   durationDays: string;
-  entitlementsJson: string;
-  metadataJson: string;
+  entitlements: PlanEntitlementFormRow[];
+  metadataRows: AdminKeyValueRow[];
   name: string;
   pricePaise: string;
   shortDescription: string;
@@ -49,6 +70,13 @@ interface PlanFormState {
 }
 
 const PLAN_STATUS_OPTIONS: PlanStatus[] = ["ACTIVE", "INACTIVE", "ARCHIVED"];
+const PLAN_ENTITLEMENT_OPTIONS: PlanEntitlementKind[] = [
+  "ALL_PREMIUM",
+  "NOTES_PREMIUM",
+  "CONTENT_PREMIUM",
+  "PRACTICE_PREMIUM",
+  "TESTS_PREMIUM",
+];
 const PAYMENT_STATUS_OPTIONS: PaymentOrderStatus[] = [
   "CREATED",
   "PENDING",
@@ -63,8 +91,8 @@ const EMPTY_PLAN_FORM_STATE: PlanFormState = {
   currencyCode: "INR",
   description: "",
   durationDays: "",
-  entitlementsJson: "",
-  metadataJson: "",
+  entitlements: [],
+  metadataRows: [],
   name: "",
   pricePaise: "",
   shortDescription: "",
@@ -77,11 +105,29 @@ function getOptionalText(value: unknown) {
   return typeof value === "string" && value.trim() ? value : null;
 }
 
+function createEntitlementRow(
+  partial?: Partial<PlanEntitlementFormRow>,
+): PlanEntitlementFormRow {
+  return {
+    entitlementKind: "ALL_PREMIUM",
+    id:
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `entitlement-${Math.random().toString(36).slice(2, 10)}`,
+    orderIndex: "",
+    scopeRows: [],
+    ...partial,
+  };
+}
+
 function buildPlanFormState(
   plan: Awaited<ReturnType<typeof listAdminPlans>>["items"][number] | null,
 ): PlanFormState {
   if (!plan) {
-    return EMPTY_PLAN_FORM_STATE;
+    return {
+      ...EMPTY_PLAN_FORM_STATE,
+      entitlements: [createEntitlementRow()],
+    };
   }
 
   return {
@@ -89,14 +135,17 @@ function buildPlanFormState(
     currencyCode: plan.currencyCode,
     description: typeof plan.description === "string" ? plan.description : "",
     durationDays: String(plan.durationDays),
-    entitlementsJson: stringifyJsonInput(
-      plan.entitlements.map((entitlement) => ({
-        entitlementKind: entitlement.entitlementKind,
-        orderIndex: entitlement.orderIndex,
-        scopeJson: entitlement.scopeJson,
-      })),
+    entitlements: plan.entitlements.map((entitlement) =>
+      createEntitlementRow({
+        entitlementKind: entitlement.entitlementKind as PlanEntitlementKind,
+        orderIndex:
+          typeof entitlement.orderIndex === "number"
+            ? String(entitlement.orderIndex)
+            : "",
+        scopeRows: parseKeyValueObject(entitlement.scopeJson),
+      }),
     ),
-    metadataJson: stringifyJsonInput(plan.metadataJson),
+    metadataRows: parseKeyValueObject(plan.metadataJson),
     name: plan.name,
     pricePaise: String(plan.pricePaise),
     shortDescription:
@@ -109,21 +158,29 @@ function buildPlanFormState(
 
 export function AdminCommerceScreen({
   initialTab,
+  planId = null,
+  planView = "workspace",
 }: Readonly<{
   initialTab: CommerceTab;
+  planId?: string | null;
+  planView?: "editor" | "list" | "workspace";
 }>) {
   const authSession = useAuthSession();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const canRead = authSession.hasPermission("payments.read");
   const canManage = authSession.hasPermission("payments.manage");
   const [searchValue, setSearchValue] = useState("");
   const [planStatus, setPlanStatus] = useState<PlanStatus | "">("");
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [planForm, setPlanForm] = useState<PlanFormState>(EMPTY_PLAN_FORM_STATE);
+  const [planForm, setPlanForm] = useState<PlanFormState>(() => buildPlanFormState(null));
   const [paymentStatus, setPaymentStatus] = useState<PaymentOrderStatus | "">("");
   const [paymentUserId, setPaymentUserId] = useState("");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const isPlanEditorMode = initialTab === "plans" && planView === "editor";
+  const isPlanListMode = initialTab === "plans" && planView === "list";
+  const isCreatingPlan = isPlanEditorMode && !planId;
 
   const plansQuery = useAuthenticatedQuery({
     enabled: initialTab === "plans" && canRead,
@@ -163,14 +220,29 @@ export function AdminCommerceScreen({
 
   const selectedPlan = useMemo(() => {
     const items = plansQuery.data?.items ?? [];
+
+    if (isPlanEditorMode) {
+      if (!planId || !items.length) {
+        return null;
+      }
+
+      return items.find((plan) => plan.id === planId) ?? null;
+    }
+
     if (!items.length) {
       return null;
     }
 
     return items.find((plan) => plan.id === selectedPlanId) ?? items[0];
-  }, [plansQuery.data?.items, selectedPlanId]);
+  }, [isPlanEditorMode, planId, plansQuery.data?.items, selectedPlanId]);
 
   const selectedOrder = paymentOrderDetailQuery.data ?? null;
+
+  useEffect(() => {
+    if (initialTab === "plans") {
+      setSelectedPlanId(planId ?? null);
+    }
+  }, [initialTab, planId]);
 
   useEffect(() => {
     setPlanForm(buildPlanFormState(selectedPlan));
@@ -183,22 +255,18 @@ export function AdminCommerceScreen({
         currencyCode: planForm.currencyCode.trim() || "INR",
         description: planForm.description.trim() || undefined,
         durationDays: parseOptionalInteger(planForm.durationDays),
-        entitlements: (safeJsonParseArray(planForm.entitlementsJson, {
-          allowEmpty: false,
-          label: "Entitlements JSON",
-        }) ?? []) as Array<{
-          entitlementKind:
-            | "NOTES_PREMIUM"
-            | "CONTENT_PREMIUM"
-            | "PRACTICE_PREMIUM"
-            | "TESTS_PREMIUM"
-            | "ALL_PREMIUM";
-          orderIndex?: number;
-          scopeJson?: Record<string, never>;
-        }>,
-        metadataJson: planForm.metadataJson.trim()
-          ? (JSON.parse(planForm.metadataJson) as Record<string, never>)
-          : undefined,
+        entitlements: planForm.entitlements
+          .map((entitlement) => ({
+            entitlementKind: entitlement.entitlementKind,
+            orderIndex: parseOptionalInteger(entitlement.orderIndex),
+            scopeJson: serializeKeyValueRows(entitlement.scopeRows) as
+              | Record<string, never>
+              | undefined,
+          }))
+          .filter((entitlement) => Boolean(entitlement.entitlementKind)),
+        metadataJson: serializeKeyValueRows(planForm.metadataRows) as
+          | Record<string, never>
+          | undefined,
         name: planForm.name.trim(),
         pricePaise: parseOptionalInteger(planForm.pricePaise),
         shortDescription: planForm.shortDescription.trim() || undefined,
@@ -207,8 +275,16 @@ export function AdminCommerceScreen({
         status: planForm.status,
       };
 
-      if (!input.code || !input.name || !input.durationDays || !input.pricePaise) {
-        throw new Error("Code, name, price, and duration are required.");
+      if (
+        !input.code ||
+        !input.name ||
+        !input.durationDays ||
+        !input.pricePaise ||
+        input.entitlements.length === 0
+      ) {
+        throw new Error(
+          "Code, name, price, duration, and at least one entitlement are required.",
+        );
       }
 
       const normalizedInput = {
@@ -231,6 +307,10 @@ export function AdminCommerceScreen({
       setSelectedPlanId(plan.id);
       setMessage("Plan saved.");
       await queryClient.invalidateQueries({ queryKey: ["admin", "plans"] });
+
+      if (isPlanEditorMode) {
+        router.replace(`/admin/plans/${plan.id}`);
+      }
     },
   });
 
@@ -301,11 +381,34 @@ export function AdminCommerceScreen({
     <div className="flex flex-col gap-6">
       <AdminPageHeader
         eyebrow="Commerce"
-        title={initialTab === "plans" ? "Plans" : "Payments"}
+        title={
+          initialTab === "plans"
+            ? isPlanEditorMode
+              ? isCreatingPlan
+                ? "Create plan"
+                : "Edit plan"
+              : "Plans"
+            : "Payments"
+        }
         description={
           initialTab === "plans"
-            ? "Create and update plan names, pricing, duration, and included access."
+            ? isPlanEditorMode
+              ? "Use one focused editor page for plan pricing, access, and Marathi-ready content fields."
+              : "Review plan rows here, then open a separate page to create or edit one plan at a time."
             : "Review payment orders, statuses, and support details."
+        }
+        actions={
+          initialTab === "plans" ? (
+            isPlanEditorMode ? (
+              <Link href="/admin/plans" className="tc-button-secondary">
+                Back to plans
+              </Link>
+            ) : (
+              <Link href="/admin/plans/new" className="tc-button-primary">
+                Create plan
+              </Link>
+            )
+          ) : null
         }
       />
 
@@ -325,59 +428,61 @@ export function AdminCommerceScreen({
         ]}
       />
 
-      <AdminFilterBar
-        searchValue={searchValue}
-        onSearchValueChange={setSearchValue}
-        searchPlaceholder={initialTab === "plans" ? "Search plans by name, code, or slug" : "Search is reserved for plans; payments can filter by user and status"}
-        resultSummary={`${
-          initialTab === "plans"
-            ? plansQuery.data?.items.length ?? 0
-            : paymentOrdersQuery.data?.items.length ?? 0
-        } ${initialTab} visible.`}
-      >
-        {initialTab === "plans" ? (
-          <label className="tc-form-field min-w-[12rem]">
-            <span className="tc-form-label">Status</span>
-            <select
-              value={planStatus}
-              onChange={(event) => setPlanStatus(event.target.value as PlanStatus | "")}
-              className="tc-input"
-            >
-              <option value="">All statuses</option>
-              {PLAN_STATUS_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : (
-          <>
+      {initialTab === "payments" || !isPlanEditorMode ? (
+        <AdminFilterBar
+          searchValue={searchValue}
+          onSearchValueChange={setSearchValue}
+          searchPlaceholder={initialTab === "plans" ? "Search plans by name, code, or slug" : "Search is reserved for plans; payments can filter by user and status"}
+          resultSummary={`${
+            initialTab === "plans"
+              ? plansQuery.data?.items.length ?? 0
+              : paymentOrdersQuery.data?.items.length ?? 0
+          } ${initialTab} visible.`}
+        >
+          {initialTab === "plans" ? (
             <label className="tc-form-field min-w-[12rem]">
-              <span className="tc-form-label">Order status</span>
+              <span className="tc-form-label">Status</span>
               <select
-                value={paymentStatus}
-                onChange={(event) =>
-                  setPaymentStatus(event.target.value as PaymentOrderStatus | "")
-                }
+                value={planStatus}
+                onChange={(event) => setPlanStatus(event.target.value as PlanStatus | "")}
                 className="tc-input"
               >
                 <option value="">All statuses</option>
-                {PAYMENT_STATUS_OPTIONS.map((option) => (
+                {PLAN_STATUS_OPTIONS.map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>
                 ))}
               </select>
             </label>
-            <AdminInput
-              label="User ID"
-              value={paymentUserId}
-              onChange={(event) => setPaymentUserId(event.target.value)}
-            />
-          </>
-        )}
-      </AdminFilterBar>
+          ) : (
+            <>
+              <label className="tc-form-field min-w-[12rem]">
+                <span className="tc-form-label">Order status</span>
+                <select
+                  value={paymentStatus}
+                  onChange={(event) =>
+                    setPaymentStatus(event.target.value as PaymentOrderStatus | "")
+                  }
+                  className="tc-input"
+                >
+                  <option value="">All statuses</option>
+                  {PAYMENT_STATUS_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <AdminInput
+                label="User ID"
+                value={paymentUserId}
+                onChange={(event) => setPaymentUserId(event.target.value)}
+              />
+            </>
+          )}
+        </AdminFilterBar>
+      ) : null}
 
       {message ? <AdminInlineNotice tone="success">{message}</AdminInlineNotice> : null}
       {initialTab === "plans" && savePlanMutation.error ? (
@@ -394,14 +499,22 @@ export function AdminCommerceScreen({
         </AdminInlineNotice>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(24rem,0.95fr)]">
-        <section>
-          {initialTab === "plans" ? (
+      <div
+        className={
+          initialTab === "plans" && (isPlanEditorMode || isPlanListMode)
+            ? "grid gap-6"
+            : "grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(24rem,0.95fr)]"
+        }
+      >
+        {initialTab === "plans" && !isPlanEditorMode ? (
+          <section>
             <AdminDataTable
               rows={plansQuery.data?.items ?? []}
               getRowId={(row) => row.id}
-              selectedRowId={selectedPlan?.id ?? null}
-              onRowClick={(row) => setSelectedPlanId(row.id)}
+              selectedRowId={isPlanListMode ? null : selectedPlan?.id ?? null}
+              onRowClick={(row) =>
+                isPlanListMode ? router.push(`/admin/plans/${row.id}`) : setSelectedPlanId(row.id)
+              }
               emptyState={
                 <EmptyState
                   eyebrow="Plans"
@@ -414,7 +527,11 @@ export function AdminCommerceScreen({
                   header: "Plan",
                   render: (row) => (
                     <div className="space-y-1">
-                      <p className="font-semibold text-[color:var(--brand)]">{row.name}</p>
+                      <TextContent
+                        as="p"
+                        className="font-semibold text-[color:var(--brand)]"
+                        value={row.name}
+                      />
                       <p className="text-xs text-[color:var(--muted)]">
                         {row.code} · {row.slug}
                       </p>
@@ -448,7 +565,9 @@ export function AdminCommerceScreen({
                 },
               ]}
             />
-          ) : (
+          </section>
+        ) : initialTab === "payments" ? (
+          <section>
             <AdminDataTable
               rows={paymentOrdersQuery.data?.items ?? []}
               getRowId={(row) => row.id}
@@ -498,20 +617,28 @@ export function AdminCommerceScreen({
                 },
               ]}
             />
-          )}
-        </section>
+          </section>
+        ) : null}
 
-        <section className="tc-card rounded-[28px] p-6">
-          {initialTab === "plans" ? (
+        {initialTab === "plans" && !isPlanListMode ? (
+          <section className="tc-card rounded-[28px] p-6">
+            {isPlanEditorMode && !isCreatingPlan && !selectedPlan ? (
+              <EmptyState
+                eyebrow="Plans"
+                title="That plan could not be found."
+                description="Return to the plans table and choose another record."
+              />
+            ) : (
             <div className="grid gap-4">
               <h2 className="tc-display text-2xl font-semibold tracking-tight">
                 {selectedPlan ? "Update plan" : "Create plan"}
               </h2>
-              <AdminInput
+              <AdminFontTextField
                 label="Name"
+                storage="html"
                 value={planForm.name}
                 onChange={(event) =>
-                  setPlanForm((current) => ({ ...current, name: event.target.value }))
+                  setPlanForm((current) => ({ ...current, name: event }))
                 }
               />
               <div className="grid gap-4 md:grid-cols-2">
@@ -584,44 +711,152 @@ export function AdminCommerceScreen({
                   ))}
                 </AdminSelect>
               </div>
-              <AdminTextarea
+              <AdminFontTextField
                 label="Short description"
+                multiline
+                preserveParagraphs
+                rows={3}
+                storage="html"
                 value={planForm.shortDescription}
-                onChange={(event) =>
+                onChange={(value) =>
                   setPlanForm((current) => ({
                     ...current,
-                    shortDescription: event.target.value,
+                    shortDescription: value,
                   }))
                 }
               />
-              <AdminTextarea
+              <AdminFontTextField
                 label="Description"
+                multiline
+                preserveParagraphs
+                rows={6}
+                storage="html"
                 value={planForm.description}
-                onChange={(event) =>
+                onChange={(value) =>
                   setPlanForm((current) => ({
                     ...current,
-                    description: event.target.value,
+                    description: value,
                   }))
                 }
               />
-              <AdminTextarea
-                label="Entitlements JSON"
-                hint='Example: [{"entitlementKind":"ALL_PREMIUM","orderIndex":0}]'
-                value={planForm.entitlementsJson}
-                onChange={(event) =>
+              <div className="grid gap-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="tc-form-label">Included access</p>
+                    <p className="text-xs leading-5 text-[color:var(--muted)]">
+                      Define exactly what this plan unlocks.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="tc-button-secondary"
+                    onClick={() =>
+                      setPlanForm((current) => ({
+                        ...current,
+                        entitlements: [...current.entitlements, createEntitlementRow()],
+                      }))
+                    }
+                  >
+                    Add entitlement
+                  </button>
+                </div>
+
+                {planForm.entitlements.map((entitlement) => (
+                  <div
+                    key={entitlement.id}
+                    className="grid gap-4 rounded-[22px] border border-[rgba(0,30,64,0.08)] bg-white/80 p-4"
+                  >
+                    <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_10rem]">
+                      <AdminSelect
+                        label="Entitlement type"
+                        value={entitlement.entitlementKind}
+                        onChange={(event) =>
+                          setPlanForm((current) => ({
+                            ...current,
+                            entitlements: current.entitlements.map((currentEntitlement) =>
+                              currentEntitlement.id === entitlement.id
+                                ? {
+                                    ...currentEntitlement,
+                                    entitlementKind: event.target.value as PlanEntitlementKind,
+                                  }
+                                : currentEntitlement,
+                            ),
+                          }))
+                        }
+                      >
+                        {PLAN_ENTITLEMENT_OPTIONS.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </AdminSelect>
+                      <AdminInput
+                        label="Order"
+                        type="number"
+                        value={entitlement.orderIndex}
+                        onChange={(event) =>
+                          setPlanForm((current) => ({
+                            ...current,
+                            entitlements: current.entitlements.map((currentEntitlement) =>
+                              currentEntitlement.id === entitlement.id
+                                ? {
+                                    ...currentEntitlement,
+                                    orderIndex: event.target.value,
+                                  }
+                                : currentEntitlement,
+                            ),
+                          }))
+                        }
+                      />
+                    </div>
+
+                    <AdminKeyValueEditor
+                      hint="Optional scope fields like track, medium, or entitlement-specific notes."
+                      label="Scope details"
+                      rows={entitlement.scopeRows}
+                      onChange={(rows) =>
+                        setPlanForm((current) => ({
+                          ...current,
+                          entitlements: current.entitlements.map((currentEntitlement) =>
+                            currentEntitlement.id === entitlement.id
+                              ? {
+                                  ...currentEntitlement,
+                                  scopeRows: rows,
+                                }
+                              : currentEntitlement,
+                          ),
+                        }))
+                      }
+                    />
+
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        className="tc-button-secondary"
+                        disabled={planForm.entitlements.length <= 1}
+                        onClick={() =>
+                          setPlanForm((current) => ({
+                            ...current,
+                            entitlements: current.entitlements.filter(
+                              (currentEntitlement) => currentEntitlement.id !== entitlement.id,
+                            ),
+                          }))
+                        }
+                      >
+                        Remove entitlement
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <AdminKeyValueEditor
+                hint="Optional plan metadata such as secondary CTA labels or pricing notes."
+                label="Plan metadata"
+                rows={planForm.metadataRows}
+                onChange={(rows) =>
                   setPlanForm((current) => ({
                     ...current,
-                    entitlementsJson: event.target.value,
-                  }))
-                }
-              />
-              <AdminTextarea
-                label="Metadata JSON"
-                value={planForm.metadataJson}
-                onChange={(event) =>
-                  setPlanForm((current) => ({
-                    ...current,
-                    metadataJson: event.target.value,
+                    metadataRows: rows,
                   }))
                 }
               />
@@ -634,7 +869,10 @@ export function AdminCommerceScreen({
                 {savePlanMutation.isPending ? "Saving..." : "Save plan"}
               </button>
             </div>
-          ) : selectedOrder ? (
+            )}
+          </section>
+        ) : initialTab === "payments" && selectedOrder ? (
+          <section className="tc-card rounded-[28px] p-6">
             <div className="grid gap-4">
               <h2 className="tc-display text-2xl font-semibold tracking-tight">
                 Payment order detail
@@ -676,14 +914,16 @@ export function AdminCommerceScreen({
                 {reconcileMutation.isPending ? "Reconciling..." : "Reconcile order"}
               </button>
             </div>
-          ) : (
+          </section>
+        ) : initialTab === "payments" ? (
+          <section className="tc-card rounded-[28px] p-6">
             <EmptyState
               eyebrow="Payments"
               title="Select an order to inspect support details."
               description="Order detail, provider status, and reconcile actions will appear here."
             />
-          )}
-        </section>
+          </section>
+        ) : null}
       </div>
     </div>
   );

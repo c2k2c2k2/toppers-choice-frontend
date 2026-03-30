@@ -227,6 +227,12 @@ export function AdminShell({
     })).filter((group) => group.items.length > 0);
   }, [authSession]);
   const currentRoute = getRouteCopy(pathname, navGroups);
+  const roleCount = authSession.access?.roles.length ?? 0;
+  const permissionCount = authSession.access?.effectivePermissionKeys.length ?? 0;
+  const visibleSectionCount = navGroups.reduce(
+    (count, group) => count + group.items.length,
+    0,
+  );
 
   async function handleLogout() {
     await authSession.logout();
@@ -235,141 +241,161 @@ export function AdminShell({
 
   return (
     <div className="min-h-dvh bg-[color:var(--surface-admin)]">
-      <div className="mx-auto flex min-h-dvh w-full max-w-[96rem] flex-col gap-4 px-4 py-4 xl:flex-row">
-        <aside className="tc-shell-rail w-full rounded-[32px] p-5 xl:sticky xl:top-4 xl:h-[calc(100dvh-2rem)] xl:w-[22rem] xl:shrink-0 xl:overflow-y-auto">
-          <p className="tc-kicker" style={{ color: "var(--accent-admin)" }}>
-            Topper&apos;s Choice
-          </p>
-          <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-            Admin panel
-          </h2>
-          <p className="tc-muted mt-3 text-sm leading-6">
-            Use this panel to manage website content, learning material, students, plans, and day-to-day operations.
-          </p>
+      <div className="mx-auto min-h-dvh w-full px-3 py-3 md:px-4 xl:px-5">
+        <div className="grid min-h-[calc(100dvh-1.5rem)] gap-4 xl:grid-cols-[18rem_minmax(0,1fr)] 2xl:grid-cols-[19rem_minmax(0,1fr)]">
+          <aside className="tc-shell-rail flex w-full flex-col rounded-[30px] p-5 xl:sticky xl:top-3 xl:h-[calc(100dvh-1.5rem)] xl:overflow-y-auto">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="tc-kicker" style={{ color: "var(--accent-admin)" }}>
+                  Topper&apos;s Choice
+                </p>
+                <h2 className="tc-display mt-3 text-[1.85rem] font-semibold tracking-tight">
+                  Admin workspace
+                </h2>
+                <p className="tc-muted mt-3 text-sm leading-6">
+                  Manage content, academics, commerce, and operations from one calmer control room.
+                </p>
+              </div>
+              <span className="tc-admin-chip" data-tone="brand">
+                Live
+              </span>
+            </div>
 
-          <div className="mt-5 grid gap-3 md:grid-cols-3 xl:grid-cols-1">
-            <div className="tc-panel rounded-[22px] p-4">
+            <div className="tc-admin-frame-subtle mt-5 rounded-[24px] p-4">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--muted)]">
-                Session
+                Signed in
               </p>
-              <p className="mt-3 font-semibold text-[color:var(--brand)]">
+              <p className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
                 {authSession.user?.fullName ?? "Admin workspace"}
               </p>
               <p className="mt-1 text-sm text-[color:var(--muted)]">
                 {authSession.user?.email ?? "admin@topperschoice.in"}
               </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="tc-admin-chip">{roleCount} roles</span>
+                <span className="tc-admin-chip">{permissionCount} permissions</span>
+                <span className="tc-admin-chip" data-tone="subtle">
+                  {visibleSectionCount} sections
+                </span>
+              </div>
             </div>
-            <div className="tc-panel rounded-[22px] p-4">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--muted)]">
-                Roles
-              </p>
-              <p className="mt-3 text-3xl font-semibold text-[color:var(--brand)]">
-                {authSession.access?.roles.length ?? 0}
-              </p>
-              <p className="mt-1 text-sm text-[color:var(--muted)]">
-                {authSession.access?.roles.map((role) => role.name).join(", ") || "No roles assigned"}
-              </p>
-            </div>
-            <div className="tc-panel rounded-[22px] p-4">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--muted)]">
-                Permissions
-              </p>
-              <p className="mt-3 text-3xl font-semibold text-[color:var(--brand)]">
-                {authSession.access?.effectivePermissionKeys.length ?? 0}
-              </p>
-              <p className="mt-1 text-sm text-[color:var(--muted)]">
-                Menu items change based on these permissions.
-              </p>
-            </div>
-          </div>
 
-          <div className="mt-6 space-y-6">
-            {navGroups.map((group) => (
-              <div key={group.title}>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[color:var(--muted)]">
-                  {group.title}
-                </p>
-                <div className="mt-3 flex flex-col gap-2">
-                  {group.items.map((item) =>
-                    item.href ? (
-                      <Link
-                        key={item.label}
-                        href={item.href}
-                        className="tc-rail-link flex-col items-start"
-                        data-active={isActive(pathname, item.href)}
-                      >
-                        <div className="flex w-full items-center justify-between gap-3">
-                          <span className="font-semibold">{item.label}</span>
-                          {item.badge ? (
-                            <span className="tc-nav-badge" data-status="live">
-                              {item.badge}
-                            </span>
-                          ) : null}
+            <div className="mt-6 space-y-6">
+              {navGroups.map((group) => (
+                <div key={group.title}>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[color:var(--muted)]">
+                    {group.title}
+                  </p>
+                  <div className="mt-3 flex flex-col gap-2">
+                    {group.items.map((item) =>
+                      item.href ? (
+                        <Link
+                          key={item.label}
+                          href={item.href}
+                          className="tc-rail-link flex-col items-start"
+                          data-active={isActive(pathname, item.href)}
+                        >
+                          <div className="flex w-full items-center justify-between gap-3">
+                            <span className="font-semibold">{item.label}</span>
+                            {item.badge ? (
+                              <span className="tc-nav-badge" data-status="live">
+                                {item.badge}
+                              </span>
+                            ) : null}
+                          </div>
+                          <span className="text-xs leading-5 text-[color:var(--muted)]">
+                            {item.description}
+                          </span>
+                        </Link>
+                      ) : (
+                        <div
+                          key={item.label}
+                          className="tc-rail-link flex-col items-start"
+                          data-disabled="true"
+                        >
+                          <div className="flex w-full items-center justify-between gap-3">
+                            <span className="font-semibold">{item.label}</span>
+                            {item.badge ? (
+                              <span className="tc-nav-badge" data-status="soon">
+                                {item.badge}
+                              </span>
+                            ) : null}
+                          </div>
+                          <span className="text-xs leading-5 text-[color:var(--muted)]">
+                            {item.description}
+                          </span>
                         </div>
-                        <span className="text-xs leading-5 text-[color:var(--muted)]">
-                          {item.description}
-                        </span>
-                      </Link>
-                    ) : (
-                      <div
-                        key={item.label}
-                        className="tc-rail-link flex-col items-start"
-                        data-disabled="true"
-                      >
-                        <div className="flex w-full items-center justify-between gap-3">
-                          <span className="font-semibold">{item.label}</span>
-                          {item.badge ? (
-                            <span className="tc-nav-badge" data-status="soon">
-                              {item.badge}
-                            </span>
-                          ) : null}
-                        </div>
-                        <span className="text-xs leading-5 text-[color:var(--muted)]">
-                          {item.description}
-                        </span>
-                      </div>
-                    ),
-                  )}
+                      ),
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </aside>
+              ))}
+            </div>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-4">
-          <header className="tc-glass rounded-[32px] p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="tc-kicker" style={{ color: "var(--accent-admin)" }}>
-                  Current section
-                </p>
-                <h1 className="tc-display mt-2 text-2xl font-semibold tracking-tight">
-                  {currentRoute.title}
-                </h1>
-                <p className="tc-muted mt-2 text-sm leading-6">
-                  {currentRoute.description}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3">
+            <div className="tc-admin-frame-subtle mt-6 rounded-[24px] p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--muted)]">
+                Quick launch
+              </p>
+              <div className="mt-4 grid gap-3">
                 <Link href="/" className="tc-button-secondary">
-                  Website
+                  Open website
                 </Link>
                 <Link href="/student" className="tc-button-secondary">
-                  Student app
+                  Open student app
                 </Link>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="tc-button-primary"
-                >
-                  Log out
-                </button>
               </div>
             </div>
-          </header>
+          </aside>
 
-          <main className="flex-1">{children}</main>
+          <div className="flex min-w-0 flex-1 flex-col gap-4">
+            <header className="tc-admin-topbar rounded-[30px] p-5 md:p-6">
+              <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                <div className="max-w-4xl">
+                  <p className="tc-kicker" style={{ color: "var(--accent-admin)" }}>
+                    Current section
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <h1 className="tc-display text-3xl font-semibold tracking-tight md:text-[2.5rem]">
+                      {currentRoute.title}
+                    </h1>
+                    <span className="tc-admin-chip" data-tone="accent">
+                      {visibleSectionCount} sections available
+                    </span>
+                  </div>
+                  <p className="tc-muted mt-3 text-sm leading-7 md:text-base">
+                    {currentRoute.description}
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <span className="tc-admin-chip">{roleCount} roles</span>
+                    <span className="tc-admin-chip">{permissionCount} permissions</span>
+                    {authSession.user?.email ? (
+                      <span className="tc-admin-chip" data-tone="subtle">
+                        {authSession.user.email}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="tc-admin-toolbar">
+                  <Link href="/" className="tc-button-secondary">
+                    Website
+                  </Link>
+                  <Link href="/student" className="tc-button-secondary">
+                    Student app
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="tc-button-primary"
+                  >
+                    Log out
+                  </button>
+                </div>
+              </div>
+            </header>
+
+            <main className="min-w-0 flex-1">{children}</main>
+          </div>
         </div>
       </div>
     </div>
