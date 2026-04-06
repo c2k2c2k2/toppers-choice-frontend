@@ -4108,7 +4108,7 @@ export interface components {
             id: string;
             merchantOrderCode: string;
             /** @enum {string} */
-            provider: "PHONEPE_STANDARD";
+            provider: "PHONEPE_STANDARD" | "HDFC_SMARTGATEWAY";
             amountPaise: number;
             currencyCode: string;
             /** @enum {string} */
@@ -4135,7 +4135,7 @@ export interface components {
             id: string;
             merchantOrderCode: string;
             /** @enum {string} */
-            provider: "PHONEPE_STANDARD";
+            provider: "PHONEPE_STANDARD" | "HDFC_SMARTGATEWAY";
             amountPaise: number;
             currencyCode: string;
             /** @enum {string} */
@@ -8745,7 +8745,7 @@ export interface operations {
         parameters: {
             query?: {
                 status?: "CREATED" | "PENDING" | "SUCCEEDED" | "FAILED" | "CANCELLED" | "EXPIRED";
-                provider?: "PHONEPE_STANDARD";
+                provider?: "PHONEPE_STANDARD" | "HDFC_SMARTGATEWAY";
                 userId?: string;
             };
             header?: never;

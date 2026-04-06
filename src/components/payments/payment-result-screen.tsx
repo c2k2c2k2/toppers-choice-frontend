@@ -56,9 +56,14 @@ export function PaymentResultScreen() {
   );
   const previousStatusRef = useRef<PaymentOrderStatus | null>(null);
 
-  const orderId = searchParams.get("orderId") ?? activeOrderId;
+  const orderId =
+    searchParams.get("orderId") ??
+    searchParams.get("order_id") ??
+    activeOrderId;
   const merchantOrderCode =
-    searchParams.get("merchantOrderCode") ?? checkoutMerchantOrderCode;
+    searchParams.get("merchantOrderCode") ??
+    searchParams.get("order_id") ??
+    checkoutMerchantOrderCode;
   const planId = searchParams.get("plan") ?? activePlanId;
   const intent = parsePremiumIntent(searchParams.get("intent") ?? checkoutIntent);
   const source = searchParams.get("source") ?? checkoutSource ?? "payment-result";

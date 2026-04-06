@@ -351,15 +351,18 @@ export function getPaymentStatusLabel(status: PaymentOrderStatus) {
 }
 
 export function getPaymentErrorMessage(error: unknown) {
-  if (
-    isApiError(error) &&
-    [
-      "PAYMENT_PROVIDER_NOT_CONFIGURED",
-      "PAYMENT_PROVIDER_MISCONFIGURED",
-      "PAYMENT_PROVIDER_REQUEST_FAILED",
-    ].includes(error.code)
-  ) {
-    return "Checkout is not configured in this environment yet. Access can still be granted manually from the admin panel for verification.";
+  if (isApiError(error)) {
+    switch (error.code) {
+      case "PAYMENT_PROVIDER_NOT_CONFIGURED":
+      case "PAYMENT_PROVIDER_MISCONFIGURED":
+        return "Checkout is not configured in this environment yet. Access can still be granted manually from the admin panel for verification.";
+      case "PAYMENT_PROVIDER_REQUEST_FAILED":
+        return "The payment provider rejected this checkout request. For the HDFC sandbox, keep plan prices at Rs 10 or below and retry.";
+      case "IDEMPOTENCY_REQUEST_IN_PROGRESS":
+        return "A checkout request is already being started for this click. Please wait a moment, and retry only if the payment page does not open.";
+      default:
+        break;
+    }
   }
 
   if (error instanceof Error && error.message.trim().length > 0) {

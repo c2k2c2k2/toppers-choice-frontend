@@ -899,7 +899,7 @@ export function SecureNoteReader({
               <div className="mt-3 flex items-center justify-between gap-3 text-xs text-white/70">
                 <p>
                   {isMobileViewport
-                    ? "Swipe up or down to move between pages."
+                    ? "Scroll to read the full page. Swipe at the top or bottom edge to move between pages."
                     : "Use the index or keyboard arrows to move through pages."}
                 </p>
                 <p>{progressMutation.isPending ? "Saving progress..." : "Saved"}</p>

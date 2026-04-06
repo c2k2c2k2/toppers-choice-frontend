@@ -34,6 +34,14 @@ function clampZoom(zoom: number) {
   return Math.min(Math.max(zoom, MIN_ZOOM), MAX_ZOOM);
 }
 
+function canScrollHorizontally(element: HTMLElement) {
+  return element.scrollWidth > element.clientWidth + 4;
+}
+
+function canScrollVertically(element: HTMLElement) {
+  return element.scrollHeight > element.clientHeight + 4;
+}
+
 function isEditableTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) {
     return false;
@@ -314,6 +322,19 @@ export function PdfCanvasViewer({
   }, [zoom]);
 
   useEffect(() => {
+    const container = containerRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    container.scrollTo({
+      left: 0,
+      top: 0,
+    });
+  }, [pageNumber]);
+
+  useEffect(() => {
     if (!documentProxy || !canvasRef.current || !containerWidth) {
       return;
     }
@@ -441,10 +462,22 @@ export function PdfCanvasViewer({
     const touch = event.changedTouches[0];
     const deltaX = touch.clientX - touchStart.x;
     const deltaY = touch.clientY - touchStart.y;
+    const container = containerRef.current;
 
     if (gestureDirection === "vertical") {
       if (Math.abs(deltaY) < 60 || Math.abs(deltaX) > 90) {
         return;
+      }
+
+      if (container && canScrollVertically(container)) {
+        const atTop = container.scrollTop <= 8;
+        const atBottom =
+          container.scrollTop + container.clientHeight >=
+          container.scrollHeight - 8;
+
+        if ((deltaY < 0 && !atBottom) || (deltaY > 0 && !atTop)) {
+          return;
+        }
       }
 
       if (deltaY < 0) {
@@ -455,12 +488,25 @@ export function PdfCanvasViewer({
       return;
     }
 
-    if (Math.abs(deltaX) >= 60 && Math.abs(deltaY) <= 90) {
-      if (deltaX < 0) {
-        goToPage(pageNumber + 1);
-      } else {
-        goToPage(pageNumber - 1);
+    if (Math.abs(deltaX) < 60 || Math.abs(deltaY) > 90) {
+      return;
+    }
+
+    if (container && canScrollHorizontally(container)) {
+      const atLeft = container.scrollLeft <= 8;
+      const atRight =
+        container.scrollLeft + container.clientWidth >=
+        container.scrollWidth - 8;
+
+      if ((deltaX < 0 && !atRight) || (deltaX > 0 && !atLeft)) {
+        return;
       }
+    }
+
+    if (deltaX < 0) {
+      goToPage(pageNumber + 1);
+    } else {
+      goToPage(pageNumber - 1);
     }
   }
 
@@ -545,7 +591,7 @@ export function PdfCanvasViewer({
       <div
         ref={containerRef}
         className={[
-          "tc-student-panel overflow-hidden rounded-[28px] bg-[linear-gradient(180deg,#11233d_0%,#0b182a_100%)] p-3 sm:p-5",
+          "tc-student-panel overflow-auto overscroll-contain rounded-[28px] bg-[linear-gradient(180deg,#11233d_0%,#0b182a_100%)] p-3 sm:p-5",
           shellClassName ?? "",
         ].join(" ")}
         onTouchEnd={handleTouchEnd}

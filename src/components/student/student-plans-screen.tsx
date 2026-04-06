@@ -396,7 +396,11 @@ export function StudentPlansScreen() {
               key={plan.id}
               intent={intent}
               isCovered={isPlanCoveredByEntitlements(plan, activeEntitlements)}
-              isPendingOrder={activePlanId === plan.id && Boolean(activeOrderId)}
+              isPendingOrder={
+                activePlanId === plan.id &&
+                Boolean(activeOrderId) &&
+                !isTerminalPaymentStatus(pendingOrder?.status ?? "CREATED")
+              }
               isRecommended={planSupportsIntent(plan, intent)}
               isSelected={selectedPlanId === plan.id}
               onCheckout={handleCheckout}
