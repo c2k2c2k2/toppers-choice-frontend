@@ -31,7 +31,14 @@ const STUDENT_NAV_ITEMS: StudentNavItem[] = [
     href: "/student/guidance",
     label: "Guidance",
     shortLabel: "Guidance",
-    description: "Career guidance, interviews, English speaking, and current affairs.",
+    description: "Career guidance, interviews, current affairs, and monthly updates.",
+    status: "live",
+  },
+  {
+    href: "/student/english-speaking",
+    label: "English speaking",
+    shortLabel: "English",
+    description: "Topic-based Hindi, Marathi, and English listening drills.",
     status: "live",
   },
   {
@@ -157,7 +164,14 @@ export function StudentBottomNavigation() {
     return null;
   }
 
-  const liveItems = STUDENT_NAV_ITEMS.filter((item) => item.href).slice(0, 4);
+  const liveItems = STUDENT_NAV_ITEMS.filter((item) =>
+    [
+      "/student",
+      "/student/catalog",
+      "/student/english-speaking",
+      "/student/notes",
+    ].includes(item.href ?? ""),
+  );
 
   return (
     <div className="tc-bottom-nav lg:hidden">

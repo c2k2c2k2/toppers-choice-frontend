@@ -3,6 +3,7 @@ export * from "@/lib/admin/commerce-api";
 export * from "@/lib/admin/comms-api";
 export * from "@/lib/admin/cms-api";
 export * from "@/lib/admin/content-api";
+export * from "@/lib/admin/english-speaking-api";
 export * from "@/lib/admin/files-api";
 export * from "@/lib/admin/helpers";
 export * from "@/lib/admin/insights-api";

@@ -85,6 +85,13 @@ export const apiRoutes = {
     publicDetail: (slug: string) =>
       `/public/content/${encodeURIComponent(slug)}`,
   },
+  englishSpeaking: {
+    list: "/english-speaking",
+    detail: (slug: string) =>
+      `/english-speaking/${encodeURIComponent(slug)}`,
+    audio: (sentenceId: string, language: string) =>
+      `/english-speaking/sentences/${encodeURIComponent(sentenceId)}/audio/${encodeURIComponent(language)}`,
+  },
   cms: {
     resolve: "/cms/public/resolve",
     page: (slug: string) => `/cms/public/pages/${encodeURIComponent(slug)}`,
@@ -202,6 +209,29 @@ export const apiRoutes = {
       unfeature: (contentEntryId: string) =>
         `/admin/content/${encodeURIComponent(contentEntryId)}/unfeature`,
       reorder: "/admin/content/reorder",
+    },
+    englishSpeaking: {
+      list: "/admin/english-speaking",
+      detail: (topicId: string) =>
+        `/admin/english-speaking/${encodeURIComponent(topicId)}`,
+      remove: (topicId: string) =>
+        `/admin/english-speaking/${encodeURIComponent(topicId)}`,
+      publish: (topicId: string) =>
+        `/admin/english-speaking/${encodeURIComponent(topicId)}/publish`,
+      unpublish: (topicId: string) =>
+        `/admin/english-speaking/${encodeURIComponent(topicId)}/unpublish`,
+      generateTopicAudio: (topicId: string) =>
+        `/admin/english-speaking/${encodeURIComponent(topicId)}/generate-audio`,
+      finalizeTopicAudio: (topicId: string) =>
+        `/admin/english-speaking/${encodeURIComponent(topicId)}/finalize-audio`,
+      generateAudio: (sentenceId: string) =>
+        `/admin/english-speaking/sentences/${encodeURIComponent(sentenceId)}/generate-audio`,
+      finalizeAudio: (sentenceId: string) =>
+        `/admin/english-speaking/sentences/${encodeURIComponent(sentenceId)}/finalize-audio`,
+      previewAudio: (sentenceId: string, language: string) =>
+        `/admin/english-speaking/sentences/${encodeURIComponent(sentenceId)}/audio/${encodeURIComponent(language)}/preview`,
+      finalAudio: (sentenceId: string, language: string) =>
+        `/admin/english-speaking/sentences/${encodeURIComponent(sentenceId)}/audio/${encodeURIComponent(language)}/final`,
     },
     entitlements: {
       byUser: (userId: string) =>

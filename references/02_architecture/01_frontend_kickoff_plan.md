@@ -84,9 +84,14 @@ The frontend must stay contract-driven against the backend, use CMS-driven conte
 - Structured content bodies must render through one shared rich-content renderer that can handle block arrays, localized body variants such as `mr-IN` / `en-IN`, HTML segments, and mixed-language lesson content.
 
 ## Structured Content Rules
-- Student structured-content routes should use one family-driven list/detail implementation instead of separate bespoke apps for guidance, English speaking, and current affairs.
+- Student structured-content routes should use one family-driven list/detail implementation for guidance and current affairs instead of separate bespoke apps for each reading-heavy content family.
 - The backend `examTrackId` and `mediumId` filters are exact-match filters, so the frontend keeps selected track and medium filtering client-side for structured content lists in order to preserve globally applicable content that has no linked track or medium.
 - Locked premium structured content may appear in authenticated lists, but the detail route should respect backend access by showing entitlement messaging instead of assuming previewable content.
+
+## English Speaking Rules
+- English speaking is a dedicated audio-first student flow rather than a structured-content article detail page.
+- Topic detail should default playback to Hindi, Marathi, then English while still letting the student narrow the language mix before starting a queue.
+- Audio playback should stay minimal and sequential on the client, stitching the listening experience as a queue of protected backend audio streams instead of depending on pre-rendered combined files.
 
 ## Assessment Experience Rules
 - Practice session detail routes should treat `ACTIVE` sessions with zero served questions as a first-batch loading state and automatically request the initial `/practice/sessions/:id/next` batch instead of rendering a dead empty screen.
@@ -129,7 +134,7 @@ The frontend must stay contract-driven against the backend, use CMS-driven conte
 2. Public landing foundation with CMS-driven sections
 3. Student shell, auth guards, and dashboard bootstrap
 4. Notes library and protected reader with preview handling
-5. Guidance, English speaking, and current affairs content flows
+5. Guidance and current affairs content flows plus the dedicated English speaking audio player
 6. Practice engine UI
 7. Test engine UI
 8. Payments and entitlement UX

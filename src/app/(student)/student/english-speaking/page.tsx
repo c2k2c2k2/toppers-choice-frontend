@@ -1,5 +1,5 @@
-import { StudentStructuredContentListScreen } from "@/components/student/student-structured-content-list-screen";
+import { StudentEnglishSpeakingListScreen } from "@/components/student/student-english-speaking-list-screen";
 
 export default function StudentEnglishSpeakingPage() {
-  return <StudentStructuredContentListScreen family="ENGLISH_SPEAKING" />;
+  return <StudentEnglishSpeakingListScreen />;
 }

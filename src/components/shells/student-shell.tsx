@@ -42,6 +42,10 @@ export function StudentShell({
   if (pathname.startsWith("/student/catalog")) {
     shellTitle = "Catalog";
     shellDescription = "Browse your available tracks, subjects, and topics.";
+  } else if (pathname.startsWith("/student/english-speaking")) {
+    shellTitle = "English speaking";
+    shellDescription =
+      "Open topic-based listening drills and repeat Hindi, Marathi, and English in the order that suits your practice.";
   } else if (pathname.startsWith("/student/practice")) {
     shellTitle = "Practice";
     shellDescription = "Solve practice questions and review mistakes topic by topic.";
@@ -53,12 +57,11 @@ export function StudentShell({
     shellDescription = "Check your active plan, payment status, and available access.";
   } else if (
     pathname.startsWith("/student/guidance") ||
-    pathname.startsWith("/student/english-speaking") ||
     pathname.startsWith("/student/current-affairs") ||
     pathname.startsWith("/student/monthly-updates")
   ) {
     shellTitle = "Guidance and learning";
-    shellDescription = "Open guidance, English speaking, current affairs, and monthly updates.";
+    shellDescription = "Open guidance, current affairs, and monthly updates.";
   } else if (pathname.startsWith("/student/notes")) {
     shellTitle = "Notes";
     shellDescription = "Read your notes and continue from where you left off.";
@@ -78,7 +81,7 @@ export function StudentShell({
                   Study console
                 </h2>
                 <p className="tc-muted mt-3 text-sm leading-6">
-                  Move across notes, guidance, practice, tests, and plans without losing your study context.
+                  Move across English speaking, notes, guidance, practice, tests, and plans without losing your study context.
                 </p>
               </div>
               <span className="tc-student-chip" data-tone="accent">
@@ -123,6 +126,9 @@ export function StudentShell({
                 Quick jump
               </p>
               <div className="mt-4 grid gap-3">
+                <Link href="/student/english-speaking" className="tc-button-secondary">
+                  Open English speaking
+                </Link>
                 <Link href="/student/notes" className="tc-button-secondary">
                   Resume notes
                 </Link>

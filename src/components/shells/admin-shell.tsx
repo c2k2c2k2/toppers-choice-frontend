@@ -43,9 +43,19 @@ const ADMIN_NAV_GROUPS: Array<{
         permissions: ["content.notes.read", "content.notes.manage", "content.notes.publish"],
       },
       {
+        href: "/admin/english-speaking",
+        label: "English speaking",
+        description: "Topic-wise sentence authoring, preview audio, and publish control.",
+        permissions: [
+          "content.structured.read",
+          "content.structured.manage",
+          "content.structured.publish",
+        ],
+      },
+      {
         href: "/admin/content",
         label: "Structured content",
-        description: "Guidance, English speaking, current affairs, and monthly updates.",
+        description: "Guidance, current affairs, and monthly updates that stay article-first.",
         permissions: [
           "content.structured.read",
           "content.structured.manage",

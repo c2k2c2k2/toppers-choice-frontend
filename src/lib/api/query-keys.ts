@@ -93,6 +93,24 @@ export const adminQueryKeys = {
         visibility: filters.visibility ?? null,
       },
     ] as const,
+  englishSpeaking: (filters: {
+    accessType?: string | null;
+    search?: string | null;
+    status?: string | null;
+    visibility?: string | null;
+  }) =>
+    [
+      "admin",
+      "english-speaking",
+      {
+        accessType: filters.accessType ?? null,
+        search: filters.search ?? null,
+        status: filters.status ?? null,
+        visibility: filters.visibility ?? null,
+      },
+    ] as const,
+  englishSpeakingDetail: (topicId: string | null) =>
+    ["admin", "english-speaking", "detail", topicId ?? "new"] as const,
   notes: (filters: {
     accessType?: string | null;
     search?: string | null;
@@ -438,6 +456,10 @@ export const queryKeys = {
       ] as const,
     contentDetail: (slug: string) =>
       ["student", "content", "detail", slug] as const,
+    englishSpeakingList: () =>
+      ["student", "english-speaking", "list"] as const,
+    englishSpeakingDetail: (slug: string) =>
+      ["student", "english-speaking", "detail", slug] as const,
     paymentOrder: (orderId: string) =>
       ["student", "payments", "order", orderId] as const,
   },

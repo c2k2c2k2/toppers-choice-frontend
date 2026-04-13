@@ -1,4 +1,4 @@
-import { StudentStructuredContentDetailScreen } from "@/components/student/student-structured-content-detail-screen";
+import { StudentEnglishSpeakingDetailScreen } from "@/components/student/student-english-speaking-detail-screen";
 
 export default async function StudentEnglishSpeakingDetailPage({
   params,
@@ -9,10 +9,5 @@ export default async function StudentEnglishSpeakingDetailPage({
 }>) {
   const { slug } = await params;
 
-  return (
-    <StudentStructuredContentDetailScreen
-      family="ENGLISH_SPEAKING"
-      slug={slug}
-    />
-  );
+  return <StudentEnglishSpeakingDetailScreen slug={slug} />;
 }

@@ -51,8 +51,9 @@ Done when:
   - contract-driven list/detail API helpers for authenticated and public content
   - family configuration for route metadata and discovery cards
   - normalization helpers for loose OpenAPI fields
-- Shared rendering uses one reusable structured-content renderer in `src/components/content/structured-content-renderer.tsx` so the same body rendering strategy can later be reused in admin preview flows.
+- Shared rendering uses one reusable structured-content renderer in `src/components/content/structured-content-renderer.tsx` for guidance and current-affairs reading surfaces.
+- English speaking intentionally diverges into a dedicated audio-first UI: the admin gets a minimal topic/sentence workspace with preview and finalize controls, and the student app gets a topic list plus a queue-based player instead of a rich article-detail renderer.
 - Marathi and mixed-language support are handled through the existing shared Marathi helpers plus localized content-body variant support such as `mr-IN` and `en-IN`.
 - Student dashboard and navigation now expose structured-learning discovery entry points instead of leaving these modules hidden behind direct URLs.
 - Frontend filtering keeps “global” content visible even when a student has an active track and medium selected, because backend `examTrackId` / `mediumId` filters only return exact linked matches.
-- Verified backend-facing seed data now covers all five structured-content families with a mix of free and premium entries so the frontend can exercise both `FULL` and `LOCKED` access states.
+- Guidance and current-affairs seed data still cover the shared structured-content families, while English speaking now relies on its dedicated backend topic/sentence/audio data model and protected stream endpoints.
