@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandLockup, BrandMark } from "@/components/primitives/brand-logo";
 import { MarathiText } from "@/components/primitives/marathi-text";
 import { getPublicShellChrome } from "@/lib/public";
 
@@ -21,24 +22,12 @@ export async function PublicShell({
       <header className="sticky top-0 z-30 px-3 pt-3 md:px-5 md:pt-4">
         <div className="tc-public-topbar mx-auto flex w-full max-w-[120rem] flex-wrap items-center justify-between gap-4 rounded-[26px] px-4 py-4 md:px-6">
           <Link href="/" className="flex min-w-0 items-center gap-3">
-            <span className="tc-public-logo-mark">
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M4 7.5h16" />
-                <path d="M6 7.5v9.5a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7.5" />
-                <path d="M8.5 5.5h7" />
-                <path d="M12 11v4.5" />
-                <path d="M9.5 13.5H12h2.5" />
-              </svg>
-            </span>
+            <BrandMark
+              alt=""
+              priority
+              sizes="56px"
+              className="tc-public-logo-mark"
+            />
             <div className="min-w-0">
               <p className="tc-display text-xl font-extrabold tracking-tight text-[color:var(--brand)] md:text-2xl">
                 {chrome.branding.displayName}
@@ -76,10 +65,11 @@ export async function PublicShell({
         <div className="relative z-10 mx-auto flex w-full max-w-[120rem] flex-col gap-12">
           <div className="grid gap-10 border-b border-white/8 pb-10 md:grid-cols-[1.25fr_0.8fr_0.8fr_0.8fr]">
             <div className="space-y-5">
-              <p className="tc-overline text-white/48">Topper&apos;s Choice</p>
-              <h2 className="tc-display text-2xl font-extrabold tracking-tight text-white md:text-3xl">
-                {chrome.branding.displayName}
-              </h2>
+              <BrandLockup
+                alt={`${chrome.branding.displayName} logo`}
+                className="w-[12rem] max-w-full"
+                sizes="192px"
+              />
               <p className="max-w-md text-sm leading-7 text-white/68">
                 {chrome.branding.description}
               </p>

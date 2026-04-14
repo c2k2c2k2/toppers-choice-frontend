@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { BrandMark } from "@/components/primitives/brand-logo";
 import { useAuthSession } from "@/lib/auth";
 import {
   StudentBottomNavigation,
@@ -74,7 +75,13 @@ export function StudentShell({
           <aside className="tc-student-shell-rail hidden rounded-[30px] p-5 xl:sticky xl:top-3 xl:block xl:h-[calc(100dvh-3rem)] xl:overflow-y-auto">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
+                <div className="inline-flex rounded-[24px] border border-white/70 bg-white/82 p-3 shadow-[0_18px_36px_rgba(0,30,64,0.14)]">
+                  <BrandMark alt="" priority sizes="64px" className="w-16" />
+                </div>
+                <p
+                  className="tc-kicker mt-4"
+                  style={{ color: "var(--accent-student)" }}
+                >
                   Student app
                 </p>
                 <h2 className="tc-display mt-3 text-[1.9rem] font-semibold tracking-tight">
@@ -148,8 +155,11 @@ export function StudentShell({
               <aside className="tc-student-shell-rail absolute inset-y-4 left-4 w-[min(21rem,calc(100vw-2rem))] rounded-[28px] p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div>
+                    <div className="inline-flex rounded-[22px] border border-white/70 bg-white/82 p-3 shadow-[0_14px_30px_rgba(0,30,64,0.14)]">
+                      <BrandMark alt="" sizes="48px" className="w-12" />
+                    </div>
                     <p
-                      className="tc-kicker"
+                      className="tc-kicker mt-4"
                       style={{ color: "var(--accent-student)" }}
                     >
                       Student app

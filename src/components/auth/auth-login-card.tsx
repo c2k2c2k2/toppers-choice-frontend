@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { BrandLockup } from "@/components/primitives/brand-logo";
 import { signup as signupRequest } from "@/lib/auth/auth-api";
 import { useAuthSession, type UserType } from "@/lib/auth";
 import {
@@ -156,7 +157,18 @@ export function AuthLoginCard({
     <section className="tc-card mx-auto w-full max-w-5xl rounded-[32px] p-6 md:p-8">
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="tc-hero rounded-[30px] p-6">
-          <p className="tc-kicker" style={{ color: "rgba(255, 184, 111, 0.92)" }}>
+          <div className="inline-flex rounded-[24px] bg-white/10 px-4 py-3 shadow-[0_16px_34px_rgba(0,30,64,0.18)] backdrop-blur-sm">
+            <BrandLockup
+              alt="Topper's Choice"
+              priority
+              sizes="184px"
+              className="w-[11.5rem] max-w-full"
+            />
+          </div>
+          <p
+            className="tc-kicker mt-6"
+            style={{ color: "rgba(255, 184, 111, 0.92)" }}
+          >
             {config.eyebrow}
           </p>
           <h1 className="tc-display mt-4 text-3xl font-semibold tracking-tight md:text-4xl">

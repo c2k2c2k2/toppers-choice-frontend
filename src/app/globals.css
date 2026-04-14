@@ -1075,14 +1075,14 @@ button {
 
 .tc-public-logo-mark {
   display: inline-flex;
-  height: 2.5rem;
-  width: 2.5rem;
+  width: 3.4rem;
   align-items: center;
   justify-content: center;
-  border-radius: 0.9rem;
-  background: var(--brand);
-  color: #f8fafc;
-  box-shadow: 0 12px 28px rgba(0, 30, 64, 0.18);
+  border-radius: 1.1rem;
+  border: 1px solid rgba(0, 30, 64, 0.08);
+  background: rgba(248, 250, 252, 0.96);
+  box-shadow: 0 16px 30px rgba(0, 30, 64, 0.14);
+  padding: 0.55rem;
 }
 
 .tc-public-nav-link {

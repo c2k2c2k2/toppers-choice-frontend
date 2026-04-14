@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo } from "react";
+import { BrandMark } from "@/components/primitives/brand-logo";
 import { useAuthSession } from "@/lib/auth";
 
 interface AdminNavItem {
@@ -256,7 +257,13 @@ export function AdminShell({
           <aside className="tc-shell-rail flex w-full flex-col rounded-[30px] p-5 xl:sticky xl:top-3 xl:h-[calc(100dvh-1.5rem)] xl:overflow-y-auto">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="tc-kicker" style={{ color: "var(--accent-admin)" }}>
+                <div className="inline-flex rounded-[24px] border border-white/70 bg-white/82 p-3 shadow-[0_18px_36px_rgba(0,30,64,0.14)]">
+                  <BrandMark alt="" priority sizes="64px" className="w-16" />
+                </div>
+                <p
+                  className="tc-kicker mt-4"
+                  style={{ color: "var(--accent-admin)" }}
+                >
                   Topper&apos;s Choice
                 </p>
                 <h2 className="tc-display mt-3 text-[1.85rem] font-semibold tracking-tight">
