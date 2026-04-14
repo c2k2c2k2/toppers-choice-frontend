@@ -105,11 +105,17 @@ export type NotesListResponse = components["schemas"]["NotesListResponseDto"];
 export type CreateNoteInput = components["schemas"]["CreateNoteDto"];
 export type UpdateNoteInput = components["schemas"]["UpdateNoteDto"];
 
-export type QuestionSummary = components["schemas"]["QuestionSummaryResponseDto"];
+export type QuestionSummary = components["schemas"]["QuestionSummaryResponseDto"] & {
+  statementPreviewText: string;
+};
 export type QuestionDetail =
-  components["schemas"]["AdminQuestionDetailResponseDto"];
+  components["schemas"]["AdminQuestionDetailResponseDto"] & {
+    statementPreviewText: string;
+  };
 export type QuestionsListResponse =
-  components["schemas"]["QuestionsListResponseDto"];
+  Omit<components["schemas"]["QuestionsListResponseDto"], "items"> & {
+    items: QuestionSummary[];
+  };
 export type QuestionOptionInput =
   components["schemas"]["QuestionOptionInputDto"];
 export type QuestionMediaReferenceInput =
@@ -189,6 +195,8 @@ export type NoteStatus = Note["status"];
 export type QuestionType = QuestionSummary["type"];
 export type QuestionDifficulty = QuestionSummary["difficulty"];
 export type QuestionStatus = QuestionSummary["status"];
+export type AdminActionMessageResponse =
+  components["schemas"]["ActionMessageResponseDto"];
 
 export type TestFamily = TestSummary["family"];
 export type TestAccessType = TestSummary["accessType"];

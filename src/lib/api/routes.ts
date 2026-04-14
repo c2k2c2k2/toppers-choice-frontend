@@ -266,6 +266,8 @@ export const apiRoutes = {
       list: "/admin/questions",
       detail: (questionId: string) =>
         `/admin/questions/${encodeURIComponent(questionId)}`,
+      remove: (questionId: string) =>
+        `/admin/questions/${encodeURIComponent(questionId)}`,
       publish: (questionId: string) =>
         `/admin/questions/${encodeURIComponent(questionId)}/publish`,
       unpublish: (questionId: string) =>

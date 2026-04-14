@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { adminQueryKeys } from "@/lib/api/query-keys";
 import { useAuthenticatedMutation, useAuthenticatedQuery, useAuthSession } from "@/lib/auth";
 import {
+  deleteAdminQuestion,
   formatAdminDateTime,
   getApiErrorMessage,
   listAdminQuestions,
@@ -111,6 +112,30 @@ export function AdminQuestionsListScreen() {
       });
     },
   });
+  const deleteMutation = useAuthenticatedMutation({
+    mutationFn: (questionId: string, accessToken) =>
+      deleteAdminQuestion(questionId, accessToken),
+    onSuccess: async (response) => {
+      setMessage(response.message);
+      await queryClient.invalidateQueries({
+        queryKey: ["admin", "questions"],
+      });
+    },
+  });
+
+  async function handleDeleteQuestion(row: QuestionSummary) {
+    const questionLabel = readStringValue(row.statementPreviewText) || row.id;
+    const confirmed = window.confirm(
+      `Delete this question?\n\n${questionLabel}\n\nThis only works if the question has not already been used in practice or tests.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setMessage(null);
+    await deleteMutation.mutateAsync(row.id);
+  }
 
   const paginatedRows = useMemo(() => {
     const items = questionsQuery.data?.items ?? [];
@@ -262,6 +287,15 @@ export function AdminQuestionsListScreen() {
         </AdminInlineNotice>
       ) : null}
 
+      {deleteMutation.error ? (
+        <AdminInlineNotice tone="warning">
+          {getApiErrorMessage(
+            deleteMutation.error,
+            "The question could not be deleted.",
+          )}
+        </AdminInlineNotice>
+      ) : null}
+
       <AdminDataTable
         rows={paginatedRows}
         getRowId={(row) => row.id}
@@ -277,13 +311,19 @@ export function AdminQuestionsListScreen() {
           {
             header: "Question",
             render: (row: QuestionSummary) => (
-              <div>
-                <p className="font-semibold text-[color:var(--brand)]">
-                  {readStringValue(row.code) || row.id}
+              <div className="max-w-3xl">
+                <p
+                  className="truncate font-semibold leading-6 text-[color:var(--brand)]"
+                  title={readStringValue(row.statementPreviewText)}
+                >
+                  {readStringValue(row.statementPreviewText) || row.id}
                 </p>
                 <p className="mt-1 text-xs text-[color:var(--muted)]">
                   {row.subject.name}
                   {row.topic ? ` · ${row.topic.name}` : ""}
+                  {readStringValue(row.code)
+                    ? ` · ${readStringValue(row.code)}`
+                    : ""}
                 </p>
               </div>
             ),
@@ -310,12 +350,13 @@ export function AdminQuestionsListScreen() {
           },
           {
             header: "Actions",
-            className: "w-60",
+            className: "w-72",
             render: (row: QuestionSummary) => (
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   className="tc-button-secondary"
+                  disabled={deleteMutation.isPending}
                   onClick={(event) => {
                     event.stopPropagation();
                     router.push(`/admin/questions/${row.id}`);
@@ -326,7 +367,11 @@ export function AdminQuestionsListScreen() {
                 <button
                   type="button"
                   className="tc-button-secondary"
-                  disabled={!canPublishQuestions || publishMutation.isPending}
+                  disabled={
+                    !canPublishQuestions ||
+                    publishMutation.isPending ||
+                    deleteMutation.isPending
+                  }
                   onClick={(event) => {
                     event.stopPropagation();
                     setMessage(null);
@@ -336,8 +381,21 @@ export function AdminQuestionsListScreen() {
                     });
                   }}
                 >
-                  {row.status === "PUBLISHED" ? "Move to draft" : "Publish"}
+                  {row.status === "PUBLISHED" ? "Draft" : "Publish"}
                 </button>
+                {canManageQuestions ? (
+                  <button
+                    type="button"
+                    className="tc-button-secondary"
+                    disabled={publishMutation.isPending || deleteMutation.isPending}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void handleDeleteQuestion(row);
+                    }}
+                  >
+                    Delete
+                  </button>
+                ) : null}
               </div>
             ),
           },

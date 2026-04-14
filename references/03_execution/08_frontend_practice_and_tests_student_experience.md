@@ -63,6 +63,7 @@ Done when:
 - The student mobile bottom navigation is intentionally hidden on immersive assessment routes so the fixed shell chrome does not block save, submit, or question navigation controls.
 - Timed test attempt history is wired against the backend's dedicated `/tests/attempts/history` contract instead of overloading the published-test detail route.
 - Student assessment rendering now consumes backend question `mediaReferences` directly, including statement images, option images, and review-time explanation images for both live practice payloads and stored test-attempt question snapshots.
+- Practice start/session flows now also surface published questions whose `mediumId` is `null`, so shared question-bank records remain available in the student app even when the student shell has a specific medium selected.
 - Verified assessment seed data now includes:
   - published free and premium student tests
   - four representative backend questions spanning the assessment renderer

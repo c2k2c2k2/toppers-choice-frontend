@@ -2,6 +2,7 @@ import { apiRequest } from "@/lib/api/client";
 import { withQuery } from "@/lib/api/config";
 import { apiRoutes } from "@/lib/api/routes";
 import type {
+  AdminActionMessageResponse,
   AdminQuestionListQuery,
   AdminTestListQuery,
   CreateQuestionInput,
@@ -74,6 +75,16 @@ export async function unpublishAdminQuestion(
 ) {
   return apiRequest<QuestionDetail>(apiRoutes.admin.questions.unpublish(questionId), {
     method: "POST",
+    accessToken,
+  });
+}
+
+export async function deleteAdminQuestion(
+  questionId: string,
+  accessToken: string,
+) {
+  return apiRequest<AdminActionMessageResponse>(apiRoutes.admin.questions.remove(questionId), {
+    method: "DELETE",
     accessToken,
   });
 }
