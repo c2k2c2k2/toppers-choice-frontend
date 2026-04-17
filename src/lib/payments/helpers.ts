@@ -65,11 +65,21 @@ export function parsePremiumIntent(value: string | null | undefined): PremiumInt
 }
 
 export function formatPlanPrice(plan: Pick<Plan, "currencyCode" | "pricePaise">) {
+  return formatCurrencyAmount({
+    amountPaise: plan.pricePaise,
+    currencyCode: plan.currencyCode,
+  });
+}
+
+export function formatCurrencyAmount(input: {
+  amountPaise: number;
+  currencyCode: string;
+}) {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
-    currency: plan.currencyCode,
+    currency: input.currencyCode,
     maximumFractionDigits: 0,
-  }).format(plan.pricePaise / 100);
+  }).format(input.amountPaise / 100);
 }
 
 export function formatPlanDuration(days: number) {

@@ -10,7 +10,7 @@ import { useAuthenticatedQuery, useAuthSession } from "@/lib/auth";
 import {
   buildPaymentResultHref,
   buildStudentPlansHref,
-  formatPlanPrice,
+  formatCurrencyAmount,
   getPaymentOrderStatus,
   getPaymentStatusLabel,
   getPremiumIntentLabel,
@@ -35,6 +35,23 @@ function buildCurrentRoute(
 ) {
   const queryString = searchParams.toString();
   return queryString ? `${pathname}?${queryString}` : pathname;
+}
+
+function formatOrderTimestamp(value: string | null | undefined) {
+  if (!value) {
+    return "Pending";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Pending";
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
 }
 
 export function PaymentResultScreen() {
@@ -214,6 +231,49 @@ export function PaymentResultScreen() {
   }
 
   const order = orderQuery.data;
+  const amountLabel = formatCurrencyAmount({
+    amountPaise: order.amountPaise,
+    currencyCode: order.currencyCode,
+  });
+  const orderNumber = order.merchantOrderCode;
+  const successMessage =
+    order.status === "SUCCEEDED"
+      ? "Payment completed successfully."
+      : order.status === "PENDING" || order.status === "CREATED"
+        ? "Payment is still being verified."
+        : "Payment did not complete successfully.";
+  const auditSummaryRows = [
+    {
+      label: "Order number",
+      value: orderNumber,
+    },
+    {
+      label: "Amount",
+      value: amountLabel,
+    },
+    {
+      label: "Success message",
+      value: successMessage,
+    },
+    {
+      label: "Payment status",
+      value: getPaymentStatusLabel(order.status),
+    },
+    {
+      label: "Provider reference",
+      value: order.providerReferenceId ?? "Pending from provider",
+    },
+    {
+      label: "Updated at",
+      value: formatOrderTimestamp(
+        order.confirmedAt ??
+          order.failedAt ??
+          order.lastCheckedAt ??
+          order.updatedAt ??
+          order.createdAt,
+      ),
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-6">
@@ -243,14 +303,17 @@ export function PaymentResultScreen() {
                 {getPaymentStatusLabel(order.status)}
               </span>
               <span className="tc-student-chip" data-tone="hero">
-                {order.plan.name}
+                Order number: {orderNumber}
               </span>
               <span className="tc-student-chip" data-tone="hero">
-                {formatPlanPrice(order.plan)}
+                Amount: {amountLabel}
+              </span>
+              <span className="tc-student-chip" data-tone="hero">
+                {order.plan.name}
               </span>
               {merchantOrderCode ? (
                 <span className="tc-student-chip" data-tone="hero">
-                  {merchantOrderCode}
+                  Merchant order code: {merchantOrderCode}
                 </span>
               ) : null}
             </div>
@@ -284,26 +347,73 @@ export function PaymentResultScreen() {
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <div className="tc-student-metric rounded-[24px] p-5">
-              <p className="tc-overline">Plan</p>
+              <p className="tc-overline">Amount</p>
               <p className="mt-4 text-lg font-semibold text-white">
-                {order.plan.name}
+                {amountLabel}
               </p>
               <p className="mt-2 text-sm text-white/72">
-                {formatPlanPrice(order.plan)} for {order.plan.durationDays} days
+                {order.currencyCode} billed for {order.plan.name}
               </p>
             </div>
             <div className="tc-student-metric rounded-[24px] p-5">
-              <p className="tc-overline">Provider state</p>
+              <p className="tc-overline">Order number</p>
               <p className="mt-4 text-lg font-semibold text-white">
-                {order.providerStatus ?? order.status}
+                {orderNumber}
               </p>
               <p className="mt-2 text-sm text-white/72">
-                Order id: {order.id}
+                Merchant reference used for status checks
+              </p>
+            </div>
+            <div className="tc-student-metric rounded-[24px] p-5 sm:col-span-2 xl:col-span-1">
+              <p className="tc-overline">Success message</p>
+              <p className="mt-4 text-lg font-semibold text-white">
+                {successMessage}
+              </p>
+              <p className="mt-2 text-sm text-white/72">
+                Provider state: {order.providerStatus ?? order.status}
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="tc-student-panel rounded-[28px] p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
+              Payment receipt
+            </p>
+            <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
+              Live order details for audit screenshots and support checks.
+            </h2>
+            <p className="tc-muted mt-3 text-sm leading-6">
+              This summary is built from the protected backend order status and
+              updates as the payment provider status changes.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            className="tc-button-secondary"
+            onClick={() => {
+              globalThis.print?.();
+            }}
+          >
+            Print receipt
+          </button>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {auditSummaryRows.map((item) => (
+            <div key={item.label} className="tc-student-card rounded-[22px] p-5">
+              <p className="tc-overline">{item.label}</p>
+              <p className="mt-3 break-all text-base font-semibold text-[color:var(--brand)]">
+                {item.value}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
 
