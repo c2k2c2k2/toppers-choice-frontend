@@ -869,10 +869,39 @@ button {
 .tc-rich-html :where(ul, ol) {
   margin: 0 0 0.75rem;
   padding-left: 1.25rem;
+  list-style-position: outside;
+}
+
+.tc-rich-html :where(ul) {
+  list-style-type: disc;
+}
+
+.tc-rich-html :where(ul ul) {
+  list-style-type: circle;
+}
+
+.tc-rich-html :where(ul ul ul) {
+  list-style-type: square;
+}
+
+.tc-rich-html :where(ol) {
+  list-style-type: decimal;
+}
+
+.tc-rich-html :where(ol ol) {
+  list-style-type: lower-alpha;
+}
+
+.tc-rich-html :where(ol ol ol) {
+  list-style-type: lower-roman;
 }
 
 .tc-rich-html :where(li) {
   margin-bottom: 0.25rem;
+}
+
+.tc-rich-html :where(li)::marker {
+  color: var(--brand);
 }
 
 .tc-rich-html :where(blockquote) {

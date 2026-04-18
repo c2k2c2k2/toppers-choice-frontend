@@ -73,8 +73,6 @@ const DEFAULT_TABLE_DRAFT: TableDraft = {
   rows: 2,
   withHeaderRow: true,
 };
-const MARATHI_TYPING_MODE_STORAGE_KEY =
-  "toppers-choice:admin:question-editor:marathi-typing-mode";
 
 function joinClasses(...values: Array<string | null | undefined | false>) {
   return values.filter(Boolean).join(" ");
@@ -166,27 +164,6 @@ function clampTableDimension(value: number, fallback: number) {
   }
 
   return Math.min(10, Math.max(1, Math.floor(value)));
-}
-
-function readStoredMarathiTypingMode(): MarathiTypingMode | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const stored = window.localStorage.getItem(MARATHI_TYPING_MODE_STORAGE_KEY);
-  if (stored === "unicode" || stored === "shree-dev" || stored === "surekh") {
-    return stored;
-  }
-
-  return null;
-}
-
-function persistMarathiTypingMode(mode: MarathiTypingMode) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(MARATHI_TYPING_MODE_STORAGE_KEY, mode);
 }
 
 function detectEncodedFontFromPlainTextLine(
@@ -477,11 +454,15 @@ const MarathiEncodedFont = Mark.create({
 
 function toolbarButtonClass(active?: boolean) {
   return joinClasses(
-    "rounded-full border px-3 py-2 text-xs font-semibold transition",
+    "inline-flex min-h-9 items-center justify-center border-r border-[rgba(0,30,64,0.08)] px-3 text-[13px] font-medium transition last:border-r-0",
     active
-      ? "border-[rgba(0,51,102,0.22)] bg-[rgba(0,51,102,0.08)] text-[color:var(--brand)]"
-      : "border-[rgba(0,30,64,0.12)] bg-white/80 text-[color:var(--brand)] hover:bg-white",
+      ? "bg-[rgba(0,51,102,0.08)] text-[color:var(--brand)]"
+      : "bg-white text-[color:var(--brand)] hover:bg-[rgba(0,51,102,0.04)]",
   );
+}
+
+function toolbarGroupClass() {
+  return "flex overflow-hidden rounded-[14px] border border-[rgba(0,30,64,0.1)] bg-white";
 }
 
 export function AdminQuestionRichTextField({
@@ -504,9 +485,7 @@ export function AdminQuestionRichTextField({
   value: string;
 }>) {
   const marathiEditor = language === "mr";
-  const [typingMode, setTypingMode] = useState<MarathiTypingMode>(
-    () => readStoredMarathiTypingMode() ?? "unicode",
-  );
+  const [typingMode, setTypingMode] = useState<MarathiTypingMode>("unicode");
   const [equationMode, setEquationMode] = useState<EquationMode>("inline");
   const [equationPanelOpen, setEquationPanelOpen] = useState(false);
   const [equationLatex, setEquationLatex] = useState("");
@@ -538,7 +517,7 @@ export function AdminQuestionRichTextField({
     editorProps: {
       attributes: {
         class: joinClasses(
-          "tc-rich-html tc-admin-rich-editor w-full rounded-[22px] px-4 py-4 text-sm leading-7 text-[color:var(--foreground)] focus:outline-none",
+          "tc-rich-html tc-admin-rich-editor min-h-full w-full px-4 py-4 text-sm leading-7 text-[color:var(--foreground)] focus:outline-none",
           marathiEditor && "font-marathi-unicode",
           disabled && "cursor-not-allowed opacity-70",
         ),
@@ -571,7 +550,7 @@ export function AdminQuestionRichTextField({
 
     editor.setEditable(!disabled);
     editor.view.dom.className = joinClasses(
-      "tc-rich-html tc-admin-rich-editor w-full rounded-[22px] px-4 py-4 text-sm leading-7 text-[color:var(--foreground)] focus:outline-none",
+      "tc-rich-html tc-admin-rich-editor min-h-full w-full px-4 py-4 text-sm leading-7 text-[color:var(--foreground)] focus:outline-none",
       marathiEditor && "font-marathi-unicode",
       disabled && "cursor-not-allowed opacity-70",
     );
@@ -605,11 +584,6 @@ export function AdminQuestionRichTextField({
 
       event.preventDefault();
       editor.chain().focus().insertContent(detectedHtml).run();
-
-      const detectedFont = getLikelyLegacyMarathiFontKey(text);
-      if (detectedFont) {
-        setTypingMode(detectedFont);
-      }
     };
 
     const dom = editor.view.dom;
@@ -692,14 +666,6 @@ export function AdminQuestionRichTextField({
   }, [editor, marathiEditor, typingMode]);
 
   useEffect(() => {
-    if (!marathiEditor) {
-      return;
-    }
-
-    persistMarathiTypingMode(typingMode);
-  }, [marathiEditor, typingMode]);
-
-  useEffect(() => {
     if (!equationPanelOpen) {
       return;
     }
@@ -766,52 +732,6 @@ export function AdminQuestionRichTextField({
       field.value = equationLatex || "";
     }
   }, [equationLatex, equationPanelOpen, mathliveReady]);
-
-  const applyTypingMode = useCallback(
-    (nextMode: MarathiTypingMode) => {
-      if (!editor || !marathiEditor) {
-        return;
-      }
-
-      const fontMark = editor.schema.marks.marathiEncodedFont;
-      if (!fontMark) {
-        return;
-      }
-
-      setTypingMode(nextMode);
-
-      const chain = editor.chain().focus();
-
-      if (editor.state.selection.empty) {
-        editor.commands.focus();
-        const { state } = editor;
-        const marks = state.storedMarks ?? state.selection.$from.marks();
-        const activeMark = fontMark.isInSet(marks);
-        const nextMarks =
-          nextMode === "unicode"
-            ? activeMark
-              ? activeMark.removeFromSet(marks)
-              : marks
-            : fontMark
-                .create({ fontKey: nextMode })
-                .addToSet(activeMark ? activeMark.removeFromSet(marks) : marks);
-
-        editor.view.dispatch(state.tr.setStoredMarks(nextMarks));
-        return;
-      }
-
-      if (nextMode === "unicode") {
-        chain.unsetMark("marathiEncodedFont").run();
-        return;
-      }
-
-      chain
-        .unsetMark("marathiEncodedFont")
-        .setMark("marathiEncodedFont", { fontKey: nextMode })
-        .run();
-    },
-    [editor, marathiEditor],
-  );
 
   const applyTemplate = useCallback((latexValue: string) => {
     const field = mathFieldRef.current;
@@ -888,148 +808,101 @@ export function AdminQuestionRichTextField({
   return (
     <AdminFormField label={label} hint={hint}>
       <div className="grid gap-3">
-        {marathiEditor ? (
-          <div className="rounded-[22px] border border-[rgba(0,30,64,0.08)] bg-white/78 p-4">
-            <p className="text-sm leading-6 text-[color:var(--muted)]">
-              Marathi editor supports Unicode, Shree-Dev, and Surekh together.
-              Choose the typing font before entering or pasting content.
-            </p>
-            <div className="mt-3 inline-flex rounded-full border border-[rgba(0,30,64,0.12)] bg-white p-1">
+        <div className="overflow-hidden rounded-[22px] border border-[rgba(0,30,64,0.12)] bg-white">
+          <div className="flex flex-wrap gap-2 border-b border-[rgba(0,30,64,0.08)] bg-[rgba(247,250,252,0.96)] p-2">
+            <div className={toolbarGroupClass()}>
               <button
                 type="button"
-                className={toolbarButtonClass(typingMode === "unicode")}
+                className={toolbarButtonClass(editor?.isActive("bold"))}
                 disabled={editorUnavailable}
-                onClick={() => applyTypingMode("unicode")}
+                onClick={() => editor?.chain().focus().toggleBold().run()}
               >
-                Unicode
+                Bold
               </button>
               <button
                 type="button"
-                className={toolbarButtonClass(typingMode === "shree-dev")}
+                className={toolbarButtonClass(editor?.isActive("italic"))}
                 disabled={editorUnavailable}
-                onClick={() => applyTypingMode("shree-dev")}
+                onClick={() => editor?.chain().focus().toggleItalic().run()}
               >
-                Shree-Dev
+                Italic
               </button>
               <button
                 type="button"
-                className={toolbarButtonClass(typingMode === "surekh")}
+                className={toolbarButtonClass(editor?.isActive("underline"))}
                 disabled={editorUnavailable}
-                onClick={() => applyTypingMode("surekh")}
+                onClick={() => editor?.chain().focus().toggleUnderline().run()}
               >
-                Surekh
+                Underline
+              </button>
+            </div>
+
+            <div className={toolbarGroupClass()}>
+              <button
+                type="button"
+                className={toolbarButtonClass(editor?.isActive("bulletList"))}
+                disabled={editorUnavailable}
+                onClick={() => editor?.chain().focus().toggleBulletList().run()}
+              >
+                Bullets
+              </button>
+              <button
+                type="button"
+                className={toolbarButtonClass(editor?.isActive("orderedList"))}
+                disabled={editorUnavailable}
+                onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+              >
+                Numbered
+              </button>
+            </div>
+
+            <div className={toolbarGroupClass()}>
+              <button
+                type="button"
+                className={toolbarButtonClass(tablePanelOpen || tableActive)}
+                disabled={editorUnavailable}
+                onClick={() => {
+                  setTablePanelOpen((open) => !open);
+                  setEquationPanelOpen(false);
+                }}
+              >
+                Table
+              </button>
+              <button
+                type="button"
+                className={toolbarButtonClass(equationPanelOpen)}
+                disabled={editorUnavailable}
+                onClick={() => {
+                  setEquationPanelOpen((open) => !open);
+                  setTablePanelOpen(false);
+                }}
+              >
+                Equation
+              </button>
+            </div>
+
+            <div className={toolbarGroupClass()}>
+              <button
+                type="button"
+                className={toolbarButtonClass(false)}
+                disabled={editorUnavailable || !editor?.can().chain().focus().undo().run()}
+                onClick={() => editor?.chain().focus().undo().run()}
+              >
+                Undo
+              </button>
+              <button
+                type="button"
+                className={toolbarButtonClass(false)}
+                disabled={editorUnavailable || !editor?.can().chain().focus().redo().run()}
+                onClick={() => editor?.chain().focus().redo().run()}
+              >
+                Redo
               </button>
             </div>
           </div>
-        ) : null}
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className={toolbarButtonClass(editor?.isActive("bold"))}
-            disabled={editorUnavailable}
-            onClick={() => editor?.chain().focus().toggleBold().run()}
-          >
-            Bold
-          </button>
-          <button
-            type="button"
-            className={toolbarButtonClass(editor?.isActive("italic"))}
-            disabled={editorUnavailable}
-            onClick={() => editor?.chain().focus().toggleItalic().run()}
-          >
-            Italic
-          </button>
-          <button
-            type="button"
-            className={toolbarButtonClass(editor?.isActive("underline"))}
-            disabled={editorUnavailable}
-            onClick={() => editor?.chain().focus().toggleUnderline().run()}
-          >
-            Underline
-          </button>
-          <button
-            type="button"
-            className={toolbarButtonClass(editor?.isActive("bulletList"))}
-            disabled={editorUnavailable}
-            onClick={() => editor?.chain().focus().toggleBulletList().run()}
-          >
-            Bullets
-          </button>
-          <button
-            type="button"
-            className={toolbarButtonClass(editor?.isActive("orderedList"))}
-            disabled={editorUnavailable}
-            onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-          >
-            Numbered
-          </button>
-          <button
-            type="button"
-            className={toolbarButtonClass(tablePanelOpen || tableActive)}
-            disabled={editorUnavailable}
-            onClick={() => {
-              setTablePanelOpen((open) => !open);
-              setEquationPanelOpen(false);
-            }}
-          >
-            Table
-          </button>
-          <button
-            type="button"
-            className={toolbarButtonClass(false)}
-            disabled={editorUnavailable}
-            onClick={() => editor?.chain().focus().addRowAfter().run()}
-          >
-            + Row
-          </button>
-          <button
-            type="button"
-            className={toolbarButtonClass(false)}
-            disabled={editorUnavailable}
-            onClick={() => editor?.chain().focus().addColumnAfter().run()}
-          >
-            + Col
-          </button>
-          <button
-            type="button"
-            className={toolbarButtonClass(false)}
-            disabled={editorUnavailable}
-            onClick={() => editor?.chain().focus().deleteTable().run()}
-          >
-            Del Table
-          </button>
-          <button
-            type="button"
-            className={toolbarButtonClass(equationPanelOpen)}
-            disabled={editorUnavailable}
-            onClick={() => {
-              setEquationPanelOpen((open) => !open);
-              setTablePanelOpen(false);
-            }}
-          >
-            Equation
-          </button>
-          <button
-            type="button"
-            className={toolbarButtonClass(false)}
-            disabled={editorUnavailable || !editor?.can().chain().focus().undo().run()}
-            onClick={() => editor?.chain().focus().undo().run()}
-          >
-            Undo
-          </button>
-          <button
-            type="button"
-            className={toolbarButtonClass(false)}
-            disabled={editorUnavailable || !editor?.can().chain().focus().redo().run()}
-            onClick={() => editor?.chain().focus().redo().run()}
-          >
-            Redo
-          </button>
-        </div>
-
-        {tablePanelOpen ? (
-          <div className="rounded-[22px] border border-[rgba(0,30,64,0.08)] bg-white/78 p-4">
+          {tablePanelOpen ? (
+            <div className="border-b border-[rgba(0,30,64,0.08)] bg-white/96 p-4">
             <div className="grid gap-3 sm:grid-cols-[repeat(2,minmax(0,140px))_auto]">
               <label className="grid gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--muted)]">
                 <span>Rows</span>
@@ -1142,12 +1015,20 @@ export function AdminQuestionRichTextField({
               >
                 Add column right
               </button>
+              <button
+                type="button"
+                className="tc-button-secondary min-h-0 px-4 py-2 text-xs"
+                disabled={editorUnavailable}
+                onClick={() => editor?.chain().focus().deleteTable().run()}
+              >
+                Delete table
+              </button>
             </div>
-          </div>
-        ) : null}
+            </div>
+          ) : null}
 
-        {equationPanelOpen ? (
-          <div className="rounded-[22px] border border-[rgba(0,30,64,0.08)] bg-white/78 p-4">
+          {equationPanelOpen ? (
+            <div className="border-b border-[rgba(0,30,64,0.08)] bg-white/96 p-4">
             <p className="text-sm font-semibold text-[color:var(--brand)]">
               Equation assistant
             </p>
@@ -1260,11 +1141,12 @@ export function AdminQuestionRichTextField({
                 Close
               </button>
             </div>
-          </div>
-        ) : null}
+            </div>
+          ) : null}
 
-        <div className="tc-input overflow-hidden rounded-[22px] p-0" style={{ minHeight }}>
-          <EditorContent editor={editor} />
+          <div style={{ minHeight }}>
+            <EditorContent editor={editor} />
+          </div>
         </div>
 
         {showPreview && value.trim() ? (

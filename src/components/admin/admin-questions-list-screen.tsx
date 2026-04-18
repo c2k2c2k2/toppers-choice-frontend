@@ -49,9 +49,171 @@ const QUESTION_DIFFICULTY_OPTIONS: Array<QuestionDifficulty | ""> = [
   "MEDIUM",
   "HARD",
 ];
+const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
+  SINGLE_CHOICE: "Single choice",
+  MULTIPLE_CHOICE: "Multiple choice",
+  TEXT_INPUT: "Text input",
+};
+
+type QuestionTableRow = QuestionSummary & {
+  serialNumber: number;
+};
 
 function readStringValue(value: unknown) {
   return typeof value === "string" ? value : "";
+}
+
+function formatQuestionTypeLabel(value: QuestionType) {
+  return QUESTION_TYPE_LABELS[value];
+}
+
+function actionButtonClass(tone: "default" | "danger" = "default") {
+  return [
+    "inline-flex h-9 w-9 items-center justify-center rounded-full border text-[color:var(--brand)] transition-colors",
+    tone === "danger"
+      ? "border-[rgba(163,39,32,0.16)] bg-[rgba(255,244,242,0.92)] hover:bg-[rgba(255,234,231,0.98)]"
+      : "border-[rgba(0,30,64,0.1)] bg-white hover:bg-[rgba(0,51,102,0.04)]",
+    "disabled:cursor-not-allowed disabled:opacity-45",
+  ].join(" ");
+}
+
+function EditIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 20 20"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M4.167 15.833h2.083l8.125-8.125-2.083-2.083-8.125 8.125v2.083Z"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+      <path
+        d="m11.875 5.625 2.083 2.083"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+    </svg>
+  );
+}
+
+function PublishIcon({ published }: Readonly<{ published: boolean }>) {
+  return published ? (
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 20 20"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M10 4.167v11.666"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+      <path
+        d="m6.25 7.917 3.75-3.75 3.75 3.75"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M4.167 15.833h11.666"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+    </svg>
+  ) : (
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 20 20"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M10 15.833V4.167"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+      <path
+        d="m13.75 12.083-3.75 3.75-3.75-3.75"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M4.167 4.167h11.666"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+    </svg>
+  );
+}
+
+function DeleteIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 20 20"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M5.833 6.25v8.333"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M14.167 6.25v8.333"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M3.75 4.167h12.5"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M7.5 4.167V3.333h5v.834"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M5 6.25h10l-.583 10H5.583L5 6.25Z"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+    </svg>
+  );
 }
 
 export function AdminQuestionsListScreen() {
@@ -137,10 +299,13 @@ export function AdminQuestionsListScreen() {
     await deleteMutation.mutateAsync(row.id);
   }
 
-  const paginatedRows = useMemo(() => {
+  const paginatedRows = useMemo<QuestionTableRow[]>(() => {
     const items = questionsQuery.data?.items ?? [];
     const start = (page - 1) * PAGE_SIZE;
-    return items.slice(start, start + PAGE_SIZE);
+    return items.slice(start, start + PAGE_SIZE).map((item, index) => ({
+      ...item,
+      serialNumber: start + index + 1,
+    }));
   }, [questionsQuery.data?.items, page]);
 
   if (!canReadQuestions) {
@@ -309,68 +474,108 @@ export function AdminQuestionsListScreen() {
         }
         columns={[
           {
+            header: "#",
+            className: "w-16 whitespace-nowrap",
+            render: (row: QuestionTableRow) => (
+              <span className="font-mono text-xs font-semibold text-[color:var(--muted)]">
+                {row.serialNumber}
+              </span>
+            ),
+          },
+          {
             header: "Question",
-            render: (row: QuestionSummary) => (
-              <div className="max-w-3xl">
+            className: "w-[18rem] xl:w-[20rem]",
+            render: (row: QuestionTableRow) => (
+              <div className="w-[18rem] max-w-[18rem] xl:w-[20rem] xl:max-w-[20rem]">
                 <p
-                  className="truncate font-semibold leading-6 text-[color:var(--brand)]"
+                  className="truncate font-semibold leading-5 text-[color:var(--brand)]"
                   title={readStringValue(row.statementPreviewText)}
                 >
                   {readStringValue(row.statementPreviewText) || row.id}
                 </p>
-                <p className="mt-1 text-xs text-[color:var(--muted)]">
+                <p
+                  className="mt-1 truncate text-xs text-[color:var(--muted)]"
+                  title={[
+                    row.subject.name,
+                    row.topic?.name ?? "",
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                >
                   {row.subject.name}
                   {row.topic ? ` · ${row.topic.name}` : ""}
-                  {readStringValue(row.code)
-                    ? ` · ${readStringValue(row.code)}`
-                    : ""}
                 </p>
               </div>
             ),
           },
           {
-            header: "Type",
-            className: "w-40",
-            render: (row: QuestionSummary) => row.type.replaceAll("_", " "),
+            header: "Code",
+            className: "w-44 whitespace-nowrap",
+            render: (row: QuestionTableRow) => (
+              <span
+                className="font-mono text-xs font-semibold text-[color:var(--muted)]"
+                title={readStringValue(row.code) || row.id}
+              >
+                {readStringValue(row.code) || "--"}
+              </span>
+            ),
           },
           {
-            header: "Difficulty",
-            className: "w-32",
-            render: (row: QuestionSummary) => row.difficulty,
+            header: "Type",
+            className: "w-36",
+            render: (row: QuestionTableRow) => formatQuestionTypeLabel(row.type),
+          },
+          {
+            header: "Level",
+            className: "w-28 whitespace-nowrap",
+            render: (row: QuestionTableRow) => row.difficulty,
           },
           {
             header: "Status",
-            className: "w-32",
-            render: (row: QuestionSummary) => row.status,
+            className: "w-28 whitespace-nowrap",
+            render: (row: QuestionTableRow) => row.status,
           },
           {
             header: "Updated",
             className: "w-44",
-            render: (row: QuestionSummary) => formatAdminDateTime(row.updatedAt),
+            render: (row: QuestionTableRow) => formatAdminDateTime(row.updatedAt),
           },
           {
             header: "Actions",
-            className: "w-72",
-            render: (row: QuestionSummary) => (
-              <div className="flex flex-wrap gap-2">
+            className: "w-40 whitespace-nowrap",
+            render: (row: QuestionTableRow) => (
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  className="tc-button-secondary"
+                  aria-label="Edit question"
+                  className={actionButtonClass()}
                   disabled={deleteMutation.isPending}
+                  title="Edit question"
                   onClick={(event) => {
                     event.stopPropagation();
                     router.push(`/admin/questions/${row.id}`);
                   }}
                 >
-                  Edit
+                  <EditIcon />
+                  <span className="sr-only">Edit question</span>
                 </button>
                 <button
                   type="button"
-                  className="tc-button-secondary"
+                  aria-label={
+                    row.status === "PUBLISHED"
+                      ? "Move question to draft"
+                      : "Publish question"
+                  }
+                  className={actionButtonClass()}
                   disabled={
                     !canPublishQuestions ||
                     publishMutation.isPending ||
                     deleteMutation.isPending
+                  }
+                  title={
+                    row.status === "PUBLISHED"
+                      ? "Move question to draft"
+                      : "Publish question"
                   }
                   onClick={(event) => {
                     event.stopPropagation();
@@ -381,19 +586,27 @@ export function AdminQuestionsListScreen() {
                     });
                   }}
                 >
-                  {row.status === "PUBLISHED" ? "Draft" : "Publish"}
+                  <PublishIcon published={row.status === "PUBLISHED"} />
+                  <span className="sr-only">
+                    {row.status === "PUBLISHED"
+                      ? "Move question to draft"
+                      : "Publish question"}
+                  </span>
                 </button>
                 {canManageQuestions ? (
                   <button
                     type="button"
-                    className="tc-button-secondary"
+                    aria-label="Delete question"
+                    className={actionButtonClass("danger")}
                     disabled={publishMutation.isPending || deleteMutation.isPending}
+                    title="Delete question"
                     onClick={(event) => {
                       event.stopPropagation();
                       void handleDeleteQuestion(row);
                     }}
                   >
-                    Delete
+                    <DeleteIcon />
+                    <span className="sr-only">Delete question</span>
                   </button>
                 ) : null}
               </div>

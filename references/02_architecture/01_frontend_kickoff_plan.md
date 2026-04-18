@@ -111,7 +111,7 @@ The frontend must stay contract-driven against the backend, use CMS-driven conte
 - Note reader UI state such as zoom, focus mode, and session-local reader controls
 - Protected note view tokens, watermark payloads, and canonical resume position should not be persisted in Zustand; the backend note progress endpoint remains the source of truth for resume
 - Practice and test session client state such as in-progress answers, timer snapshot, local draft persistence, and resume-safe interaction state
-- Admin panel UI state such as table preferences, filter drawer state, and non-server draft UI controls
+- Admin panel UI state such as table preferences, filter drawer state, question-entry defaults, and non-server draft UI controls
 - Keep canonical backend-backed entities out of Zustand; fetch them through API hooks and query cache instead
 
 ## Rendering Strategy

@@ -58,6 +58,6 @@ Done when:
 - Explicit font hints should use `data-marathi-font="shree-dev"` or `data-marathi-font="surekh"` when content source metadata is known.
 - Safe fallback detection may infer encoded legacy content from glyph patterns when explicit hints are missing, but later integrations should prefer explicit source metadata whenever available.
 - Shared rich HTML rendering may decorate question-specific math nodes and legacy encoded wrappers, but those transforms must stay centralized so admin preview, student practice/tests, and CMS-style surfaces do not drift apart.
-- Question-bank authoring should use the Dhurandhar-style typing-mode flow for Marathi input: Unicode as the default surface font, explicit `marathiEncodedFont` marks for Shree-Dev or Surekh spans, and MathLive + KaTeX for equation creation and rendering.
+- Question-bank authoring is now Unicode-first for new admin entry; legacy Shree-Dev and Surekh handling remains in the shared rendering path for previously encoded content, while MathLive + KaTeX stay available for equation creation and rendering.
 - The PWA baseline uses `src/app/manifest.ts`, shared provider registration, generated app icons, and `public/sw.js`.
 - The service worker caches only static shell assets, bundled fonts, icons, and the manifest. It must not cache `/api`, student/admin route documents, or protected content payloads by default.

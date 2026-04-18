@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
+import { adminQueryKeys } from "@/lib/api/query-keys";
 import { useAuthenticatedMutation, useAuthenticatedQuery, useAuthSession } from "@/lib/auth";
 import {
   createAdminQuestion,
   formatAdminDateTime,
   getAdminQuestion,
   getApiErrorMessage,
+  listAdminQuestions,
   publishAdminQuestion,
   unpublishAdminQuestion,
   updateAdminQuestion,
@@ -25,14 +27,13 @@ import {
   readStructuredDocumentHtml,
 } from "@/lib/admin/rich-text";
 import {
-  AdminInput,
+  AdminFormField,
   AdminSelect,
 } from "@/components/admin/admin-form-field";
 import { AdminInlineNotice } from "@/components/admin/admin-inline-notice";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminQuestionMediaField } from "@/components/admin/admin-question-media-field";
 import { AdminQuestionRichTextField } from "@/components/admin/admin-question-rich-text-field";
-import { AdminRouteTabs } from "@/components/admin/admin-route-tabs";
 import { useAdminTaxonomyReferenceData } from "@/components/admin/use-admin-taxonomy-reference-data";
 import { QuestionRichTextRenderer } from "@/components/questions/question-rich-text-renderer";
 import { EmptyState } from "@/components/primitives/empty-state";
@@ -42,8 +43,12 @@ import {
   extractQuestionHtml,
   hasQuestionRichContent,
 } from "@/lib/questions/rich-content";
-
-type QuestionLanguageMode = "ENGLISH" | "MARATHI" | "BILINGUAL";
+import {
+  initialAdminQuestionEditorDefaults,
+  useAdminQuestionEditorStore,
+  type AdminQuestionEditorDefaults,
+  type QuestionLanguageMode,
+} from "@/stores/admin-question-editor.store";
 
 interface QuestionOptionState {
   englishHtml: string;
@@ -78,6 +83,7 @@ const QUESTION_TYPE_OPTIONS: QuestionType[] = [
   "TEXT_INPUT",
 ];
 const QUESTION_DIFFICULTY_OPTIONS: QuestionDifficulty[] = ["EASY", "MEDIUM", "HARD"];
+const MINIMUM_CODE_DIGITS = 3;
 const QUESTION_LANGUAGE_OPTIONS: Array<{
   description: string;
   label: string;
@@ -310,18 +316,76 @@ function buildFormState(question: QuestionDetail | null): QuestionFormState {
 
 type AdminTaxonomyReferenceData = ReturnType<typeof useAdminTaxonomyReferenceData>;
 
+interface QuestionPublishIssue {
+  code: string;
+  message: string;
+}
+
+function buildQuestionSettingsState(
+  form: QuestionFormState,
+): AdminQuestionEditorDefaults {
+  return {
+    difficulty: form.difficulty,
+    languageMode: form.languageMode,
+    mediumId: form.mediumId,
+    subjectId: form.subjectId,
+    topicId: form.topicId,
+    type: form.type,
+  };
+}
+
+function buildResolvedQuestionSettings(
+  defaults: AdminQuestionEditorDefaults,
+  taxonomy: AdminTaxonomyReferenceData,
+  defaultSubjectId: string,
+): AdminQuestionEditorDefaults {
+  const subjectId = taxonomy.subjects.some((subject) => subject.id === defaults.subjectId)
+    ? defaults.subjectId
+    : defaultSubjectId;
+  const mediumId = taxonomy.mediums.some((medium) => medium.id === defaults.mediumId)
+    ? defaults.mediumId
+    : "";
+  const topicId =
+    subjectId && defaults.topicId
+      ? (taxonomy.topicsBySubjectId[subjectId] ?? []).some((topic) => topic.id === defaults.topicId)
+        ? defaults.topicId
+        : ""
+      : "";
+
+  return {
+    ...initialAdminQuestionEditorDefaults,
+    ...defaults,
+    mediumId,
+    subjectId,
+    topicId,
+  };
+}
+
+function buildEmptyQuestionForm(
+  settings: AdminQuestionEditorDefaults,
+  suggestedCode = "",
+): QuestionFormState {
+  return {
+    ...EMPTY_FORM,
+    code: suggestedCode,
+    difficulty: settings.difficulty,
+    languageMode: settings.languageMode,
+    mediumId: settings.mediumId,
+    subjectId: settings.subjectId,
+    topicId: settings.topicId,
+    type: settings.type,
+  };
+}
+
 function buildInitialQuestionForm(
   question: QuestionDetail | null,
-  defaultSubjectId: string,
+  defaults: AdminQuestionEditorDefaults,
 ): QuestionFormState {
   if (question) {
     return buildFormState(question);
   }
 
-  return {
-    ...EMPTY_FORM,
-    subjectId: defaultSubjectId,
-  };
+  return buildEmptyQuestionForm(defaults);
 }
 
 function countFilledOptions(form: QuestionFormState) {
@@ -359,6 +423,184 @@ function canSaveQuestion(form: QuestionFormState) {
   }
 
   return countFilledOptions(form) >= 2 && form.correctOptionKeys.length > 0;
+}
+
+function getActiveLanguageKeys(
+  languageMode: QuestionLanguageMode,
+): Array<"en" | "mr"> {
+  if (languageMode === "BILINGUAL") {
+    return ["en", "mr"];
+  }
+
+  return [languageMode === "MARATHI" ? "mr" : "en"];
+}
+
+function hasStatementContentForLanguage(
+  form: QuestionFormState,
+  languageKey: "en" | "mr",
+) {
+  return hasMeaningfulHtml(
+    languageKey === "mr" ? form.statementMrHtml : form.statementEnHtml,
+  );
+}
+
+function hasOptionContentForLanguage(
+  option: QuestionOptionState,
+  languageKey: "en" | "mr",
+) {
+  return hasMeaningfulHtml(
+    languageKey === "mr" ? option.marathiHtml : option.englishHtml,
+  );
+}
+
+function optionHasAnyUserContent(option: QuestionOptionState) {
+  return (
+    option.imageAssetId.trim().length > 0 ||
+    hasMeaningfulHtml(option.englishHtml) ||
+    hasMeaningfulHtml(option.marathiHtml)
+  );
+}
+
+function optionHasPublishableContent(
+  form: QuestionFormState,
+  option: QuestionOptionState,
+) {
+  const activeLanguages = getActiveLanguageKeys(form.languageMode);
+
+  if (option.imageAssetId.trim()) {
+    return true;
+  }
+
+  return activeLanguages.every((languageKey) =>
+    hasOptionContentForLanguage(option, languageKey),
+  );
+}
+
+function countPublishableOptions(form: QuestionFormState) {
+  return form.options.filter((option) => optionHasPublishableContent(form, option)).length;
+}
+
+function getQuestionPublishIssues(form: QuestionFormState): QuestionPublishIssue[] {
+  const issues: QuestionPublishIssue[] = [];
+  const activeLanguages = getActiveLanguageKeys(form.languageMode);
+
+  if (!form.code.trim()) {
+    issues.push({
+      code: "code",
+      message: "Add a question code before publishing.",
+    });
+  }
+
+  if (!form.subjectId) {
+    issues.push({
+      code: "subject",
+      message: "Choose a subject before publishing.",
+    });
+  }
+
+  const missingStatementLanguages = activeLanguages.filter(
+    (languageKey) => !hasStatementContentForLanguage(form, languageKey),
+  );
+  if (missingStatementLanguages.length > 0) {
+    issues.push({
+      code: "statement",
+      message:
+        missingStatementLanguages.length === 2
+          ? "Add the question statement in both English and Marathi."
+          : `Add the ${missingStatementLanguages[0] === "en" ? "English" : "Marathi"} statement before publishing.`,
+    });
+  }
+
+  if (form.type === "TEXT_INPUT") {
+    const answers = form.acceptedAnswers
+      .split("\n")
+      .map((value) => value.trim())
+      .filter(Boolean);
+    if (answers.length === 0) {
+      issues.push({
+        code: "answers",
+        message: "Add at least one accepted answer before publishing.",
+      });
+    }
+    return issues;
+  }
+
+  const incompleteOptionKeys = form.options
+    .filter(
+      (option) =>
+        optionHasAnyUserContent(option) && !optionHasPublishableContent(form, option),
+    )
+    .map((option) => option.key);
+
+  if (countPublishableOptions(form) < 2) {
+    issues.push({
+      code: "options",
+      message:
+        "Complete at least two answer options in the active language set before publishing.",
+    });
+  }
+
+  if (incompleteOptionKeys.length > 0) {
+    issues.push({
+      code: "option-content",
+      message: `Complete option ${incompleteOptionKeys.join(
+        ", ",
+      )} in every active language.`,
+    });
+  }
+
+  if (form.correctOptionKeys.length === 0) {
+    issues.push({
+      code: "correct-answer",
+      message: "Mark the correct answer before publishing.",
+    });
+  }
+
+  return issues;
+}
+
+function normalizeCodePrefix(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function parseQuestionCodeSequence(prefix: string, code: string | null | undefined) {
+  const normalizedCode = normalizeCodePrefix(code ?? "");
+  if (!normalizedCode || !normalizedCode.startsWith(`${prefix}-`)) {
+    return null;
+  }
+
+  const segments = normalizedCode.split("-");
+  const lastSegment = segments.at(-1) ?? "";
+  if (!/^\d+$/.test(lastSegment)) {
+    return null;
+  }
+
+  return Number.parseInt(lastSegment, 10);
+}
+
+function buildSuggestedQuestionCode(
+  subjectCode: string | null | undefined,
+  existingCodes: Array<string | null | undefined>,
+) {
+  const prefix = normalizeCodePrefix(subjectCode ?? "");
+  if (!prefix) {
+    return "";
+  }
+
+  const sequences = existingCodes
+    .map((code) => parseQuestionCodeSequence(prefix, code))
+    .filter((value): value is number => value !== null);
+  const nextSequence = Math.max(0, ...sequences) + 1;
+  const width = Math.max(
+    MINIMUM_CODE_DIGITS,
+    ...sequences.map((value) => String(value).length),
+  );
+
+  return `${prefix}-${String(nextSequence).padStart(width, "0")}`;
+}
+
+function readQuestionCodeValue(value: unknown) {
+  return typeof value === "string" ? value : null;
 }
 
 function buildQuestionMediaReferences(form: QuestionFormState) {
@@ -566,47 +808,51 @@ function QuestionLanguageSection({
     languageKey === "mr" ? form.explanationMrHtml : form.explanationEnHtml;
   const hint =
     languageKey === "mr"
-      ? "Marathi editor supports Unicode, Shree-Dev, and Surekh together. Choose the typing font before entering or pasting content."
+      ? "Unicode Marathi editor with formatting, tables, and equations."
       : "Use the toolbar to format text, add tables, and insert equations.";
 
   return (
-    <section className="tc-card rounded-[28px] p-6">
-      <div className="flex items-center justify-between border-b border-[rgba(0,30,64,0.08)] pb-4">
+    <section className="tc-card rounded-[26px] p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[rgba(0,30,64,0.08)] pb-3">
         <div>
-          <p className="tc-overline">Question content</p>
-          <h2 className="mt-2 text-xl font-semibold text-[color:var(--brand)]">{label}</h2>
+          <p className="tc-overline">{label}</p>
+          <h2 className="mt-1 text-lg font-semibold text-[color:var(--brand)]">
+            {label} content
+          </h2>
         </div>
+        <span className="tc-code-chip">
+          {form.type === "TEXT_INPUT" ? "Statement + answer" : "Statement + options"}
+        </span>
       </div>
 
-      <div className="mt-5 grid gap-6">
+      <div className="mt-4 grid gap-4">
         <AdminQuestionRichTextField
           disabled={disabled}
           hint={hint}
           language={languageKey}
           label={`Statement (${label})`}
-          minHeight="14rem"
+          minHeight="11rem"
           onChange={onStatementChange}
           showPreview={false}
           value={statementValue}
         />
 
         {form.type !== "TEXT_INPUT" ? (
-          <div className="grid gap-4">
-            <div>
+          <div className="grid gap-3">
+            <div className="flex items-center justify-between gap-3">
               <h3 className="text-base font-semibold text-[color:var(--brand)]">
                 Options ({label})
               </h3>
-              <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
-                Add option text, tables, equations, and shared option images.
-              </p>
+              <span className="text-xs font-medium text-[color:var(--muted)]">
+                Keep only the filled options.
+              </span>
             </div>
-
             {form.options.map((option) => (
               <div
                 key={`${languageKey}-${option.key}`}
-                className="rounded-[24px] border border-[rgba(0,30,64,0.08)] bg-white/78 p-4"
+                className="rounded-[20px] border border-[rgba(0,30,64,0.08)] bg-white/82 p-3"
               >
-                <div className="mb-4 flex items-center gap-3">
+                <div className="mb-3 flex items-center gap-3">
                   <span className="tc-code-chip">Option {option.key}</span>
                 </div>
                 <AdminQuestionRichTextField
@@ -614,7 +860,7 @@ function QuestionLanguageSection({
                   hint={hint}
                   language={languageKey}
                   label={`Option ${option.key} (${label})`}
-                  minHeight="9rem"
+                  minHeight="6.5rem"
                   onChange={(value) => onOptionChange(option.key, value)}
                   showPreview={false}
                   value={languageKey === "mr" ? option.marathiHtml : option.englishHtml}
@@ -629,7 +875,7 @@ function QuestionLanguageSection({
           hint="Optional explanation shown after answer submission."
           language={languageKey}
           label={`Explanation (${label})`}
-          minHeight="10rem"
+          minHeight="7rem"
           onChange={onExplanationChange}
           showPreview={false}
           value={explanationValue}
@@ -722,34 +968,149 @@ function AdminQuestionEditorForm({
   const router = useRouter();
   const queryClient = useQueryClient();
   const previewSectionRef = useRef<HTMLElement | null>(null);
+  const editorDifficulty = useAdminQuestionEditorStore((state) => state.difficulty);
+  const editorLanguageMode = useAdminQuestionEditorStore((state) => state.languageMode);
+  const editorMediumId = useAdminQuestionEditorStore((state) => state.mediumId);
+  const editorSubjectId = useAdminQuestionEditorStore((state) => state.subjectId);
+  const editorTopicId = useAdminQuestionEditorStore((state) => state.topicId);
+  const editorType = useAdminQuestionEditorStore((state) => state.type);
+  const setEditorDefaults = useAdminQuestionEditorStore((state) => state.setDefaults);
+  const defaultSubjectId = taxonomy.subjects[0]?.id ?? "";
+  const editorDefaults = useMemo(
+    () => ({
+      difficulty: editorDifficulty,
+      languageMode: editorLanguageMode,
+      mediumId: editorMediumId,
+      subjectId: editorSubjectId,
+      topicId: editorTopicId,
+      type: editorType,
+    }),
+    [
+      editorDifficulty,
+      editorLanguageMode,
+      editorMediumId,
+      editorSubjectId,
+      editorTopicId,
+      editorType,
+    ],
+  );
+  const resolvedDefaults = buildResolvedQuestionSettings(
+    editorDefaults,
+    taxonomy,
+    defaultSubjectId,
+  );
   const [currentQuestion, setCurrentQuestion] = useState<QuestionDetail | null>(question);
   const [form, setForm] = useState<QuestionFormState>(() =>
-    buildInitialQuestionForm(question, taxonomy.subjects[0]?.id ?? ""),
+    buildInitialQuestionForm(question, resolvedDefaults),
   );
   const [message, setMessage] = useState<string | null>(null);
+  const [isCodeManual, setIsCodeManual] = useState<boolean>(Boolean(question?.code));
+  const [previewOpen, setPreviewOpen] = useState<boolean>(Boolean(isEdit));
+
+  const questionCodeQuery = useAuthenticatedQuery({
+    enabled: !isEdit && Boolean(form.subjectId),
+    queryFn: (accessToken) => listAdminQuestions(accessToken, { subjectId: form.subjectId }),
+    queryKey: adminQueryKeys.questions({ subjectId: form.subjectId }),
+    staleTime: 30_000,
+  });
 
   const selectedSubjectTopics = useMemo(
     () => (form.subjectId ? taxonomy.topicsBySubjectId[form.subjectId] ?? [] : []),
     [form.subjectId, taxonomy.topicsBySubjectId],
   );
+  const selectedSubject = useMemo(
+    () => taxonomy.subjects.find((subject) => subject.id === form.subjectId) ?? null,
+    [form.subjectId, taxonomy.subjects],
+  );
 
-  const visibleLanguages = useMemo(() => {
-    if (form.languageMode === "BILINGUAL") {
-      return ["en", "mr"] as const;
+  const visibleLanguages = useMemo(
+    () => getActiveLanguageKeys(form.languageMode),
+    [form.languageMode],
+  );
+  const suggestedQuestionCode = useMemo(
+    () =>
+      buildSuggestedQuestionCode(
+        selectedSubject?.code,
+        (questionCodeQuery.data?.items ?? []).map((item) =>
+          readQuestionCodeValue(item.code),
+        ),
+      ),
+    [questionCodeQuery.data?.items, selectedSubject?.code],
+  );
+  const formWithResolvedCode = useMemo(() => {
+    if (isEdit || isCodeManual) {
+      return form;
     }
 
-    return [form.languageMode === "MARATHI" ? "mr" : "en"] as const;
-  }, [form.languageMode]);
+    const nextCode = suggestedQuestionCode || form.code;
+    return nextCode === form.code ? form : { ...form, code: nextCode };
+  }, [form, isCodeManual, isEdit, suggestedQuestionCode]);
+  const publishIssues = useMemo(
+    () => getQuestionPublishIssues(formWithResolvedCode),
+    [formWithResolvedCode],
+  );
+  const canPublishForm = publishIssues.length === 0;
+
+  useEffect(() => {
+    if (isEdit) {
+      return;
+    }
+
+    setEditorDefaults({
+      difficulty: form.difficulty,
+      languageMode: form.languageMode,
+      mediumId: form.mediumId,
+      subjectId: form.subjectId,
+      topicId: form.topicId,
+      type: form.type,
+    });
+  }, [
+    form.difficulty,
+    form.languageMode,
+    form.mediumId,
+    form.subjectId,
+    form.topicId,
+    form.type,
+    isEdit,
+    setEditorDefaults,
+  ]);
+
+  const scrollToPreview = () => {
+    window.requestAnimationFrame(() => {
+      previewSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  };
+
+  const togglePreview = () => {
+    setPreviewOpen((current) => {
+      const next = !current;
+      if (next) {
+        scrollToPreview();
+      }
+      return next;
+    });
+  };
+
+  const startNewQuestionWithCurrentSettings = () => {
+    setEditorDefaults(buildQuestionSettingsState(formWithResolvedCode));
+    router.push("/admin/questions/new");
+  };
 
   const saveMutation = useAuthenticatedMutation({
-    mutationFn: async (mode: "draft" | "publish", accessToken: string) => {
-      const payload = buildQuestionPayload(form);
+    mutationFn: async (
+      mode: "draft" | "publish" | "publish-add-next",
+      accessToken: string,
+    ) => {
+      const payload = buildQuestionPayload(formWithResolvedCode);
       const savedQuestion =
         isEdit && questionId
           ? await updateAdminQuestion(questionId, payload as UpdateQuestionInput, accessToken)
           : await createAdminQuestion(payload as CreateQuestionInput, accessToken);
 
-      if (mode === "publish") {
+      if (mode !== "draft") {
         return publishAdminQuestion(savedQuestion.id, accessToken);
       }
 
@@ -760,6 +1121,26 @@ function AdminQuestionEditorForm({
         queryKey: ["admin", "questions"],
       });
 
+      if (!isEdit && mode === "publish-add-next") {
+        const nextForm = buildEmptyQuestionForm(
+          buildQuestionSettingsState(formWithResolvedCode),
+          buildSuggestedQuestionCode(selectedSubject?.code, [
+            ...(questionCodeQuery.data?.items ?? []).map((item) =>
+              readQuestionCodeValue(item.code),
+            ),
+            readQuestionCodeValue(savedQuestion.code),
+          ]),
+        );
+        setCurrentQuestion(null);
+        setForm(nextForm);
+        setIsCodeManual(false);
+        setPreviewOpen(false);
+        setMessage(
+          `Question ${savedQuestion.code ?? savedQuestion.id} published. Ready for the next entry.`,
+        );
+        return;
+      }
+
       if (!isEdit) {
         router.replace(`/admin/questions/${savedQuestion.id}`);
         return;
@@ -768,6 +1149,7 @@ function AdminQuestionEditorForm({
       setMessage(mode === "publish" ? "Question saved and published." : "Question saved.");
       setCurrentQuestion(savedQuestion);
       setForm(buildFormState(savedQuestion));
+      setIsCodeManual(Boolean(savedQuestion.code));
       await queryClient.invalidateQueries({
         queryKey: ["admin", "question", savedQuestion.id],
       });
@@ -785,6 +1167,7 @@ function AdminQuestionEditorForm({
       );
       setCurrentQuestion(savedQuestion);
       setForm(buildFormState(savedQuestion));
+      setIsCodeManual(Boolean(savedQuestion.code));
       await queryClient.invalidateQueries({
         queryKey: ["admin", "questions"],
       });
@@ -795,102 +1178,47 @@ function AdminQuestionEditorForm({
   });
 
   const statementPreview = buildLocalizedDocument({
-    englishHtml: form.statementEnHtml,
-    languageMode: form.languageMode,
-    marathiHtml: form.statementMrHtml,
+    englishHtml: formWithResolvedCode.statementEnHtml,
+    languageMode: formWithResolvedCode.languageMode,
+    marathiHtml: formWithResolvedCode.statementMrHtml,
   });
   const explanationPreview = buildLocalizedDocument({
-    englishHtml: form.explanationEnHtml,
-    languageMode: form.languageMode,
-    marathiHtml: form.explanationMrHtml,
+    englishHtml: formWithResolvedCode.explanationEnHtml,
+    languageMode: formWithResolvedCode.languageMode,
+    marathiHtml: formWithResolvedCode.explanationMrHtml,
   });
   const isBusy = saveMutation.isPending || statusMutation.isPending;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <AdminPageHeader
         eyebrow="Assessment management"
-        title={isEdit ? "Edit question" : "Create question"}
-        description="Compose multilingual question content, attach shared images, review the rendered payload, and publish when the record is ready for practice and tests."
+        title={isEdit ? "Edit question" : "Question entry"}
+        description={
+          isEdit
+            ? "Update question content, check publish readiness, and keep the workflow moving."
+            : "Enter question content fast, keep the chosen settings, and publish straight into the next blank form."
+        }
         actions={
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2">
             <Link href="/admin/questions" className="tc-button-secondary">
               Back to question bank
             </Link>
-            <button
-              type="button"
-              className="tc-button-secondary"
-              onClick={() =>
-                previewSectionRef.current?.scrollIntoView({
-                  behavior: "smooth",
-                  block: "start",
-                })
-              }
-            >
-              Preview question
-            </button>
-            {isEdit && currentQuestion?.status === "PUBLISHED" ? (
+            {isEdit ? (
               <button
                 type="button"
                 className="tc-button-secondary"
-                disabled={!canPublishQuestions || isBusy}
-                onClick={() => {
-                  setMessage(null);
-                  statusMutation.mutate("unpublish");
-                }}
+                disabled={!canManageQuestions || isBusy}
+                onClick={startNewQuestionWithCurrentSettings}
               >
-                Move to draft
+                New question
               </button>
             ) : null}
-            <button
-              type="button"
-              className="tc-button-secondary"
-              disabled={!canManageQuestions || !canSaveQuestion(form) || isBusy}
-              onClick={() => {
-                setMessage(null);
-                saveMutation.mutate("draft");
-              }}
-            >
-              {saveMutation.isPending ? "Saving..." : isEdit ? "Save question" : "Create question"}
-            </button>
-            <button
-              type="button"
-              className="tc-button-primary"
-              disabled={
-                !canManageQuestions ||
-                !canPublishQuestions ||
-                !canSaveQuestion(form) ||
-                isBusy
-              }
-              onClick={() => {
-                setMessage(null);
-                saveMutation.mutate("publish");
-              }}
-            >
-              {saveMutation.isPending
-                ? "Saving..."
-                : currentQuestion?.status === "PUBLISHED"
-                  ? "Save & keep published"
-                  : "Save & publish"}
+            <button type="button" className="tc-button-secondary" onClick={togglePreview}>
+              {previewOpen ? "Hide preview" : "Show preview"}
             </button>
           </div>
         }
-      />
-
-      <AdminRouteTabs
-        activeHref="/admin/questions"
-        items={[
-          {
-            href: "/admin/questions",
-            label: "Questions",
-            description: "Return to the full question listing.",
-          },
-          {
-            href: "/admin/tests",
-            label: "Tests",
-            description: "Build tests from published questions.",
-          },
-        ]}
       />
 
       {message ? <AdminInlineNotice tone="success">{message}</AdminInlineNotice> : null}
@@ -911,36 +1239,22 @@ function AdminQuestionEditorForm({
       ) : null}
 
       {isEdit && currentQuestion ? (
-        <div className="grid gap-4 md:grid-cols-4">
-          <div className="tc-glass rounded-[22px] p-4">
-            <p className="tc-overline">Status</p>
-            <p className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
-              {currentQuestion.status}
-            </p>
-          </div>
-          <div className="tc-glass rounded-[22px] p-4">
-            <p className="tc-overline">Type</p>
-            <p className="mt-3 text-sm font-semibold text-[color:var(--brand)]">
-              {currentQuestion.type.replaceAll("_", " ")}
-            </p>
-          </div>
-          <div className="tc-glass rounded-[22px] p-4">
-            <p className="tc-overline">Media</p>
-            <p className="mt-3 text-sm font-semibold text-[color:var(--brand)]">
-              {currentQuestion.hasMedia ? "Attached" : "Text only"}
-            </p>
-          </div>
-          <div className="tc-glass rounded-[22px] p-4">
-            <p className="tc-overline">Updated</p>
-            <p className="mt-3 text-sm font-semibold text-[color:var(--brand)]">
-              {formatAdminDateTime(currentQuestion.updatedAt)}
-            </p>
-          </div>
+        <div className="flex flex-wrap gap-2">
+          <span className="tc-code-chip">Status: {currentQuestion.status}</span>
+          <span className="tc-code-chip">
+            Type: {currentQuestion.type.replaceAll("_", " ")}
+          </span>
+          <span className="tc-code-chip">
+            {currentQuestion.hasMedia ? "Media attached" : "Text only"}
+          </span>
+          <span className="tc-code-chip">
+            Updated: {formatAdminDateTime(currentQuestion.updatedAt)}
+          </span>
         </div>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="grid gap-6">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_21rem]">
+        <div className="grid gap-4">
           {visibleLanguages.map((languageKey) => (
             <QuestionLanguageSection
               disabled={!canManageQuestions || isBusy}
@@ -982,14 +1296,16 @@ function AdminQuestionEditorForm({
           ))}
 
           {form.type === "TEXT_INPUT" ? (
-            <section className="tc-card rounded-[28px] p-6">
-              <h2 className="text-xl font-semibold text-[color:var(--brand)]">Accepted answers</h2>
-              <p className="mt-3 text-sm leading-6 text-[color:var(--muted)]">
+            <section className="tc-card rounded-[26px] p-5">
+              <h2 className="text-lg font-semibold text-[color:var(--brand)]">
+                Accepted answers
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
                 Add one accepted answer per line. The student answer will be checked against this
                 list.
               </p>
               <textarea
-                className="tc-input mt-5 min-h-36 resize-y"
+                className="tc-input mt-4 min-h-32 resize-y"
                 disabled={!canManageQuestions || isBusy}
                 placeholder={"Delhi\nNew Delhi"}
                 value={form.acceptedAnswers}
@@ -1002,11 +1318,13 @@ function AdminQuestionEditorForm({
               />
             </section>
           ) : (
-            <section className="tc-card rounded-[28px] p-6">
+            <section className="tc-card rounded-[26px] p-5">
               <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold text-[color:var(--brand)]">Correct answer</h2>
-                  <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
+                  <h2 className="text-lg font-semibold text-[color:var(--brand)]">
+                    Correct answer
+                  </h2>
+                  <p className="mt-1 text-sm leading-6 text-[color:var(--muted)]">
                     {form.type === "MULTIPLE_CHOICE"
                       ? "Select every correct option."
                       : "Select the single correct option."}
@@ -1019,7 +1337,7 @@ function AdminQuestionEditorForm({
                 </span>
               </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {form.options.map((option) => {
                   const isSelected = form.correctOptionKeys.includes(option.key);
                   return (
@@ -1058,14 +1376,14 @@ function AdminQuestionEditorForm({
             </section>
           )}
 
-          <section className="tc-card rounded-[28px] p-6">
-            <h2 className="text-xl font-semibold text-[color:var(--brand)]">Shared images</h2>
-            <p className="mt-3 text-sm leading-6 text-[color:var(--muted)]">
+          <section className="tc-card rounded-[26px] p-5">
+            <h2 className="text-lg font-semibold text-[color:var(--brand)]">Shared images</h2>
+            <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
               Upload shared media once. The same image is reused across the active language
               variants.
             </p>
 
-            <div className="mt-5 grid gap-4 xl:grid-cols-2">
+            <div className="mt-4 grid gap-4 xl:grid-cols-2">
               <AdminQuestionMediaField
                 description="Upload once. The same statement image is used for all language variants."
                 emptyDescription="No statement image is linked yet."
@@ -1087,7 +1405,7 @@ function AdminQuestionEditorForm({
             </div>
 
             {form.type !== "TEXT_INPUT" ? (
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
                 {form.options.map((option) => (
                   <AdminQuestionMediaField
                     key={`option-image-${option.key}`}
@@ -1111,112 +1429,164 @@ function AdminQuestionEditorForm({
             ) : null}
           </section>
 
-          <section ref={previewSectionRef} className="tc-card rounded-[28px] p-6">
-            <h2 className="text-xl font-semibold text-[color:var(--brand)]">Preview</h2>
-            <div className="mt-5 grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
-              <div className="rounded-[24px] border border-[rgba(0,30,64,0.08)] bg-white/78 p-5">
-                <p className="tc-overline">Statement</p>
-                <div className="mt-3">
-                  <QuestionPreviewContent
-                    content={statementPreview}
-                    emptyText="Add a statement to preview it."
-                    languageMode={form.languageMode}
-                  />
-                </div>
+          {previewOpen ? (
+            <section ref={previewSectionRef} className="tc-card rounded-[26px] p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-lg font-semibold text-[color:var(--brand)]">Preview</h2>
+                <span className="tc-code-chip">Rendered question</span>
+              </div>
+              <div className="mt-4 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+                <div className="rounded-[22px] border border-[rgba(0,30,64,0.08)] bg-white/78 p-5">
+                  <p className="tc-overline">Statement</p>
+                  <div className="mt-3">
+                    <QuestionPreviewContent
+                      content={statementPreview}
+                      emptyText="Add a statement to preview it."
+                      languageMode={form.languageMode}
+                    />
+                  </div>
 
-                {form.statementImageAssetId ? (
-                  <p className="mt-4 text-sm leading-6 text-[color:var(--muted)]">
-                    A shared statement image is linked and will render with this question.
-                  </p>
-                ) : null}
+                  {form.statementImageAssetId ? (
+                    <p className="mt-4 text-sm leading-6 text-[color:var(--muted)]">
+                      A shared statement image is linked and will render with this question.
+                    </p>
+                  ) : null}
 
-                {form.type !== "TEXT_INPUT" ? (
-                  <div className="mt-5 grid gap-3">
-                    {form.options.map((option) => {
-                      const previewDocument = buildPreviewOptionDocument(option, form);
-                      const hasOptionBody = Boolean(
-                        previewDocument && Object.keys(previewDocument).length > 0,
-                      );
+                  {form.type !== "TEXT_INPUT" ? (
+                    <div className="mt-5 grid gap-3">
+                      {form.options.map((option) => {
+                        const previewDocument = buildPreviewOptionDocument(option, form);
+                        const hasOptionBody = Boolean(
+                          previewDocument && Object.keys(previewDocument).length > 0,
+                        );
 
-                      if (!hasOptionBody && !option.imageAssetId) {
-                        return null;
-                      }
+                        if (!hasOptionBody && !option.imageAssetId) {
+                          return null;
+                        }
 
-                      return (
-                        <div
-                          key={option.key}
-                          className="rounded-[20px] border border-[rgba(0,30,64,0.08)] bg-white px-4 py-3"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="tc-code-chip">{option.key}</span>
-                            {form.correctOptionKeys.includes(option.key) ? (
-                              <span className="tc-code-chip">Correct</span>
+                        return (
+                          <div
+                            key={option.key}
+                            className="rounded-[18px] border border-[rgba(0,30,64,0.08)] bg-white px-4 py-3"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="tc-code-chip">{option.key}</span>
+                              {form.correctOptionKeys.includes(option.key) ? (
+                                <span className="tc-code-chip">Correct</span>
+                              ) : null}
+                            </div>
+                            {hasOptionBody ? (
+                              <div className="mt-3">
+                                <QuestionPreviewContent
+                                  content={previewDocument}
+                                  emptyText="Add option content to preview it."
+                                  languageMode={form.languageMode}
+                                />
+                              </div>
+                            ) : null}
+                            {option.imageAssetId ? (
+                              <p className="mt-3 text-sm leading-6 text-[color:var(--muted)]">
+                                A shared option image is linked for this answer choice.
+                              </p>
                             ) : null}
                           </div>
-                          {hasOptionBody ? (
-                            <div className="mt-3">
-                              <QuestionPreviewContent
-                                content={previewDocument}
-                                emptyText="Add option content to preview it."
-                                languageMode={form.languageMode}
-                              />
-                            </div>
-                          ) : null}
-                          {option.imageAssetId ? (
-                            <p className="mt-3 text-sm leading-6 text-[color:var(--muted)]">
-                              A shared option image is linked for this answer choice.
-                            </p>
-                          ) : null}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : null}
-              </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
 
-              <div className="rounded-[24px] border border-[rgba(0,30,64,0.08)] bg-white/78 p-5">
-                <p className="tc-overline">Explanation</p>
-                <div className="mt-3">
-                  <QuestionPreviewContent
-                    content={explanationPreview}
-                    emptyText="Add an explanation if you want one."
-                    languageMode={form.languageMode}
-                  />
-                </div>
-                {form.explanationImageAssetId ? (
-                  <p className="mt-4 text-sm leading-6 text-[color:var(--muted)]">
-                    A shared explanation image is linked and will render in review mode.
-                  </p>
-                ) : null}
-                <div className="mt-5 rounded-[20px] border border-[rgba(0,30,64,0.08)] bg-[rgba(0,51,102,0.03)] p-4 text-sm leading-7 text-[color:var(--brand)]">
-                  {form.type === "TEXT_INPUT"
-                    ? `Accepted answers: ${
-                        form.acceptedAnswers
-                          .split("\n")
-                          .map((value) => value.trim())
-                          .filter(Boolean)
-                          .join(", ") || "none"
-                      }`
-                    : `Correct option keys: ${form.correctOptionKeys.join(", ") || "none"}`}
+                <div className="rounded-[22px] border border-[rgba(0,30,64,0.08)] bg-white/78 p-5">
+                  <p className="tc-overline">Explanation</p>
+                  <div className="mt-3">
+                    <QuestionPreviewContent
+                      content={explanationPreview}
+                      emptyText="Add an explanation if you want one."
+                      languageMode={form.languageMode}
+                    />
+                  </div>
+                  {form.explanationImageAssetId ? (
+                    <p className="mt-4 text-sm leading-6 text-[color:var(--muted)]">
+                      A shared explanation image is linked and will render in review mode.
+                    </p>
+                  ) : null}
+                  <div className="mt-5 rounded-[18px] border border-[rgba(0,30,64,0.08)] bg-[rgba(0,51,102,0.03)] p-4 text-sm leading-7 text-[color:var(--brand)]">
+                    {form.type === "TEXT_INPUT"
+                      ? `Accepted answers: ${
+                          form.acceptedAnswers
+                            .split("\n")
+                            .map((value) => value.trim())
+                            .filter(Boolean)
+                            .join(", ") || "none"
+                        }`
+                      : `Correct option keys: ${form.correctOptionKeys.join(", ") || "none"}`}
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
+          ) : null}
         </div>
 
-        <aside className="grid gap-6">
-          <section className="tc-card rounded-[28px] p-6">
-            <h2 className="text-xl font-semibold text-[color:var(--brand)]">Question settings</h2>
-            <div className="mt-5 grid gap-4">
-              <AdminInput
-                disabled={!canManageQuestions || isBusy}
+        <aside className="grid gap-4 self-start xl:sticky xl:top-24">
+          <section className="tc-card rounded-[26px] p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-[color:var(--brand)]">
+                  Question settings
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-[color:var(--muted)]">
+                  These settings stay ready for the next question.
+                </p>
+              </div>
+              {currentQuestion ? (
+                <span className="tc-code-chip">{currentQuestion.status}</span>
+              ) : null}
+            </div>
+
+            <div className="mt-4 grid gap-4">
+              <AdminFormField
                 label="Code"
-                placeholder="polity-fr-001"
-                value={form.code}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, code: event.target.value }))
+                hint={
+                  selectedSubject
+                    ? questionCodeQuery.isFetching
+                      ? "Checking the next subject code..."
+                      : `Auto-generated from ${selectedSubject.name}. You can still edit it.`
+                    : "Select a subject to generate the code automatically."
                 }
-              />
+              >
+                <div className="flex gap-2">
+                  <input
+                    className="tc-input flex-1"
+                    disabled={!canManageQuestions || isBusy}
+                    placeholder="polity-fr-001"
+                    value={formWithResolvedCode.code}
+                    onChange={(event) => {
+                      setIsCodeManual(true);
+                      setForm((current) => ({
+                        ...current,
+                        code: event.target.value,
+                      }));
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="tc-button-secondary shrink-0 px-4"
+                    disabled={
+                      !canManageQuestions || isBusy || !selectedSubject?.code || !suggestedQuestionCode
+                    }
+                    onClick={() => {
+                      setIsCodeManual(false);
+                      setForm((current) => ({
+                        ...current,
+                        code: suggestedQuestionCode,
+                      }));
+                    }}
+                  >
+                    Auto
+                  </button>
+                </div>
+              </AdminFormField>
+
               <AdminSelect
                 disabled={!canManageQuestions || isBusy}
                 label="Question type"
@@ -1236,6 +1606,7 @@ function AdminQuestionEditorForm({
                   </option>
                 ))}
               </AdminSelect>
+
               <AdminSelect
                 disabled={!canManageQuestions || isBusy}
                 label="Difficulty"
@@ -1253,17 +1624,20 @@ function AdminQuestionEditorForm({
                   </option>
                 ))}
               </AdminSelect>
+
               <AdminSelect
                 disabled={!canManageQuestions || isBusy}
                 label="Subject"
                 value={form.subjectId}
-                onChange={(event) =>
+                onChange={(event) => {
+                  setIsCodeManual(false);
                   setForm((current) => ({
                     ...current,
+                    code: "",
                     subjectId: event.target.value,
                     topicId: "",
-                  }))
-                }
+                  }));
+                }}
               >
                 <option value="">Select subject</option>
                 {taxonomy.subjects.map((subject) => (
@@ -1272,6 +1646,7 @@ function AdminQuestionEditorForm({
                   </option>
                 ))}
               </AdminSelect>
+
               <AdminSelect
                 disabled={!canManageQuestions || isBusy}
                 label="Topic"
@@ -1287,6 +1662,7 @@ function AdminQuestionEditorForm({
                   </option>
                 ))}
               </AdminSelect>
+
               <AdminSelect
                 disabled={!canManageQuestions || isBusy}
                 label="Medium"
@@ -1302,46 +1678,174 @@ function AdminQuestionEditorForm({
                   </option>
                 ))}
               </AdminSelect>
+
+              <div className="grid gap-2">
+                <p className="tc-form-label">Question language</p>
+                <div className="grid gap-2">
+                  {QUESTION_LANGUAGE_OPTIONS.map((option) => {
+                    const isActive = form.languageMode === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={[
+                          "rounded-[18px] border px-4 py-3 text-left transition",
+                          isActive
+                            ? "border-[rgba(0,51,102,0.28)] bg-[rgba(0,51,102,0.06)]"
+                            : "border-[rgba(0,30,64,0.08)] bg-white/78 hover:border-[rgba(0,51,102,0.2)]",
+                        ].join(" ")}
+                        disabled={!canManageQuestions || isBusy}
+                        onClick={() =>
+                          setForm((current) => ({
+                            ...current,
+                            languageMode: option.value,
+                          }))
+                        }
+                      >
+                        <p className="font-semibold text-[color:var(--brand)]">{option.label}</p>
+                        <p className="mt-1 text-sm leading-6 text-[color:var(--muted)]">
+                          {option.description}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {currentQuestion ? (
+                <div className="rounded-[18px] border border-[rgba(0,30,64,0.08)] bg-[rgba(0,51,102,0.03)] p-4 text-sm leading-6 text-[color:var(--brand)]">
+                  Last updated {formatAdminDateTime(currentQuestion.updatedAt)}.
+                </div>
+              ) : null}
             </div>
           </section>
 
-          <section className="tc-card rounded-[28px] p-6">
-            <h2 className="text-xl font-semibold text-[color:var(--brand)]">Question languages</h2>
-            <p className="mt-3 text-sm leading-6 text-[color:var(--muted)]">
-              Choose whether the admin enters English, Marathi, or both.
-            </p>
-            <div className="mt-5 grid gap-3">
-              {QUESTION_LANGUAGE_OPTIONS.map((option) => {
-                const isActive = form.languageMode === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    className={[
-                      "rounded-[22px] border px-4 py-4 text-left transition",
-                      isActive
-                        ? "border-[rgba(0,51,102,0.28)] bg-[rgba(0,51,102,0.06)]"
-                        : "border-[rgba(0,30,64,0.08)] bg-white/78 hover:border-[rgba(0,51,102,0.2)]",
-                    ].join(" ")}
-                    disabled={!canManageQuestions || isBusy}
-                    onClick={() =>
-                      setForm((current) => ({
-                        ...current,
-                        languageMode: option.value,
-                      }))
-                    }
-                  >
-                    <p className="font-semibold text-[color:var(--brand)]">{option.label}</p>
-                    <p className="mt-1 text-sm leading-6 text-[color:var(--muted)]">
-                      {option.description}
-                    </p>
-                  </button>
-                );
-              })}
+          <section className="tc-card rounded-[26px] p-5">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-[color:var(--brand)]">
+                Publish checklist
+              </h2>
+              <span className="tc-code-chip">
+                {publishIssues.length === 0 ? "Ready" : `${publishIssues.length} left`}
+              </span>
             </div>
+
+            {publishIssues.length === 0 ? (
+              <p className="mt-3 text-sm leading-6 text-[color:var(--muted)]">
+                Code, statement, answers, and active-language content are ready to publish.
+              </p>
+            ) : (
+              <div className="mt-4 grid gap-2">
+                {publishIssues.map((issue) => (
+                  <div
+                    key={issue.code}
+                    className="rounded-[16px] border border-[rgba(0,30,64,0.08)] bg-white/82 px-4 py-3 text-sm leading-6 text-[color:var(--brand)]"
+                  >
+                    {issue.message}
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         </aside>
       </div>
+
+      <section className="sticky bottom-4 z-20">
+        <div className="rounded-[24px] border border-[rgba(0,30,64,0.1)] bg-[rgba(255,255,255,0.94)] p-4 shadow-[0_20px_50px_rgba(0,30,64,0.16)] backdrop-blur">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-[color:var(--brand)]">
+                {publishIssues.length === 0
+                  ? "Ready to publish."
+                  : `${publishIssues.length} publish checks remaining.`}
+              </p>
+              <p className="mt-1 text-sm leading-6 text-[color:var(--muted)]">
+                {isEdit
+                  ? "Save, publish, or start a new question from anywhere on the page."
+                  : "Publish & next question resets the content while keeping these settings."}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {isEdit ? (
+                <button
+                  type="button"
+                  className="tc-button-secondary"
+                  disabled={!canManageQuestions || isBusy}
+                  onClick={startNewQuestionWithCurrentSettings}
+                >
+                  New question
+                </button>
+              ) : null}
+              <button type="button" className="tc-button-secondary" onClick={togglePreview}>
+                {previewOpen ? "Hide preview" : "Show preview"}
+              </button>
+              {isEdit && currentQuestion?.status === "PUBLISHED" ? (
+                <button
+                  type="button"
+                  className="tc-button-secondary"
+                  disabled={!canPublishQuestions || isBusy}
+                  onClick={() => {
+                    setMessage(null);
+                    statusMutation.mutate("unpublish");
+                  }}
+                >
+                  Move to draft
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="tc-button-secondary"
+                disabled={!canManageQuestions || !canSaveQuestion(form) || isBusy}
+                onClick={() => {
+                  setMessage(null);
+                  saveMutation.mutate("draft");
+                }}
+              >
+                {saveMutation.isPending ? "Working..." : isEdit ? "Save changes" : "Save draft"}
+              </button>
+              <button
+                type="button"
+                className="tc-button-secondary"
+                disabled={
+                  !canManageQuestions ||
+                  !canPublishQuestions ||
+                  !canPublishForm ||
+                  isBusy
+                }
+                onClick={() => {
+                  setMessage(null);
+                  saveMutation.mutate("publish");
+                }}
+              >
+                {saveMutation.isPending
+                  ? "Working..."
+                  : currentQuestion?.status === "PUBLISHED"
+                    ? "Save & keep published"
+                    : "Save & publish"}
+              </button>
+              {!isEdit ? (
+                <button
+                  type="button"
+                  className="tc-button-primary"
+                  disabled={
+                    !canManageQuestions ||
+                    !canPublishQuestions ||
+                    !canPublishForm ||
+                    isBusy
+                  }
+                  onClick={() => {
+                    setMessage(null);
+                    saveMutation.mutate("publish-add-next");
+                  }}
+                >
+                  {saveMutation.isPending ? "Working..." : "Publish & next question"}
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
