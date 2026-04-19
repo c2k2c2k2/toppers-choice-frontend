@@ -5,7 +5,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { adminQueryKeys } from "@/lib/api/query-keys";
-import { useAuthenticatedMutation, useAuthenticatedQuery, useAuthSession } from "@/lib/auth";
+import {
+  useAuthenticatedMutation,
+  useAuthenticatedQuery,
+  useAuthSession,
+} from "@/lib/auth";
 import {
   createAdminQuestion,
   formatAdminDateTime,
@@ -82,7 +86,11 @@ const QUESTION_TYPE_OPTIONS: QuestionType[] = [
   "MULTIPLE_CHOICE",
   "TEXT_INPUT",
 ];
-const QUESTION_DIFFICULTY_OPTIONS: QuestionDifficulty[] = ["EASY", "MEDIUM", "HARD"];
+const QUESTION_DIFFICULTY_OPTIONS: QuestionDifficulty[] = [
+  "EASY",
+  "MEDIUM",
+  "HARD",
+];
 const MINIMUM_CODE_DIGITS = 3;
 const QUESTION_LANGUAGE_OPTIONS: Array<{
   description: string;
@@ -138,6 +146,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
+function isStructuredDocumentNode(
+  value: unknown,
+): value is Record<string, unknown> {
+  return (
+    isRecord(value) &&
+    (Array.isArray(value.blocks) ||
+      typeof value.html === "string" ||
+      typeof value.text === "string" ||
+      typeof value.contentHtml === "string" ||
+      typeof value.content === "string" ||
+      typeof value.body === "string")
+  );
+}
+
 function getCandidateNode(document: unknown, locale: "en" | "mr") {
   if (!isRecord(document)) {
     return document;
@@ -158,7 +180,7 @@ function getCandidateNode(document: unknown, locale: "en" | "mr") {
     }
   }
 
-  return document;
+  return isStructuredDocumentNode(document) ? document : undefined;
 }
 
 function readStructuredText(value: unknown): string {
@@ -237,7 +259,8 @@ function findMediaAssetId(
 
 function detectLanguageMode(question: QuestionDetail): QuestionLanguageMode {
   const metadataMode =
-    isRecord(question.metadataJson) && typeof question.metadataJson.languageMode === "string"
+    isRecord(question.metadataJson) &&
+    typeof question.metadataJson.languageMode === "string"
       ? question.metadataJson.languageMode
       : null;
 
@@ -249,13 +272,19 @@ function detectLanguageMode(question: QuestionDetail): QuestionLanguageMode {
     return metadataMode;
   }
 
-  const hasEnglish = Boolean(readStructuredText(getCandidateNode(question.statementJson, "en")));
+  const hasEnglish = Boolean(
+    readStructuredText(getCandidateNode(question.statementJson, "en")),
+  );
   const hasMarathi =
-    Boolean(readStructuredText(getCandidateNode(question.statementJson, "mr"))) ||
+    Boolean(
+      readStructuredText(getCandidateNode(question.statementJson, "mr")),
+    ) ||
     question.options.some((option) =>
       Boolean(readStructuredText(getCandidateNode(option.contentJson, "mr"))),
     ) ||
-    Boolean(readStructuredText(getCandidateNode(question.explanationJson, "mr")));
+    Boolean(
+      readStructuredText(getCandidateNode(question.explanationJson, "mr")),
+    );
 
   if (hasEnglish && hasMarathi) {
     return "BILINGUAL";
@@ -279,7 +308,9 @@ function buildFormState(question: QuestionDetail | null): QuestionFormState {
     : {};
 
   return {
-    acceptedAnswers: readStringArray(correctAnswerJson.acceptedAnswers).join("\n"),
+    acceptedAnswers: readStringArray(correctAnswerJson.acceptedAnswers).join(
+      "\n",
+    ),
     code: readStringValue(question.code),
     correctOptionKeys: readStringArray(correctAnswerJson.optionKeys),
     difficulty: question.difficulty,
@@ -296,25 +327,35 @@ function buildFormState(question: QuestionDetail | null): QuestionFormState {
       const option = question.options.find((entry) => entry.optionKey === key);
       return {
         englishHtml: option
-          ? readStructuredDocumentHtml(getCandidateNode(option.contentJson, "en"))
+          ? readStructuredDocumentHtml(
+              getCandidateNode(option.contentJson, "en"),
+            )
           : "",
         imageAssetId: findMediaAssetId(question, "OPTION", key),
         key,
         marathiHtml: option
-          ? readStructuredDocumentHtml(getCandidateNode(option.contentJson, "mr"))
+          ? readStructuredDocumentHtml(
+              getCandidateNode(option.contentJson, "mr"),
+            )
           : "",
       };
     }),
-    statementEnHtml: readStructuredDocumentHtml(getCandidateNode(question.statementJson, "en")),
+    statementEnHtml: readStructuredDocumentHtml(
+      getCandidateNode(question.statementJson, "en"),
+    ),
     statementImageAssetId: findMediaAssetId(question, "STATEMENT"),
-    statementMrHtml: readStructuredDocumentHtml(getCandidateNode(question.statementJson, "mr")),
+    statementMrHtml: readStructuredDocumentHtml(
+      getCandidateNode(question.statementJson, "mr"),
+    ),
     subjectId: readStringValue(question.subjectId),
     topicId: readStringValue(question.topicId),
     type: question.type,
   };
 }
 
-type AdminTaxonomyReferenceData = ReturnType<typeof useAdminTaxonomyReferenceData>;
+type AdminTaxonomyReferenceData = ReturnType<
+  typeof useAdminTaxonomyReferenceData
+>;
 
 interface QuestionPublishIssue {
   code: string;
@@ -339,15 +380,21 @@ function buildResolvedQuestionSettings(
   taxonomy: AdminTaxonomyReferenceData,
   defaultSubjectId: string,
 ): AdminQuestionEditorDefaults {
-  const subjectId = taxonomy.subjects.some((subject) => subject.id === defaults.subjectId)
+  const subjectId = taxonomy.subjects.some(
+    (subject) => subject.id === defaults.subjectId,
+  )
     ? defaults.subjectId
     : defaultSubjectId;
-  const mediumId = taxonomy.mediums.some((medium) => medium.id === defaults.mediumId)
+  const mediumId = taxonomy.mediums.some(
+    (medium) => medium.id === defaults.mediumId,
+  )
     ? defaults.mediumId
     : "";
   const topicId =
     subjectId && defaults.topicId
-      ? (taxonomy.topicsBySubjectId[subjectId] ?? []).some((topic) => topic.id === defaults.topicId)
+      ? (taxonomy.topicsBySubjectId[subjectId] ?? []).some(
+          (topic) => topic.id === defaults.topicId,
+        )
         ? defaults.topicId
         : ""
       : "";
@@ -399,7 +446,10 @@ function countFilledOptions(form: QuestionFormState) {
     }
 
     if (form.languageMode === "BILINGUAL") {
-      return hasMeaningfulHtml(option.englishHtml) || hasMeaningfulHtml(option.marathiHtml);
+      return (
+        hasMeaningfulHtml(option.englishHtml) ||
+        hasMeaningfulHtml(option.marathiHtml)
+      );
     }
 
     return hasMeaningfulHtml(option.englishHtml);
@@ -408,18 +458,22 @@ function countFilledOptions(form: QuestionFormState) {
 
 function canSaveQuestion(form: QuestionFormState) {
   const hasStatement =
-    (form.languageMode !== "MARATHI" && hasMeaningfulHtml(form.statementEnHtml)) ||
-    (form.languageMode !== "ENGLISH" && hasMeaningfulHtml(form.statementMrHtml));
+    (form.languageMode !== "MARATHI" &&
+      hasMeaningfulHtml(form.statementEnHtml)) ||
+    (form.languageMode !== "ENGLISH" &&
+      hasMeaningfulHtml(form.statementMrHtml));
 
   if (!form.subjectId || !hasStatement) {
     return false;
   }
 
   if (form.type === "TEXT_INPUT") {
-    return form.acceptedAnswers
-      .split("\n")
-      .map((value) => value.trim())
-      .filter(Boolean).length > 0;
+    return (
+      form.acceptedAnswers
+        .split("\n")
+        .map((value) => value.trim())
+        .filter(Boolean).length > 0
+    );
   }
 
   return countFilledOptions(form) >= 2 && form.correctOptionKeys.length > 0;
@@ -477,10 +531,14 @@ function optionHasPublishableContent(
 }
 
 function countPublishableOptions(form: QuestionFormState) {
-  return form.options.filter((option) => optionHasPublishableContent(form, option)).length;
+  return form.options.filter((option) =>
+    optionHasPublishableContent(form, option),
+  ).length;
 }
 
-function getQuestionPublishIssues(form: QuestionFormState): QuestionPublishIssue[] {
+function getQuestionPublishIssues(
+  form: QuestionFormState,
+): QuestionPublishIssue[] {
   const issues: QuestionPublishIssue[] = [];
   const activeLanguages = getActiveLanguageKeys(form.languageMode);
 
@@ -528,7 +586,8 @@ function getQuestionPublishIssues(form: QuestionFormState): QuestionPublishIssue
   const incompleteOptionKeys = form.options
     .filter(
       (option) =>
-        optionHasAnyUserContent(option) && !optionHasPublishableContent(form, option),
+        optionHasAnyUserContent(option) &&
+        !optionHasPublishableContent(form, option),
     )
     .map((option) => option.key);
 
@@ -563,7 +622,10 @@ function normalizeCodePrefix(value: string) {
   return value.trim().toLowerCase();
 }
 
-function parseQuestionCodeSequence(prefix: string, code: string | null | undefined) {
+function parseQuestionCodeSequence(
+  prefix: string,
+  code: string | null | undefined,
+) {
   const normalizedCode = normalizeCodePrefix(code ?? "");
   if (!normalizedCode || !normalizedCode.startsWith(`${prefix}-`)) {
     return null;
@@ -643,7 +705,9 @@ function buildQuestionMediaReferences(form: QuestionFormState) {
   return mediaReferences;
 }
 
-function buildQuestionPayload(form: QuestionFormState): CreateQuestionInput | UpdateQuestionInput {
+function buildQuestionPayload(
+  form: QuestionFormState,
+): CreateQuestionInput | UpdateQuestionInput {
   const statementJson = buildLocalizedDocument({
     englishHtml: form.statementEnHtml,
     languageMode: form.languageMode,
@@ -658,18 +722,16 @@ function buildQuestionPayload(form: QuestionFormState): CreateQuestionInput | Up
 
   const payload = {
     code: form.code.trim() || undefined,
-    correctAnswerJson: (
-      form.type === "TEXT_INPUT"
-        ? {
-            acceptedAnswers: form.acceptedAnswers
-              .split("\n")
-              .map((value) => value.trim())
-              .filter(Boolean),
-          }
-        : {
-            optionKeys: form.correctOptionKeys,
-          }
-    ) as Record<string, unknown>,
+    correctAnswerJson: (form.type === "TEXT_INPUT"
+      ? {
+          acceptedAnswers: form.acceptedAnswers
+            .split("\n")
+            .map((value) => value.trim())
+            .filter(Boolean),
+        }
+      : {
+          optionKeys: form.correctOptionKeys,
+        }) as Record<string, unknown>,
     difficulty: form.difficulty,
     explanationJson: explanationJson ?? undefined,
     mediaReferences: buildQuestionMediaReferences(form),
@@ -685,39 +747,41 @@ function buildQuestionPayload(form: QuestionFormState): CreateQuestionInput | Up
     ...(form.type === "TEXT_INPUT"
       ? {}
       : {
-          options: form.options
-            .flatMap((option, index) => {
-              const contentJson =
-                buildLocalizedDocument({
-                  englishHtml: option.englishHtml,
-                  languageMode: form.languageMode,
-                  marathiHtml: option.marathiHtml,
-                }) ?? {};
+          options: form.options.flatMap((option, index) => {
+            const contentJson =
+              buildLocalizedDocument({
+                englishHtml: option.englishHtml,
+                languageMode: form.languageMode,
+                marathiHtml: option.marathiHtml,
+              }) ?? {};
 
-              const shouldKeep =
-                option.imageAssetId.trim().length > 0 ||
-                Object.keys(contentJson).length > 0 ||
-                form.correctOptionKeys.includes(option.key);
+            const shouldKeep =
+              option.imageAssetId.trim().length > 0 ||
+              Object.keys(contentJson).length > 0 ||
+              form.correctOptionKeys.includes(option.key);
 
-              if (!shouldKeep) {
-                return [];
-              }
+            if (!shouldKeep) {
+              return [];
+            }
 
-              return [
-                {
-                  contentJson: contentJson as Record<string, unknown>,
-                  optionKey: option.key,
-                  orderIndex: (index + 1) * 10,
-                },
-              ];
-            }),
+            return [
+              {
+                contentJson: contentJson as Record<string, unknown>,
+                optionKey: option.key,
+                orderIndex: (index + 1) * 10,
+              },
+            ];
+          }),
         }),
   };
 
   return payload as unknown as CreateQuestionInput | UpdateQuestionInput;
 }
 
-function buildPreviewOptionDocument(option: QuestionOptionState, form: QuestionFormState) {
+function buildPreviewOptionDocument(
+  option: QuestionOptionState,
+  form: QuestionFormState,
+) {
   return buildLocalizedDocument({
     englishHtml: option.englishHtml,
     languageMode: form.languageMode,
@@ -756,9 +820,7 @@ function QuestionPreviewContent({
               languageMode === "MARATHI" ? "font-marathi-unicode" : undefined,
             label: null,
             localeKeys:
-              languageMode === "MARATHI"
-                ? ["mr-IN", "mr"]
-                : ["en-IN", "en"],
+              languageMode === "MARATHI" ? ["mr-IN", "mr"] : ["en-IN", "en"],
           },
         ].filter((item) => hasQuestionRichContent(content, item.localeKeys));
 
@@ -771,7 +833,10 @@ function QuestionPreviewContent({
   return (
     <div className={joinClasses("space-y-4", className)}>
       {previewItems.map((item) => (
-        <div key={item.label ?? item.localeKeys.join("-")} className="space-y-2">
+        <div
+          key={item.label ?? item.localeKeys.join("-")}
+          className="space-y-2"
+        >
           {item.label ? (
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--muted)]">
               {item.label}
@@ -803,7 +868,8 @@ function QuestionLanguageSection({
   onStatementChange: (value: string) => void;
 }>) {
   const label = languageKey === "mr" ? "Marathi" : "English";
-  const statementValue = languageKey === "mr" ? form.statementMrHtml : form.statementEnHtml;
+  const statementValue =
+    languageKey === "mr" ? form.statementMrHtml : form.statementEnHtml;
   const explanationValue =
     languageKey === "mr" ? form.explanationMrHtml : form.explanationEnHtml;
   const hint =
@@ -821,7 +887,9 @@ function QuestionLanguageSection({
           </h2>
         </div>
         <span className="tc-code-chip">
-          {form.type === "TEXT_INPUT" ? "Statement + answer" : "Statement + options"}
+          {form.type === "TEXT_INPUT"
+            ? "Statement + answer"
+            : "Statement + options"}
         </span>
       </div>
 
@@ -863,7 +931,11 @@ function QuestionLanguageSection({
                   minHeight="6.5rem"
                   onChange={(value) => onOptionChange(option.key, value)}
                   showPreview={false}
-                  value={languageKey === "mr" ? option.marathiHtml : option.englishHtml}
+                  value={
+                    languageKey === "mr"
+                      ? option.marathiHtml
+                      : option.englishHtml
+                  }
                 />
               </div>
             ))}
@@ -893,14 +965,22 @@ export function AdminQuestionEditorScreen({
   const authSession = useAuthSession();
   const taxonomy = useAdminTaxonomyReferenceData();
   const isEdit = Boolean(questionId);
-  const canReadQuestions = authSession.hasPermission("academics.questions.read");
-  const canManageQuestions = authSession.hasPermission("academics.questions.manage");
-  const canPublishQuestions = authSession.hasPermission("academics.questions.publish");
+  const canReadQuestions = authSession.hasPermission(
+    "academics.questions.read",
+  );
+  const canManageQuestions = authSession.hasPermission(
+    "academics.questions.manage",
+  );
+  const canPublishQuestions = authSession.hasPermission(
+    "academics.questions.publish",
+  );
 
   const questionQuery = useAuthenticatedQuery({
     enabled: Boolean(questionId) && canReadQuestions,
     queryFn: (accessToken) => getAdminQuestion(questionId!, accessToken),
-    queryKey: questionId ? ["admin", "question", questionId] : ["admin", "question", "new"],
+    queryKey: questionId
+      ? ["admin", "question", questionId]
+      : ["admin", "question", "new"],
     staleTime: 15_000,
   });
 
@@ -968,13 +1048,21 @@ function AdminQuestionEditorForm({
   const router = useRouter();
   const queryClient = useQueryClient();
   const previewSectionRef = useRef<HTMLElement | null>(null);
-  const editorDifficulty = useAdminQuestionEditorStore((state) => state.difficulty);
-  const editorLanguageMode = useAdminQuestionEditorStore((state) => state.languageMode);
+  const editorDifficulty = useAdminQuestionEditorStore(
+    (state) => state.difficulty,
+  );
+  const editorLanguageMode = useAdminQuestionEditorStore(
+    (state) => state.languageMode,
+  );
   const editorMediumId = useAdminQuestionEditorStore((state) => state.mediumId);
-  const editorSubjectId = useAdminQuestionEditorStore((state) => state.subjectId);
+  const editorSubjectId = useAdminQuestionEditorStore(
+    (state) => state.subjectId,
+  );
   const editorTopicId = useAdminQuestionEditorStore((state) => state.topicId);
   const editorType = useAdminQuestionEditorStore((state) => state.type);
-  const setEditorDefaults = useAdminQuestionEditorStore((state) => state.setDefaults);
+  const setEditorDefaults = useAdminQuestionEditorStore(
+    (state) => state.setDefaults,
+  );
   const defaultSubjectId = taxonomy.subjects[0]?.id ?? "";
   const editorDefaults = useMemo(
     () => ({
@@ -999,27 +1087,35 @@ function AdminQuestionEditorForm({
     taxonomy,
     defaultSubjectId,
   );
-  const [currentQuestion, setCurrentQuestion] = useState<QuestionDetail | null>(question);
+  const [currentQuestion, setCurrentQuestion] = useState<QuestionDetail | null>(
+    question,
+  );
   const [form, setForm] = useState<QuestionFormState>(() =>
     buildInitialQuestionForm(question, resolvedDefaults),
   );
   const [message, setMessage] = useState<string | null>(null);
-  const [isCodeManual, setIsCodeManual] = useState<boolean>(Boolean(question?.code));
+  const [isCodeManual, setIsCodeManual] = useState<boolean>(
+    Boolean(question?.code),
+  );
   const [previewOpen, setPreviewOpen] = useState<boolean>(Boolean(isEdit));
 
   const questionCodeQuery = useAuthenticatedQuery({
     enabled: !isEdit && Boolean(form.subjectId),
-    queryFn: (accessToken) => listAdminQuestions(accessToken, { subjectId: form.subjectId }),
+    queryFn: (accessToken) =>
+      listAdminQuestions(accessToken, { subjectId: form.subjectId }),
     queryKey: adminQueryKeys.questions({ subjectId: form.subjectId }),
     staleTime: 30_000,
   });
 
   const selectedSubjectTopics = useMemo(
-    () => (form.subjectId ? taxonomy.topicsBySubjectId[form.subjectId] ?? [] : []),
+    () =>
+      form.subjectId ? (taxonomy.topicsBySubjectId[form.subjectId] ?? []) : [],
     [form.subjectId, taxonomy.topicsBySubjectId],
   );
   const selectedSubject = useMemo(
-    () => taxonomy.subjects.find((subject) => subject.id === form.subjectId) ?? null,
+    () =>
+      taxonomy.subjects.find((subject) => subject.id === form.subjectId) ??
+      null,
     [form.subjectId, taxonomy.subjects],
   );
 
@@ -1107,8 +1203,15 @@ function AdminQuestionEditorForm({
       const payload = buildQuestionPayload(formWithResolvedCode);
       const savedQuestion =
         isEdit && questionId
-          ? await updateAdminQuestion(questionId, payload as UpdateQuestionInput, accessToken)
-          : await createAdminQuestion(payload as CreateQuestionInput, accessToken);
+          ? await updateAdminQuestion(
+              questionId,
+              payload as UpdateQuestionInput,
+              accessToken,
+            )
+          : await createAdminQuestion(
+              payload as CreateQuestionInput,
+              accessToken,
+            );
 
       if (mode !== "draft") {
         return publishAdminQuestion(savedQuestion.id, accessToken);
@@ -1146,7 +1249,11 @@ function AdminQuestionEditorForm({
         return;
       }
 
-      setMessage(mode === "publish" ? "Question saved and published." : "Question saved.");
+      setMessage(
+        mode === "publish"
+          ? "Question saved and published."
+          : "Question saved.",
+      );
       setCurrentQuestion(savedQuestion);
       setForm(buildFormState(savedQuestion));
       setIsCodeManual(Boolean(savedQuestion.code));
@@ -1163,7 +1270,9 @@ function AdminQuestionEditorForm({
         : unpublishAdminQuestion(questionId!, accessToken),
     onSuccess: async (savedQuestion, action) => {
       setMessage(
-        action === "publish" ? "Question published." : "Question moved back to draft.",
+        action === "publish"
+          ? "Question published."
+          : "Question moved back to draft.",
       );
       setCurrentQuestion(savedQuestion);
       setForm(buildFormState(savedQuestion));
@@ -1214,18 +1323,27 @@ function AdminQuestionEditorForm({
                 New question
               </button>
             ) : null}
-            <button type="button" className="tc-button-secondary" onClick={togglePreview}>
+            <button
+              type="button"
+              className="tc-button-secondary"
+              onClick={togglePreview}
+            >
               {previewOpen ? "Hide preview" : "Show preview"}
             </button>
           </div>
         }
       />
 
-      {message ? <AdminInlineNotice tone="success">{message}</AdminInlineNotice> : null}
+      {message ? (
+        <AdminInlineNotice tone="success">{message}</AdminInlineNotice>
+      ) : null}
 
       {saveMutation.error ? (
         <AdminInlineNotice tone="warning">
-          {getApiErrorMessage(saveMutation.error, "The question could not be saved.")}
+          {getApiErrorMessage(
+            saveMutation.error,
+            "The question could not be saved.",
+          )}
         </AdminInlineNotice>
       ) : null}
 
@@ -1301,8 +1419,8 @@ function AdminQuestionEditorForm({
                 Accepted answers
               </h2>
               <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
-                Add one accepted answer per line. The student answer will be checked against this
-                list.
+                Add one accepted answer per line. The student answer will be
+                checked against this list.
               </p>
               <textarea
                 className="tc-input mt-4 min-h-32 resize-y"
@@ -1339,7 +1457,9 @@ function AdminQuestionEditorForm({
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {form.options.map((option) => {
-                  const isSelected = form.correctOptionKeys.includes(option.key);
+                  const isSelected = form.correctOptionKeys.includes(
+                    option.key,
+                  );
                   return (
                     <button
                       key={`correct-${option.key}`}
@@ -1357,8 +1477,13 @@ function AdminQuestionEditorForm({
                           correctOptionKeys:
                             current.type === "MULTIPLE_CHOICE"
                               ? isSelected
-                                ? current.correctOptionKeys.filter((key) => key !== option.key)
-                                : [...current.correctOptionKeys, option.key].sort()
+                                ? current.correctOptionKeys.filter(
+                                    (key) => key !== option.key,
+                                  )
+                                : [
+                                    ...current.correctOptionKeys,
+                                    option.key,
+                                  ].sort()
                               : [option.key],
                         }))
                       }
@@ -1377,10 +1502,12 @@ function AdminQuestionEditorForm({
           )}
 
           <section className="tc-card rounded-[26px] p-5">
-            <h2 className="text-lg font-semibold text-[color:var(--brand)]">Shared images</h2>
+            <h2 className="text-lg font-semibold text-[color:var(--brand)]">
+              Shared images
+            </h2>
             <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
-              Upload shared media once. The same image is reused across the active language
-              variants.
+              Upload shared media once. The same image is reused across the
+              active language variants.
             </p>
 
             <div className="mt-4 grid gap-4 xl:grid-cols-2">
@@ -1390,7 +1517,10 @@ function AdminQuestionEditorForm({
                 label="Statement image"
                 value={form.statementImageAssetId}
                 onChange={(assetId) =>
-                  setForm((current) => ({ ...current, statementImageAssetId: assetId }))
+                  setForm((current) => ({
+                    ...current,
+                    statementImageAssetId: assetId,
+                  }))
                 }
               />
               <AdminQuestionMediaField
@@ -1399,7 +1529,10 @@ function AdminQuestionEditorForm({
                 label="Explanation image"
                 value={form.explanationImageAssetId}
                 onChange={(assetId) =>
-                  setForm((current) => ({ ...current, explanationImageAssetId: assetId }))
+                  setForm((current) => ({
+                    ...current,
+                    explanationImageAssetId: assetId,
+                  }))
                 }
               />
             </div>
@@ -1430,9 +1563,14 @@ function AdminQuestionEditorForm({
           </section>
 
           {previewOpen ? (
-            <section ref={previewSectionRef} className="tc-card rounded-[26px] p-5">
+            <section
+              ref={previewSectionRef}
+              className="tc-card rounded-[26px] p-5"
+            >
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-lg font-semibold text-[color:var(--brand)]">Preview</h2>
+                <h2 className="text-lg font-semibold text-[color:var(--brand)]">
+                  Preview
+                </h2>
                 <span className="tc-code-chip">Rendered question</span>
               </div>
               <div className="mt-4 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
@@ -1448,16 +1586,21 @@ function AdminQuestionEditorForm({
 
                   {form.statementImageAssetId ? (
                     <p className="mt-4 text-sm leading-6 text-[color:var(--muted)]">
-                      A shared statement image is linked and will render with this question.
+                      A shared statement image is linked and will render with
+                      this question.
                     </p>
                   ) : null}
 
                   {form.type !== "TEXT_INPUT" ? (
                     <div className="mt-5 grid gap-3">
                       {form.options.map((option) => {
-                        const previewDocument = buildPreviewOptionDocument(option, form);
+                        const previewDocument = buildPreviewOptionDocument(
+                          option,
+                          form,
+                        );
                         const hasOptionBody = Boolean(
-                          previewDocument && Object.keys(previewDocument).length > 0,
+                          previewDocument &&
+                          Object.keys(previewDocument).length > 0,
                         );
 
                         if (!hasOptionBody && !option.imageAssetId) {
@@ -1486,7 +1629,8 @@ function AdminQuestionEditorForm({
                             ) : null}
                             {option.imageAssetId ? (
                               <p className="mt-3 text-sm leading-6 text-[color:var(--muted)]">
-                                A shared option image is linked for this answer choice.
+                                A shared option image is linked for this answer
+                                choice.
                               </p>
                             ) : null}
                           </div>
@@ -1507,7 +1651,8 @@ function AdminQuestionEditorForm({
                   </div>
                   {form.explanationImageAssetId ? (
                     <p className="mt-4 text-sm leading-6 text-[color:var(--muted)]">
-                      A shared explanation image is linked and will render in review mode.
+                      A shared explanation image is linked and will render in
+                      review mode.
                     </p>
                   ) : null}
                   <div className="mt-5 rounded-[18px] border border-[rgba(0,30,64,0.08)] bg-[rgba(0,51,102,0.03)] p-4 text-sm leading-7 text-[color:var(--brand)]">
@@ -1572,7 +1717,10 @@ function AdminQuestionEditorForm({
                     type="button"
                     className="tc-button-secondary shrink-0 px-4"
                     disabled={
-                      !canManageQuestions || isBusy || !selectedSubject?.code || !suggestedQuestionCode
+                      !canManageQuestions ||
+                      isBusy ||
+                      !selectedSubject?.code ||
+                      !suggestedQuestionCode
                     }
                     onClick={() => {
                       setIsCodeManual(false);
@@ -1652,7 +1800,10 @@ function AdminQuestionEditorForm({
                 label="Topic"
                 value={form.topicId}
                 onChange={(event) =>
-                  setForm((current) => ({ ...current, topicId: event.target.value }))
+                  setForm((current) => ({
+                    ...current,
+                    topicId: event.target.value,
+                  }))
                 }
               >
                 <option value="">Optional topic</option>
@@ -1668,7 +1819,10 @@ function AdminQuestionEditorForm({
                 label="Medium"
                 value={form.mediumId}
                 onChange={(event) =>
-                  setForm((current) => ({ ...current, mediumId: event.target.value }))
+                  setForm((current) => ({
+                    ...current,
+                    mediumId: event.target.value,
+                  }))
                 }
               >
                 <option value="">All mediums</option>
@@ -1702,7 +1856,9 @@ function AdminQuestionEditorForm({
                           }))
                         }
                       >
-                        <p className="font-semibold text-[color:var(--brand)]">{option.label}</p>
+                        <p className="font-semibold text-[color:var(--brand)]">
+                          {option.label}
+                        </p>
                         <p className="mt-1 text-sm leading-6 text-[color:var(--muted)]">
                           {option.description}
                         </p>
@@ -1726,13 +1882,16 @@ function AdminQuestionEditorForm({
                 Publish checklist
               </h2>
               <span className="tc-code-chip">
-                {publishIssues.length === 0 ? "Ready" : `${publishIssues.length} left`}
+                {publishIssues.length === 0
+                  ? "Ready"
+                  : `${publishIssues.length} left`}
               </span>
             </div>
 
             {publishIssues.length === 0 ? (
               <p className="mt-3 text-sm leading-6 text-[color:var(--muted)]">
-                Code, statement, answers, and active-language content are ready to publish.
+                Code, statement, answers, and active-language content are ready
+                to publish.
               </p>
             ) : (
               <div className="mt-4 grid gap-2">
@@ -1777,7 +1936,11 @@ function AdminQuestionEditorForm({
                   New question
                 </button>
               ) : null}
-              <button type="button" className="tc-button-secondary" onClick={togglePreview}>
+              <button
+                type="button"
+                className="tc-button-secondary"
+                onClick={togglePreview}
+              >
                 {previewOpen ? "Hide preview" : "Show preview"}
               </button>
               {isEdit && currentQuestion?.status === "PUBLISHED" ? (
@@ -1796,13 +1959,19 @@ function AdminQuestionEditorForm({
               <button
                 type="button"
                 className="tc-button-secondary"
-                disabled={!canManageQuestions || !canSaveQuestion(form) || isBusy}
+                disabled={
+                  !canManageQuestions || !canSaveQuestion(form) || isBusy
+                }
                 onClick={() => {
                   setMessage(null);
                   saveMutation.mutate("draft");
                 }}
               >
-                {saveMutation.isPending ? "Working..." : isEdit ? "Save changes" : "Save draft"}
+                {saveMutation.isPending
+                  ? "Working..."
+                  : isEdit
+                    ? "Save changes"
+                    : "Save draft"}
               </button>
               <button
                 type="button"
@@ -1839,7 +2008,9 @@ function AdminQuestionEditorForm({
                     saveMutation.mutate("publish-add-next");
                   }}
                 >
-                  {saveMutation.isPending ? "Working..." : "Publish & next question"}
+                  {saveMutation.isPending
+                    ? "Working..."
+                    : "Publish & next question"}
                 </button>
               ) : null}
             </div>
