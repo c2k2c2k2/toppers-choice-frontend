@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useQueryClient } from "@tanstack/react-query"
+import { keepPreviousData, useQueryClient } from "@tanstack/react-query"
 import { adminQueryKeys } from "@/lib/api/query-keys"
 import { useAuthenticatedMutation, useAuthenticatedQuery, useAuthSession } from "@/lib/auth"
 import {
@@ -88,6 +88,7 @@ import {
 import { AdminPageHeader } from "@/components/admin/admin-page-header"
 import { AdminRichHtmlField } from "@/components/admin/admin-rich-html-field"
 import { AdminRouteTabs } from "@/components/admin/admin-route-tabs"
+import { useAdminSearchState } from "@/components/admin/use-admin-search-state"
 import { TextContent } from "@/components/primitives/text-content"
 import { EmptyState } from "@/components/primitives/empty-state"
 import { ErrorState } from "@/components/primitives/error-state"
@@ -670,7 +671,12 @@ function AdminCmsListScreen({
   const router = useRouter()
   const authSession = useAuthSession()
   const queryClient = useQueryClient()
-  const [search, setSearch] = useState("")
+  const {
+    clearSearchValue,
+    searchInputValue: search,
+    searchQueryValue,
+    setSearchInputValue: setSearch,
+  } = useAdminSearchState()
   const [status, setStatus] = useState("")
   const [visibility, setVisibility] = useState("")
   const [placement, setPlacement] = useState("")
@@ -684,17 +690,18 @@ function AdminCmsListScreen({
     () =>
       buildCmsCollectionQuery(collection, {
         placement,
-        search,
+        search: searchQueryValue,
         status,
         surface,
         visibility,
       }),
-    [collection, placement, search, status, surface, visibility],
+    [collection, placement, searchQueryValue, status, surface, visibility],
   )
 
   const listQuery = useAuthenticatedQuery({
     queryFn: (accessToken) => listCmsRecords(collection, accessToken, filters),
     queryKey: adminQueryKeys.cms(collection, filters),
+    placeholderData: keepPreviousData,
     staleTime: 15_000,
   })
 
@@ -810,7 +817,7 @@ function AdminCmsListScreen({
             type="button"
             className="tc-button-secondary"
             onClick={() => {
-              setSearch("")
+              clearSearchValue()
               setStatus("")
               setVisibility("")
               setPlacement("")

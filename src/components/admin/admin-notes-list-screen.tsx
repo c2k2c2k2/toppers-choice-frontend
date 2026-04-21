@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { adminQueryKeys } from "@/lib/api/query-keys";
 import { useAuthenticatedMutation, useAuthenticatedQuery, useAuthSession } from "@/lib/auth";
 import {
@@ -23,6 +23,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminPagination } from "@/components/admin/admin-pagination";
 import { AdminRouteTabs } from "@/components/admin/admin-route-tabs";
 import { AdminSelect } from "@/components/admin/admin-form-field";
+import { useAdminSearchState } from "@/components/admin/use-admin-search-state";
 import { useAdminTaxonomyReferenceData } from "@/components/admin/use-admin-taxonomy-reference-data";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
@@ -45,7 +46,11 @@ export function AdminNotesListScreen() {
   const canReadNotes = authSession.hasPermission("content.notes.read");
   const canManageNotes = authSession.hasPermission("content.notes.manage");
   const canPublishNotes = authSession.hasPermission("content.notes.publish");
-  const [searchValue, setSearchValue] = useState("");
+  const {
+    searchInputValue: searchValue,
+    searchQueryValue,
+    setSearchInputValue: setSearchValue,
+  } = useAdminSearchState();
   const [status, setStatus] = useState<NoteStatus | "">("");
   const [accessType, setAccessType] = useState<NoteAccessType | "">("");
   const [subjectId, setSubjectId] = useState("");
@@ -58,18 +63,19 @@ export function AdminNotesListScreen() {
     queryFn: (accessToken) =>
       listAdminNotes(accessToken, {
         accessType: accessType || undefined,
-        search: searchValue.trim() || undefined,
+        search: searchQueryValue.trim() || undefined,
         status: status || undefined,
         subjectId: subjectId || undefined,
         topicId: topicId || undefined,
       }),
     queryKey: adminQueryKeys.notes({
       accessType: accessType || null,
-      search: searchValue.trim() || null,
+      search: searchQueryValue.trim() || null,
       status: status || null,
       subjectId: subjectId || null,
       topicId: topicId || null,
     }),
+    placeholderData: keepPreviousData,
     staleTime: 15_000,
   });
 

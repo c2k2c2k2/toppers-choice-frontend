@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { adminQueryKeys } from "@/lib/api/query-keys";
 import { useAuthenticatedMutation, useAuthenticatedQuery, useAuthSession } from "@/lib/auth";
 import {
@@ -34,6 +34,7 @@ import { AdminInput, AdminSelect } from "@/components/admin/admin-form-field";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminRouteTabs } from "@/components/admin/admin-route-tabs";
 import { AdminToneBadge } from "@/components/admin/admin-status-badge";
+import { useAdminSearchState } from "@/components/admin/use-admin-search-state";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
 import { LoadingState } from "@/components/primitives/loading-state";
@@ -170,7 +171,11 @@ export function AdminCommerceScreen({
   const queryClient = useQueryClient();
   const canRead = authSession.hasPermission("payments.read");
   const canManage = authSession.hasPermission("payments.manage");
-  const [searchValue, setSearchValue] = useState("");
+  const {
+    searchInputValue: searchValue,
+    searchQueryValue,
+    setSearchInputValue: setSearchValue,
+  } = useAdminSearchState();
   const [planStatus, setPlanStatus] = useState<PlanStatus | "">("");
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [planForm, setPlanForm] = useState<PlanFormState>(() => buildPlanFormState(null));
@@ -186,13 +191,14 @@ export function AdminCommerceScreen({
     enabled: initialTab === "plans" && canRead,
     queryFn: (accessToken) =>
       listAdminPlans(accessToken, {
-        search: searchValue || undefined,
+        search: searchQueryValue.trim() || undefined,
         status: planStatus || undefined,
       }),
     queryKey: adminQueryKeys.plans({
-      search: searchValue || null,
+      search: searchQueryValue.trim() || null,
       status: planStatus || null,
     }),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 
@@ -208,6 +214,7 @@ export function AdminCommerceScreen({
       status: paymentStatus || null,
       userId: paymentUserId || null,
     }),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 

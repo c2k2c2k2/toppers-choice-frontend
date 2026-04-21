@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { adminQueryKeys } from "@/lib/api/query-keys";
 import { buildApiUrl } from "@/lib/api/config";
 import { apiRoutes } from "@/lib/api/routes";
@@ -45,6 +45,7 @@ import { AdminInput, AdminSelect } from "@/components/admin/admin-form-field";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminRouteTabs } from "@/components/admin/admin-route-tabs";
 import { AdminToneBadge } from "@/components/admin/admin-status-badge";
+import { useAdminSearchState } from "@/components/admin/use-admin-search-state";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
 import { LoadingState } from "@/components/primitives/loading-state";
@@ -209,7 +210,11 @@ export function AdminInsightsScreen({
   const canSupportOps = authSession.hasPermission("admin.ops.support");
   const canReadSecurity = authSession.hasPermission("admin.security.read");
 
-  const [searchValue, setSearchValue] = useState("");
+  const {
+    searchInputValue: searchValue,
+    searchQueryValue,
+    setSearchInputValue: setSearchValue,
+  } = useAdminSearchState();
   const [templateStatus, setTemplateStatus] = useState<NotificationTemplateStatus | "">("");
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [templateDrafts, setTemplateDrafts] = useState<
@@ -234,14 +239,15 @@ export function AdminInsightsScreen({
     enabled: initialTab === "notifications" && canReadNotifications,
     queryFn: (accessToken) =>
       listAdminNotificationTemplates(accessToken, {
-        q: searchValue || undefined,
+        q: searchQueryValue.trim() || undefined,
         status: templateStatus || undefined,
       }),
     queryKey: adminQueryKeys.notifications.templates({
       channel: null,
-      q: searchValue || null,
+      q: searchQueryValue.trim() || null,
       status: templateStatus || null,
     }),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 
@@ -256,6 +262,7 @@ export function AdminInsightsScreen({
       channel: null,
       status: broadcastStatus || null,
     }),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 
@@ -271,6 +278,7 @@ export function AdminInsightsScreen({
       status: messageStatus || null,
       userId: null,
     }),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 
@@ -307,20 +315,22 @@ export function AdminInsightsScreen({
       severity: securitySeverity || null,
       take: 25,
     }),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 
   const searchQuery = useAuthenticatedQuery({
-    enabled: initialTab === "ops" && canReadSearch && searchValue.trim().length >= 2,
+    enabled: initialTab === "ops" && canReadSearch && searchQueryValue.trim().length >= 2,
     queryFn: (accessToken) =>
       searchAdminWorkspace(accessToken, {
         limit: 20,
-        q: searchValue.trim(),
+        q: searchQueryValue.trim(),
       }),
     queryKey: adminQueryKeys.search({
       limit: 20,
-      q: searchValue.trim() || null,
+      q: searchQueryValue.trim() || null,
     }),
+    placeholderData: keepPreviousData,
     staleTime: 15_000,
   });
 

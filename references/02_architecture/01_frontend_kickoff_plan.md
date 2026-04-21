@@ -69,6 +69,7 @@ The frontend must stay contract-driven against the backend, use CMS-driven conte
 - The admin surface should boot from the shared auth session plus lightweight admin bootstrap queries such as `/admin/ops/dashboard`, `/admin/access/permissions`, and `/admin/access/roles`, rather than inventing a separate admin-only session model.
 - Route-level admin protection should layer relevant permission checks on top of the shared admin shell; the shell itself enforces the authenticated admin user type, while specific modules such as `/admin/cms/*` add permission-aware guards and action-level gating.
 - CMS management should stay on one reusable client-heavy CRUD foundation: shared filter bar, shared data table, shared form fields, shared JSON text areas, shared inline notices, and collection-specific field configuration on top.
+- Admin list search inputs should debounce query-bound text filters and keep previous results visible during refetch so slow typing does not thrash backend APIs or flicker the workspace.
 - Admin file uploads should follow the backend contract sequence `/admin/files/init-upload` -> provider upload URL -> `/admin/files/{assetId}/confirm-upload`, and the uploader UI should degrade gracefully when a session can manage CMS records but lacks file permissions.
 
 ## PWA Baseline Rules

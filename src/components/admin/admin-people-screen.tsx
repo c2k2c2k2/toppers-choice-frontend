@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { adminQueryKeys } from "@/lib/api/query-keys";
 import { useAuthenticatedMutation, useAuthenticatedQuery, useAuthSession } from "@/lib/auth";
 import {
@@ -43,6 +43,7 @@ import { AdminInput, AdminSelect, AdminTextarea } from "@/components/admin/admin
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminRouteTabs } from "@/components/admin/admin-route-tabs";
 import { AdminToneBadge } from "@/components/admin/admin-status-badge";
+import { useAdminSearchState } from "@/components/admin/use-admin-search-state";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
 import { LoadingState } from "@/components/primitives/loading-state";
@@ -154,7 +155,11 @@ export function AdminPeopleScreen({
   const canManagePayments = authSession.hasPermission("payments.manage");
   const canSupport = authSession.hasPermission("admin.ops.support");
 
-  const [searchValue, setSearchValue] = useState("");
+  const {
+    searchInputValue: searchValue,
+    searchQueryValue,
+    setSearchInputValue: setSearchValue,
+  } = useAdminSearchState();
   const [statusFilter, setStatusFilter] = useState<"ACTIVE" | "INVITED" | "SUSPENDED" | "">("");
   const [userTypeFilter, setUserTypeFilter] = useState<"STUDENT" | "ADMIN" | "">("");
   const [limitFilter, setLimitFilter] = useState("20");
@@ -177,16 +182,17 @@ export function AdminPeopleScreen({
     queryFn: (accessToken) =>
       listAdminUsers(accessToken, {
         limit: Number.parseInt(limitFilter, 10) || undefined,
-        q: searchValue || undefined,
+        q: searchQueryValue.trim() || undefined,
         status: statusFilter || undefined,
         userType: userTypeFilter || undefined,
       }),
     queryKey: adminQueryKeys.users({
       limit: Number.parseInt(limitFilter, 10) || null,
-      q: searchValue || null,
+      q: searchQueryValue.trim() || null,
       status: statusFilter || null,
       userType: userTypeFilter || null,
     }),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 
@@ -230,17 +236,18 @@ export function AdminPeopleScreen({
     queryFn: (accessToken) =>
       listAdminAuditLogs(accessToken, {
         action: auditAction || undefined,
-        actorUserId: searchValue || undefined,
+        actorUserId: searchQueryValue.trim() || undefined,
         limit: 50,
         resourceType: auditResourceType || undefined,
       }),
     queryKey: adminQueryKeys.audit({
       action: auditAction || null,
-      actorUserId: searchValue || null,
+      actorUserId: searchQueryValue.trim() || null,
       limit: 50,
       resourceId: null,
       resourceType: auditResourceType || null,
     }),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 

@@ -78,7 +78,8 @@ export function formatCurrencyAmount(input: {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: input.currencyCode,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(input.amountPaise / 100);
 }
 

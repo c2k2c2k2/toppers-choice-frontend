@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { adminQueryKeys } from "@/lib/api/query-keys";
 import { useAuthenticatedMutation, useAuthenticatedQuery, useAuthSession } from "@/lib/auth";
 import {
@@ -57,6 +57,7 @@ import {
 } from "@/lib/admin/rich-text";
 import { AdminRouteTabs } from "@/components/admin/admin-route-tabs";
 import { AdminToneBadge } from "@/components/admin/admin-status-badge";
+import { useAdminSearchState } from "@/components/admin/use-admin-search-state";
 import { useAdminTaxonomyReferenceData } from "@/components/admin/use-admin-taxonomy-reference-data";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
@@ -259,7 +260,11 @@ export function AdminAssessmentsScreen({
   const canManageTests = authSession.hasPermission("academics.tests.manage");
   const canPublishTests = authSession.hasPermission("academics.tests.publish");
 
-  const [searchValue, setSearchValue] = useState("");
+  const {
+    searchInputValue: searchValue,
+    searchQueryValue,
+    setSearchInputValue: setSearchValue,
+  } = useAdminSearchState();
   const [questionStatus, setQuestionStatus] = useState<QuestionStatus | "">("");
   const [questionType, setQuestionType] = useState<QuestionType | "">("");
   const [questionDifficulty, setQuestionDifficulty] = useState<QuestionDifficulty | "">("");
@@ -284,7 +289,7 @@ export function AdminAssessmentsScreen({
     queryFn: (accessToken) =>
       listAdminQuestions(accessToken, {
         difficulty: questionDifficulty || undefined,
-        search: searchValue || undefined,
+        search: searchQueryValue.trim() || undefined,
         status: questionStatus || undefined,
         subjectId: questionSubjectId || undefined,
         type: questionType || undefined,
@@ -294,12 +299,13 @@ export function AdminAssessmentsScreen({
       examTrackId: null,
       hasMedia: null,
       mediumId: null,
-      search: searchValue || null,
+      search: searchQueryValue.trim() || null,
       status: questionStatus || null,
       subjectId: questionSubjectId || null,
       topicId: null,
       type: questionType || null,
     }),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 
@@ -308,7 +314,7 @@ export function AdminAssessmentsScreen({
     queryFn: (accessToken) =>
       listAdminTests(accessToken, {
         family: testFamily || undefined,
-        search: searchValue || undefined,
+        search: searchQueryValue.trim() || undefined,
         status: testStatus || undefined,
         subjectId: testSubjectId || undefined,
       }),
@@ -316,10 +322,11 @@ export function AdminAssessmentsScreen({
       examTrackId: null,
       family: testFamily || null,
       mediumId: null,
-      search: searchValue || null,
+      search: searchQueryValue.trim() || null,
       status: testStatus || null,
       subjectId: testSubjectId || null,
     }),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 

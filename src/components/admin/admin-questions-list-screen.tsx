@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { adminQueryKeys } from "@/lib/api/query-keys";
 import { useAuthenticatedMutation, useAuthenticatedQuery, useAuthSession } from "@/lib/auth";
 import {
@@ -25,6 +25,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminPagination } from "@/components/admin/admin-pagination";
 import { AdminRouteTabs } from "@/components/admin/admin-route-tabs";
 import { AdminSelect } from "@/components/admin/admin-form-field";
+import { useAdminSearchState } from "@/components/admin/use-admin-search-state";
 import { useAdminTaxonomyReferenceData } from "@/components/admin/use-admin-taxonomy-reference-data";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
@@ -224,7 +225,11 @@ export function AdminQuestionsListScreen() {
   const canReadQuestions = authSession.hasPermission("academics.questions.read");
   const canManageQuestions = authSession.hasPermission("academics.questions.manage");
   const canPublishQuestions = authSession.hasPermission("academics.questions.publish");
-  const [searchValue, setSearchValue] = useState("");
+  const {
+    searchInputValue: searchValue,
+    searchQueryValue,
+    setSearchInputValue: setSearchValue,
+  } = useAdminSearchState();
   const [status, setStatus] = useState<QuestionStatus | "">("");
   const [type, setType] = useState<QuestionType | "">("");
   const [difficulty, setDifficulty] = useState<QuestionDifficulty | "">("");
@@ -237,18 +242,19 @@ export function AdminQuestionsListScreen() {
     queryFn: (accessToken) =>
       listAdminQuestions(accessToken, {
         difficulty: difficulty || undefined,
-        search: searchValue.trim() || undefined,
+        search: searchQueryValue.trim() || undefined,
         status: status || undefined,
         subjectId: subjectId || undefined,
         type: type || undefined,
       }),
     queryKey: adminQueryKeys.questions({
       difficulty: difficulty || null,
-      search: searchValue.trim() || null,
+      search: searchQueryValue.trim() || null,
       status: status || null,
       subjectId: subjectId || null,
       type: type || null,
     }),
+    placeholderData: keepPreviousData,
     staleTime: 15_000,
   });
 

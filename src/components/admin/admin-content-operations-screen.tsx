@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { adminQueryKeys } from "@/lib/api/query-keys";
 import { useAuthenticatedMutation, useAuthenticatedQuery, useAuthSession } from "@/lib/auth";
 import {
@@ -58,6 +58,7 @@ import {
 } from "@/lib/admin/rich-text";
 import { AdminRouteTabs } from "@/components/admin/admin-route-tabs";
 import { AdminToneBadge, AdminVisibilityBadge } from "@/components/admin/admin-status-badge";
+import { useAdminSearchState } from "@/components/admin/use-admin-search-state";
 import { useAdminTaxonomyReferenceData } from "@/components/admin/use-admin-taxonomy-reference-data";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
@@ -260,7 +261,11 @@ export function AdminContentOperationsScreen({
   const canManageContent = authSession.hasPermission("content.structured.manage");
   const canPublishContent = authSession.hasPermission("content.structured.publish");
 
-  const [searchValue, setSearchValue] = useState("");
+  const {
+    searchInputValue: searchValue,
+    searchQueryValue,
+    setSearchInputValue: setSearchValue,
+  } = useAdminSearchState();
   const [noteStatus, setNoteStatus] = useState<NoteStatus | "">("");
   const [noteAccessType, setNoteAccessType] = useState<NoteAccessType | "">("");
   const [noteSubjectId, setNoteSubjectId] = useState("");
@@ -286,18 +291,19 @@ export function AdminContentOperationsScreen({
     queryFn: (accessToken) =>
       listAdminNotes(accessToken, {
         accessType: noteAccessType || undefined,
-        search: searchValue || undefined,
+        search: searchQueryValue.trim() || undefined,
         status: noteStatus || undefined,
         subjectId: noteSubjectId || undefined,
         topicId: noteTopicId || undefined,
       }),
     queryKey: adminQueryKeys.notes({
       accessType: noteAccessType || null,
-      search: searchValue || null,
+      search: searchQueryValue.trim() || null,
       status: noteStatus || null,
       subjectId: noteSubjectId || null,
       topicId: noteTopicId || null,
     }),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 
@@ -308,7 +314,7 @@ export function AdminContentOperationsScreen({
         accessType: contentAccessType || undefined,
         family: contentFamily || undefined,
         mediumId: contentMediumId || undefined,
-        search: searchValue || undefined,
+        search: searchQueryValue.trim() || undefined,
         status: contentStatus || undefined,
       }),
     queryKey: adminQueryKeys.content({
@@ -316,10 +322,11 @@ export function AdminContentOperationsScreen({
       family: contentFamily || null,
       format: null,
       mediumId: contentMediumId || null,
-      search: searchValue || null,
+      search: searchQueryValue.trim() || null,
       status: contentStatus || null,
       visibility: null,
     }),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 
@@ -580,11 +587,11 @@ export function AdminContentOperationsScreen({
   const contentFamilyCount = new Set(contentRows.map((row) => row.family)).size;
   const activeFilterCount =
     initialTab === "notes"
-      ? [searchValue.trim(), noteStatus, noteAccessType, noteSubjectId, noteTopicId].filter(
+      ? [searchQueryValue.trim(), noteStatus, noteAccessType, noteSubjectId, noteTopicId].filter(
           Boolean,
         ).length
       : [
-          searchValue.trim(),
+          searchQueryValue.trim(),
           contentStatus,
           contentAccessType,
           contentFamily,
