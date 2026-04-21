@@ -6,7 +6,6 @@ import { Table } from "@tiptap/extension-table"
 import TableCell from "@tiptap/extension-table-cell"
 import TableHeader from "@tiptap/extension-table-header"
 import TableRow from "@tiptap/extension-table-row"
-import Underline from "@tiptap/extension-underline"
 import {
   EditorContent,
   NodeViewWrapper,
@@ -501,7 +500,6 @@ export function AdminRichHtmlField({
     editable: !disabled,
     extensions: [
       StarterKit,
-      Underline,
       Placeholder.configure({
         placeholder: `Enter ${label.toLowerCase()}`,
       }),

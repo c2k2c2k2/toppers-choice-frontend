@@ -6,7 +6,6 @@ import { Table } from "@tiptap/extension-table";
 import TableCell from "@tiptap/extension-table-cell";
 import TableHeader from "@tiptap/extension-table-header";
 import TableRow from "@tiptap/extension-table-row";
-import Underline from "@tiptap/extension-underline";
 import {
   EditorContent,
   NodeViewWrapper,
@@ -500,7 +499,6 @@ export function AdminQuestionRichTextField({
     editable: !disabled,
     extensions: [
       StarterKit.configure({ heading: false }),
-      Underline,
       Placeholder.configure({
         placeholder: `Enter ${label.toLowerCase()}`,
       }),
