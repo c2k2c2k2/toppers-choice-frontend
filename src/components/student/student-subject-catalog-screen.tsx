@@ -46,7 +46,12 @@ export function StudentSubjectCatalogScreen({
         mediumCode: searchParams.get("medium") ?? activeMediumCode,
       })
     : null;
-  const subject = catalog ? findSubjectBySlug(catalog, subjectSlug) : null;
+  const subject =
+    catalog && snapshot
+      ? findSubjectBySlug(catalog, subjectSlug, {
+          examTrackId: snapshot.selectedTrack?.id ?? null,
+        })
+      : null;
 
   useEffect(() => {
     if (!snapshot?.selectedTrack?.code) {

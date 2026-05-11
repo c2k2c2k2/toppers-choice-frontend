@@ -57,10 +57,12 @@ export function getSubjectsForExamTrack(
 export function findSubjectBySlug(
   catalog: StudentCatalogResponse,
   subjectSlug: string,
+  options: {
+    examTrackId?: string | null;
+  } = {},
 ) {
-  return (
-    catalog.subjects.find((subject) => subject.slug === subjectSlug) ?? null
-  );
+  const subjects = getSubjectsForExamTrack(catalog, options.examTrackId);
+  return subjects.find((subject) => subject.slug === subjectSlug) ?? null;
 }
 
 export function countTopics(topics: StudentTopicTreeNode[]): number {
