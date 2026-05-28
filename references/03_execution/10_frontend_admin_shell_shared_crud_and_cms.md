@@ -6,7 +6,7 @@
 
 ## Prompt
 ```text
-We are implementing Topper's Choice frontend step F10: admin shell, shared CRUD patterns, and CMS management foundation.
+We are implementing Toppers' Choice frontend step F10: admin shell, shared CRUD patterns, and CMS management foundation.
 
 Read these references first:
 - references/02_architecture/01_frontend_kickoff_plan.md

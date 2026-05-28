@@ -10,7 +10,7 @@ type StudentLoginPageProps = {
 export const metadata: Metadata = {
   title: "Student Login",
   description:
-    "Sign in to continue your Topper's Choice notes, practice, tests, and updates.",
+    "Sign in to continue your Toppers' Choice notes, practice, tests, and updates.",
 };
 
 export default async function StudentLoginPage({

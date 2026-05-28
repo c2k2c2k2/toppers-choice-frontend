@@ -5,7 +5,7 @@
 
 ## Prompt
 ```text
-We are implementing Topper's Choice frontend step F12: final integration gap analysis, QA, and release hardening.
+We are implementing Toppers' Choice frontend step F12: final integration gap analysis, QA, and release hardening.
 
 Read these references first:
 - references/02_architecture/01_frontend_kickoff_plan.md

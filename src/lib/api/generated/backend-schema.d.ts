@@ -2546,7 +2546,7 @@ export interface components {
              * @example {
              *       "code": "toppers-choice",
              *       "slug": "toppers-choice",
-             *       "name": "Topper's Choice",
+             *       "name": "Toppers' Choice",
              *       "primaryDomain": null,
              *       "defaultLocale": "mr-IN",
              *       "timezone": "Asia/Kolkata"
@@ -2557,7 +2557,7 @@ export interface components {
              * @example {
              *       "site": {
              *         "branding": {
-             *           "displayName": "Topper's Choice",
+             *           "displayName": "Toppers' Choice",
              *           "tagline": "Competitive exam preparation platform"
              *         }
              *       },
@@ -5332,7 +5332,7 @@ export interface components {
              * @enum {string}
              */
             channel: "IN_APP" | "EMAIL" | "SMS";
-            /** @example Welcome to Topper's Choice */
+            /** @example Welcome to Toppers' Choice */
             subjectTemplate?: string;
             /** @example Welcome {{fullName}} */
             titleTemplate: string;
@@ -5360,7 +5360,7 @@ export interface components {
              * @enum {string}
              */
             channel: "IN_APP" | "EMAIL" | "SMS";
-            /** @example Welcome to Topper's Choice */
+            /** @example Welcome to Toppers' Choice */
             subjectTemplate?: string;
             /** @example Welcome {{fullName}} */
             titleTemplate?: string;

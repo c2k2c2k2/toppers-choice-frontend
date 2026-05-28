@@ -5,7 +5,7 @@
 
 ## Prompt
 ```text
-We are implementing Topper's Choice frontend step F02: design foundation, PWA baseline, and application-level legacy Marathi font support.
+We are implementing Toppers' Choice frontend step F02: design foundation, PWA baseline, and application-level legacy Marathi font support.
 
 Read these references first:
 - references/02_architecture/01_frontend_kickoff_plan.md
@@ -20,12 +20,12 @@ Read these references first:
 - /Users/raje/projects/Dhurandhar/dhurandhar-web-app-frontend/src/modules/questions/components/RichTextRenderer.tsx
 
 Task:
-- Establish the global design system and PWA baseline for Topper's Choice.
+- Establish the global design system and PWA baseline for Toppers' Choice.
 - Add app-wide font tokens, brand tokens, layout primitives, manifest/meta scaffolding, and safe installable PWA behavior.
 - Implement reusable legacy Marathi font support at application level so Unicode Marathi and encoded Marathi content can both be rendered reliably across landing, student, and admin surfaces.
 
 Must include:
-- global color, spacing, typography, and surface tokens aligned to the Topper's Choice design direction
+- global color, spacing, typography, and surface tokens aligned to the Toppers' Choice design direction
 - display/body font setup and Devanagari-safe fallback stack
 - manifest, icons strategy, installable PWA shell, and safe cache policy baseline
 - shared legacy Marathi font assets and utilities
@@ -35,7 +35,7 @@ Must include:
 Constraints:
 - Legacy Marathi support must be shared infrastructure, not hidden inside one future question component
 - Premium or protected content must not be cached unsafely for offline use
-- Preserve the new Topper's Choice design language; do not port Dhurandhar's UI directly
+- Preserve the new Toppers' Choice design language; do not port Dhurandhar's UI directly
 - Treat the stitch references above as the visual source of truth for tokens, surfaces, type rhythm, glass navigation, tonal cards, and CTA behavior; do not invent a generic design kit detached from those references
 
 Done when:

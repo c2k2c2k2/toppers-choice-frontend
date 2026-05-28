@@ -6,7 +6,7 @@
 
 ## Prompt
 ```text
-We are implementing Topper's Choice frontend step F11: the main admin product modules.
+We are implementing Toppers' Choice frontend step F11: the main admin product modules.
 
 Read these references first:
 - references/03_execution/00_master_index.md
@@ -51,7 +51,7 @@ Done when:
 - Notification template and broadcast editors now use selection-scoped draft state rather than effect-synced form resets, which keeps the admin editor behavior lint-clean and more predictable.
 - Shared admin authoring now includes `AdminFontTextField`, `AdminRichHtmlField`, `TextContent`, and row-based object editors so non-technical admins can manage Marathi-capable content, metadata, question lineups, attachments, and access overrides without editing raw JSON blobs in the main F11 workflows.
 - Plans, structured content, tests, and taxonomy now follow list-first CRUD routing with dedicated `/new` and `/:id` admin editor pages instead of split half-table and half-form workspaces.
-- The dedicated `/admin/questions/new` and `/admin/questions/[questionId]` editor now matches the richer Dhurandhar-style authoring flow at the capability level: per-language rich text blocks, Marathi typing-mode support, shared statement/option/explanation image uploads, save-and-publish actions, and an inline render preview that stays contract-driven against the Topper's Choice backend question/media payloads.
+- The dedicated `/admin/questions/new` and `/admin/questions/[questionId]` editor now matches the richer Dhurandhar-style authoring flow at the capability level: per-language rich text blocks, Marathi typing-mode support, shared statement/option/explanation image uploads, save-and-publish actions, and an inline render preview that stays contract-driven against the Toppers' Choice backend question/media payloads.
 - The shared admin rich HTML editor was upgraded from a lightweight `contentEditable` toolbar to a Tiptap-based authoring surface with Marathi-aware paste normalization, explicit legacy font marks, KaTeX-backed equation nodes, MathLive-assisted equation entry, and table tooling so mathematical question authoring stays reliable in admin, preview, and student rendering.
 - Question authoring and question consumption now share a Dhurandhar-style question-rich renderer path instead of the generic structured-content renderer for assessment surfaces. The admin question editor, admin preview, and student practice/test cards all resolve the same `data-question-font` and `data-question-math-*` markup contract before rendering.
 - The `/admin/questions` list now favors scan-first UX: each row shows a compact authored statement preview plus study context instead of raw ids, and question rows now include a guarded delete action alongside edit/publish controls.

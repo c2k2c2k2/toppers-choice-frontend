@@ -18,7 +18,7 @@ export function PublicPageHero({
   actions = [],
   aside,
   description,
-  eyebrow = "Topper's Choice",
+  eyebrow = "Toppers' Choice",
   kickerColor = "var(--accent-public)",
   motto,
   stats = [],

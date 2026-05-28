@@ -6,7 +6,7 @@
 
 ## Prompt
 ```text
-We are implementing Topper's Choice frontend step F01: shared application foundation.
+We are implementing Toppers' Choice frontend step F01: shared application foundation.
 
 Read these references first:
 - references/01_product/01_toppers_choice_product_understanding.md

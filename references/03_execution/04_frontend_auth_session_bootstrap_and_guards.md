@@ -6,7 +6,7 @@
 
 ## Prompt
 ```text
-We are implementing Topper's Choice frontend step F04: auth session bootstrap, guards, and access-aware routing.
+We are implementing Toppers' Choice frontend step F04: auth session bootstrap, guards, and access-aware routing.
 
 Read these references first:
 - references/02_architecture/01_frontend_kickoff_plan.md

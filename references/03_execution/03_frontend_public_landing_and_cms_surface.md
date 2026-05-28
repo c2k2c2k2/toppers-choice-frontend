@@ -5,7 +5,7 @@
 
 ## Prompt
 ```text
-We are implementing Topper's Choice frontend step F03: public landing experience and CMS-driven public surface.
+We are implementing Toppers' Choice frontend step F03: public landing experience and CMS-driven public surface.
 
 Read these references first:
 - references/01_product/01_toppers_choice_product_understanding.md
@@ -16,7 +16,7 @@ Read these references first:
 - /Users/raje/projects/Dhurandhar/dhurandhar-web-app-frontend/references/frontend/landing/codex_01_landing_page_plan.md
 
 Task:
-- Build the public landing surface with a strong, modern Topper's Choice identity.
+- Build the public landing surface with a strong, modern Toppers' Choice identity.
 - Use CMS-ready section rendering so landing content can later come from backend configuration without rewrites.
 - Cover the main public routes needed early: home, track highlights, pricing, contact/about, and legal page placeholders.
 

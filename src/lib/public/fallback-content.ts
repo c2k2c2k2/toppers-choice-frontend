@@ -111,7 +111,7 @@ export const FALLBACK_PUBLIC_BOOTSTRAP: PublicBootstrapResponse = {
   site: {
     code: "toppers-choice",
     slug: "toppers-choice",
-    name: "Topper's Choice",
+    name: "Toppers' Choice",
     primaryDomain: null,
     defaultLocale: "mr-IN",
     timezone: "Asia/Kolkata",
@@ -119,8 +119,8 @@ export const FALLBACK_PUBLIC_BOOTSTRAP: PublicBootstrapResponse = {
   publicConfig: {
     site: {
       branding: {
-        displayName: "Topper's Choice",
-        tagline: "One stop solution for all by M.D. madam",
+        displayName: "Toppers' Choice",
+        tagline: "One stop solution for all by Mrs. Madhuri Deulkar Allies M.D. Madam",
         motto: "आपल्या सूचना, आमची बांधिलकी",
         description:
           "Trusted notes, tests, guidance, and study support for competitive exam preparation.",
@@ -317,18 +317,18 @@ export const FALLBACK_STANDALONE_PAGES: Record<
 > = {
   about: {
     slug: "about",
-    title: "About Topper's Choice",
+    title: "About Toppers' Choice",
     summary:
-      "Learn about Topper's Choice, the academy's approach, and how students use the platform.",
+      "Learn about Toppers' Choice, the academy's approach, and how students use the platform.",
     description:
-      "Learn what Topper's Choice stands for and how the platform supports students.",
+      "Learn what Toppers' Choice stands for and how the platform supports students.",
     bodyJson: {
       blocks: [
         {
           type: "prose",
-          title: "Why students choose Topper's Choice",
+          title: "Why students choose Toppers' Choice",
           paragraphs: [
-            "Topper's Choice is built to reduce the confusion of scattered books, mixed notes, and disconnected test material.",
+            "Toppers' Choice is built to reduce the confusion of scattered books, mixed notes, and disconnected test material.",
             "The goal is to keep notes, practice, tests, and guidance together so students can follow a clearer preparation path.",
           ],
         },
@@ -367,7 +367,7 @@ export const FALLBACK_STANDALONE_PAGES: Record<
     },
     seoJson: {
       description:
-        "About Topper's Choice, the academic preparation platform built for structured notes, practice, guidance, and student-first delivery.",
+        "About Toppers' Choice, the academic preparation platform built for structured notes, practice, guidance, and student-first delivery.",
     } as Metadata,
   },
   contact: {
@@ -376,7 +376,7 @@ export const FALLBACK_STANDALONE_PAGES: Record<
     summary:
       "Get in touch for batch details, fees, and general support.",
     description:
-      "Reach Topper's Choice support through the current contact channels.",
+      "Reach Toppers' Choice support through the current contact channels.",
     bodyJson: {
       blocks: [
         {
@@ -397,7 +397,7 @@ export const FALLBACK_STANDALONE_PAGES: Record<
             {
               label: "Proprietor",
               value: "Madhuri Anil Deulkar",
-              description: "Topper's Choice",
+              description: "Toppers' Choice",
             },
           ],
         },
@@ -413,7 +413,7 @@ export const FALLBACK_STANDALONE_PAGES: Record<
     },
     seoJson: {
       description:
-        "Contact Topper's Choice support through the current public-facing channels, with the route ready for later CMS-managed updates.",
+        "Contact Toppers' Choice support through the current public-facing channels, with the route ready for later CMS-managed updates.",
     } as Metadata,
   },
   privacy: {
@@ -422,7 +422,7 @@ export const FALLBACK_STANDALONE_PAGES: Record<
     summary:
       "The full privacy policy will be updated here. Please contact support if you need clarification before enrollment.",
     description:
-      "Read the current privacy notes for Topper's Choice.",
+      "Read the current privacy notes for Toppers' Choice.",
     bodyJson: {
       blocks: [
         {
@@ -448,7 +448,7 @@ export const FALLBACK_STANDALONE_PAGES: Record<
         follow: true,
       },
       description:
-        "Privacy information for Topper's Choice.",
+        "Privacy information for Toppers' Choice.",
     } as Metadata,
   },
   terms: {
@@ -457,7 +457,7 @@ export const FALLBACK_STANDALONE_PAGES: Record<
     summary:
       "The full terms will be updated here. Please contact support if you need clarification before enrollment.",
     description:
-      "Read the current terms notes for Topper's Choice.",
+      "Read the current terms notes for Toppers' Choice.",
     bodyJson: {
       blocks: [
         {
@@ -483,7 +483,7 @@ export const FALLBACK_STANDALONE_PAGES: Record<
         follow: true,
       },
       description:
-        "Terms and conditions information for Topper's Choice.",
+        "Terms and conditions information for Toppers' Choice.",
     } as Metadata,
   },
 };
@@ -510,9 +510,9 @@ export const FALLBACK_PUBLIC_CMS_RESOLVE: CmsResolveResponse = {
   banners: [
     buildFallbackBanner({
       title: "Trusted notes, tests, and guidance for competitive exam preparation.",
-      subtitle: "One stop solution for all by M.D. madam",
+      subtitle: "One stop solution for all by Mrs. Madhuri Deulkar Allies M.D. Madam",
       body:
-        "Study with organized notes, regular practice, mock tests, and focused guidance from Topper's Choice.",
+        "Study with organized notes, regular practice, mock tests, and focused guidance from Toppers' Choice.",
       ctaLabel: "Explore preparation tracks",
       ctaHref: "/tracks/mpsc-allied",
       metaJson: {
@@ -552,12 +552,12 @@ export const FALLBACK_PUBLIC_CMS_RESOLVE: CmsResolveResponse = {
       code: "landing-editorial-intro",
       title: "Study with a clear plan.",
       subtitle:
-        "Topper's Choice brings notes, practice, tests, and guidance together in one focused learning experience.",
+        "Toppers' Choice brings notes, practice, tests, and guidance together in one focused learning experience.",
       type: "RICH_TEXT",
       orderIndex: 0,
       bodyJson: {
         paragraphs: [
-          "Students often lose time jumping between notes, coaching material, and random test sources. Topper's Choice keeps the important parts together.",
+          "Students often lose time jumping between notes, coaching material, and random test sources. Toppers' Choice keeps the important parts together.",
           "The goal is simple: learn the topic, revise with the right notes, and test yourself regularly.",
         ],
         stats: [
@@ -567,7 +567,7 @@ export const FALLBACK_PUBLIC_CMS_RESOLVE: CmsResolveResponse = {
         ],
       },
       configJson: {
-        eyebrow: "Why Topper's Choice",
+        eyebrow: "Why Toppers' Choice",
         variant: "editorial",
       },
     }),

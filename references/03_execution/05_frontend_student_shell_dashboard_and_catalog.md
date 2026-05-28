@@ -6,7 +6,7 @@
 
 ## Prompt
 ```text
-We are implementing Topper's Choice frontend step F05: student shell, dashboard bootstrap, and catalog navigation.
+We are implementing Toppers' Choice frontend step F05: student shell, dashboard bootstrap, and catalog navigation.
 
 Read these references first:
 - references/02_architecture/01_frontend_kickoff_plan.md

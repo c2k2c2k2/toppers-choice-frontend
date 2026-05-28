@@ -33,13 +33,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  applicationName: "Topper's Choice",
+  applicationName: "Toppers' Choice",
   title: {
-    default: "Topper's Choice",
-    template: "%s | Topper's Choice",
+    default: "Toppers' Choice",
+    template: "%s | Toppers' Choice",
   },
   description:
-    "Topper's Choice learning platform spanning public discovery, student learning, and admin operations.",
+    "Toppers' Choice learning platform spanning public discovery, student learning, and admin operations.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
@@ -65,7 +65,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Topper's Choice",
+    title: "Toppers' Choice",
   },
   formatDetection: {
     telephone: false,

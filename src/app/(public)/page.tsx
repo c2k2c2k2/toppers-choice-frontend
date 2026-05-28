@@ -532,7 +532,7 @@ export default async function PublicHomePage() {
 
       <section className="space-y-8">
         <HomeSectionHeading
-          title="The Topper’s Choice Advantage"
+          title="The Toppers' Choice Advantage"
           description={
             introSection?.subtitle ??
             "Strategic preparation tailored for students who want clarity, structure, and exam-focused support."
@@ -654,10 +654,10 @@ export default async function PublicHomePage() {
         <div className="space-y-6">
           <div className="space-y-4">
             <h2 className="tc-display text-3xl font-extrabold tracking-tight text-[color:var(--brand)] md:text-5xl">
-              The Vision Behind Topper’s Choice
+              The Vision Behind Toppers&apos; Choice
             </h2>
             <p className="tc-muted text-base leading-8 md:text-lg">
-              {content.branding.proprietorName} shaped Topper&apos;s Choice around
+              {content.branding.proprietorName} shaped Toppers&apos; Choice around
               one simple idea: students should not have to chase scattered
               books, coaching notes, and disconnected tests just to prepare
               seriously.

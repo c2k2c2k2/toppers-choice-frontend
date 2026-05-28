@@ -1,4 +1,4 @@
-We are starting a new production-grade web application called “Toppers Choice”.
+We are starting a new production-grade web application called “Toppers' Choice”.
 
 Architecture:
 - Multi-repo setup

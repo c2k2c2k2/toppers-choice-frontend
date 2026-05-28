@@ -6,7 +6,7 @@
 
 ## Prompt
 ```text
-We are implementing Topper's Choice frontend step F08: student practice and test experiences.
+We are implementing Toppers' Choice frontend step F08: student practice and test experiences.
 
 Read these references first:
 - references/01_product/01_toppers_choice_product_understanding.md

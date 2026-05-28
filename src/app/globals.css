@@ -1346,3 +1346,469 @@ button {
 .tc-public-footer-link:hover {
   color: #ffffff;
 }
+
+.tc-launch-page {
+  position: relative;
+  isolation: isolate;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 18% 12%, rgba(255, 184, 111, 0.24), transparent 26%),
+    radial-gradient(circle at 86% 18%, rgba(167, 200, 255, 0.16), transparent 24%),
+    radial-gradient(circle at 50% 110%, rgba(255, 220, 189, 0.2), transparent 34%),
+    linear-gradient(145deg, #04172f 0%, #082447 42%, #003366 100%);
+  background-size:
+    38px 38px,
+    38px 38px,
+    auto,
+    auto,
+    auto,
+    auto;
+  color: #f8f9fa;
+}
+
+.tc-launch-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, 0.09) 44%, transparent 58%),
+    radial-gradient(circle at center, transparent 0%, rgba(3, 14, 32, 0.34) 72%);
+  animation: tc-launch-sweep 5.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.tc-launch-page::after {
+  content: "";
+  position: absolute;
+  inset: 8% 14%;
+  z-index: -1;
+  border-radius: 999px;
+  background: rgba(255, 184, 111, 0.12);
+  filter: blur(72px);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.tc-launch-aurora {
+  position: absolute;
+  inset: auto auto -20rem -12rem;
+  z-index: -1;
+  height: 34rem;
+  width: 34rem;
+  border-radius: 999px;
+  background: rgba(255, 220, 189, 0.22);
+  filter: blur(36px);
+  animation: tc-launch-float 8s ease-in-out infinite;
+}
+
+.tc-launch-stage {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  padding: 1.25rem;
+}
+
+.tc-launch-card {
+  position: relative;
+  display: grid;
+  column-gap: clamp(2rem, 6vw, 5rem);
+  grid-template-areas:
+    "brand brand"
+    "copy orbit"
+    "actions orbit"
+    "message orbit";
+  grid-template-columns: minmax(0, 1fr) minmax(13rem, 18rem);
+  row-gap: clamp(1.1rem, 2.6vw, 1.75rem);
+  width: min(100%, 68rem);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: clamp(1.5rem, 4vw, 3rem);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.06)),
+    rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 32px 90px rgba(0, 12, 28, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(20px);
+  padding: clamp(1.25rem, 4vw, 3rem);
+}
+
+.tc-launch-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 82% 22%, rgba(255, 184, 111, 0.24), transparent 20%),
+    radial-gradient(circle at 18% 82%, rgba(255, 255, 255, 0.1), transparent 22%);
+  pointer-events: none;
+}
+
+.tc-launch-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.tc-launch-brand {
+  display: flex;
+  grid-area: brand;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.tc-launch-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 5.75rem;
+  width: 5.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 1.6rem;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 20px 48px rgba(0, 12, 28, 0.24);
+}
+
+.tc-launch-pill {
+  display: inline-flex;
+  min-height: 2.65rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 184, 111, 0.26);
+  border-radius: 999px;
+  background: rgba(255, 220, 189, 0.12);
+  color: #ffdcbd;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  padding: 0.7rem 1rem;
+  text-transform: uppercase;
+}
+
+.tc-launch-copy {
+  grid-area: copy;
+  max-width: 42rem;
+  padding-block: clamp(2rem, 5vw, 4rem) 0;
+}
+
+.tc-launch-kicker {
+  color: #ffb86f;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  margin: 0 0 1rem;
+  text-transform: uppercase;
+}
+
+.tc-launch-copy h1 {
+  color: #ffffff;
+  font-size: clamp(3rem, 6.4vw, 5.65rem);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 0.96;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.tc-launch-description {
+  color: rgba(248, 249, 250, 0.78);
+  font-size: clamp(1rem, 2vw, 1.24rem);
+  line-height: 1.8;
+  margin: 1.2rem 0 0;
+  max-width: 39rem;
+}
+
+.tc-launch-founder {
+  align-items: center;
+  border: 1px solid rgba(255, 184, 111, 0.2);
+  border-radius: 1.25rem;
+  color: rgba(248, 249, 250, 0.82);
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.08);
+  line-height: 1.5;
+  margin: 1.25rem 0 0;
+  max-width: min(100%, 42rem);
+  padding: 0.8rem 1rem;
+}
+
+.tc-launch-founder strong {
+  color: #ffdcbd;
+  font-weight: 900;
+}
+
+.tc-launch-orbit {
+  display: grid;
+  grid-area: orbit;
+  height: clamp(9rem, 24vw, 15rem);
+  justify-self: center;
+  margin-top: clamp(2.5rem, 7vw, 5rem);
+  place-items: center;
+  position: relative;
+  width: clamp(9rem, 24vw, 15rem);
+}
+
+.tc-launch-orbit span,
+.tc-launch-orbit strong {
+  grid-area: 1 / 1;
+}
+
+.tc-launch-orbit span {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.04);
+}
+
+.tc-launch-orbit span[data-ring="outer"] {
+  height: 100%;
+  width: 100%;
+  animation: tc-launch-orbit 7s linear infinite;
+}
+
+.tc-launch-orbit span[data-ring="middle"] {
+  height: 72%;
+  width: 72%;
+  border-color: rgba(255, 184, 111, 0.28);
+  animation: tc-launch-orbit 5s linear infinite reverse;
+}
+
+.tc-launch-orbit span[data-ring="inner"] {
+  height: 42%;
+  width: 42%;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.tc-launch-orbit strong {
+  align-items: center;
+  background: linear-gradient(135deg, #ffdcbd, #ffb86f);
+  border-radius: 999px;
+  color: #2c1600;
+  display: inline-flex;
+  font-size: clamp(1.2rem, 3vw, 2rem);
+  font-weight: 900;
+  height: 48%;
+  justify-content: center;
+  min-width: 48%;
+  padding-inline: 1rem;
+  text-transform: uppercase;
+}
+
+.tc-launch-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  grid-area: actions;
+}
+
+.tc-launch-button {
+  border: 0;
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, rgba(255, 220, 189, 0.92), rgba(255, 184, 111, 1)),
+    #ffb86f;
+  box-shadow:
+    0 18px 56px rgba(255, 184, 111, 0.28),
+    0 0 0 8px rgba(255, 184, 111, 0.08);
+  color: #2c1600;
+  cursor: pointer;
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  font-weight: 900;
+  min-height: 4.4rem;
+  min-width: min(100%, 20rem);
+  padding: 1rem 1.45rem;
+  transition:
+    transform 0.24s ease,
+    box-shadow 0.24s ease,
+    filter 0.24s ease;
+}
+
+.tc-launch-button:hover {
+  filter: saturate(1.08);
+  transform: translateY(-2px) scale(1.01);
+}
+
+.tc-launch-button[data-state="countdown"] {
+  animation: tc-launch-pulse 0.76s ease-in-out infinite;
+}
+
+.tc-launch-button[data-state="launched"] {
+  background: linear-gradient(135deg, #ffffff, #ffdcbd);
+}
+
+.tc-launch-button:disabled {
+  cursor: default;
+}
+
+.tc-launch-home-link {
+  color: rgba(248, 249, 250, 0.72);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.28em;
+}
+
+.tc-launch-message {
+  border-left: 3px solid rgba(255, 184, 111, 0.78);
+  grid-area: message;
+  margin-top: 2rem;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  padding-left: 1rem;
+  transform: translateY(12px);
+  transition:
+    max-height 0.5s ease,
+    opacity 0.5s ease,
+    transform 0.5s ease;
+}
+
+.tc-launch-message[data-visible="true"] {
+  max-height: 8rem;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tc-launch-message p {
+  color: #ffffff;
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  font-weight: 800;
+  margin: 0;
+}
+
+.tc-launch-message strong {
+  color: #ffdcbd;
+  display: block;
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  margin-top: 0.45rem;
+}
+
+.tc-launch-message span {
+  color: rgba(248, 249, 250, 0.68);
+  display: inline-flex;
+  margin-top: 0.45rem;
+}
+
+.tc-launch-confetti {
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  z-index: 4;
+}
+
+.tc-launch-confetti span {
+  animation: tc-launch-confetti 2.9s cubic-bezier(0.18, 0.8, 0.32, 1) both;
+  animation-delay: var(--delay);
+  background: #ffb86f;
+  border-radius: 0.2rem;
+  height: 0.85rem;
+  left: var(--left);
+  position: absolute;
+  top: -1rem;
+  transform: translateX(var(--drift)) rotate(var(--rotate));
+  width: 0.45rem;
+}
+
+.tc-launch-confetti span:nth-child(3n) {
+  background: #ffffff;
+  height: 0.55rem;
+  width: 0.9rem;
+}
+
+.tc-launch-confetti span:nth-child(4n) {
+  background: #a7c8ff;
+}
+
+.tc-launch-confetti span:nth-child(5n) {
+  background: #ffdcbd;
+  border-radius: 999px;
+}
+
+@keyframes tc-launch-sweep {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translateX(-12%);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateX(12%);
+  }
+}
+
+@keyframes tc-launch-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(3rem, -2rem, 0);
+  }
+}
+
+@keyframes tc-launch-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes tc-launch-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.035);
+  }
+}
+
+@keyframes tc-launch-confetti {
+  0% {
+    opacity: 0;
+    transform: translate3d(var(--drift), -1rem, 0) rotate(var(--rotate));
+  }
+
+  8% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--drift), 112dvh, 0) rotate(calc(var(--rotate) + 540deg));
+  }
+}
+
+@media (max-width: 780px) {
+  .tc-launch-card {
+    grid-template-areas:
+      "brand"
+      "copy"
+      "orbit"
+      "actions"
+      "message";
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tc-launch-brand {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .tc-launch-orbit {
+    margin-block: 0.75rem 1.5rem;
+  }
+
+  .tc-launch-copy {
+    padding-block: 2.25rem 1rem;
+  }
+
+  .tc-launch-button {
+    width: 100%;
+  }
+}

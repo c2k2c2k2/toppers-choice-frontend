@@ -56,7 +56,7 @@ export default async function PublicStandalonePage({
         title={pageResult.page.title}
         description={
           pageResult.page.summary ??
-          "Important information from Topper's Choice."
+          "Important information from Toppers' Choice."
         }
         actions={[
           { label: "Return home", href: "/", tone: "secondary" },

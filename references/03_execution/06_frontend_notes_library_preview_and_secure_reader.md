@@ -6,7 +6,7 @@
 
 ## Prompt
 ```text
-We are implementing Topper's Choice frontend step F06: notes library, premium preview UX, and secure note reader.
+We are implementing Toppers' Choice frontend step F06: notes library, premium preview UX, and secure note reader.
 
 Read these references first:
 - references/01_product/01_toppers_choice_product_understanding.md

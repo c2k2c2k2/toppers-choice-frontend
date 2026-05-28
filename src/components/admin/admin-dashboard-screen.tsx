@@ -150,7 +150,7 @@ export function AdminDashboardScreen() {
     <div className="flex flex-col gap-6">
       <AdminPageHeader
         eyebrow="Admin dashboard"
-        title="Manage Topper's Choice from one place."
+        title="Manage Toppers' Choice from one place."
         description="Use this page to check what needs attention, open the right workspace, and review launch readiness without digging through the full app."
         actions={
           <>

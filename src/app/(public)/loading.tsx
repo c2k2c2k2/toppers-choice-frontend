@@ -5,7 +5,7 @@ export default function PublicLoading() {
     <div className="mx-auto w-full max-w-6xl">
       <LoadingState
         title="Loading website"
-        description="Opening the latest Topper's Choice website content."
+        description="Opening the latest Toppers' Choice website content."
       />
     </div>
   );

@@ -159,7 +159,7 @@ export function AuthLoginCard({
         <div className="tc-hero rounded-[30px] p-6">
           <div className="inline-flex rounded-[24px] bg-white/10 px-4 py-3 shadow-[0_16px_34px_rgba(0,30,64,0.18)] backdrop-blur-sm">
             <BrandLockup
-              alt="Topper's Choice"
+              alt="Toppers' Choice"
               priority
               sizes="184px"
               className="w-[11.5rem] max-w-full"

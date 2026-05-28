@@ -11,3 +11,6 @@
 
 ## 03. Execution Prompt Pack
 - [x] `references/03_execution/00_master_index.md`
+
+## Stitch References
+- [x] `references/stitch_topper_s_choice/student_app_stitch_implementation_map.md`

@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Student Access Required",
   description:
-    "This route belongs to the protected Topper's Choice student workspace.",
+    "This route belongs to the protected Toppers' Choice student workspace.",
 };
 
 export default function StudentForbiddenPage() {

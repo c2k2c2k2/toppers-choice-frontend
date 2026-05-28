@@ -173,7 +173,7 @@ export function extractPublicBranding(
       readString(bootstrap, ["publicConfig", "site", "branding", "displayName"]) ||
       bootstrap.site.name ||
       fallbackBranding.displayName ||
-      "Topper's Choice",
+      "Toppers' Choice",
     motto:
       readString(bootstrap, ["publicConfig", "site", "branding", "motto"]) ||
       fallbackBranding.motto ||
@@ -200,7 +200,7 @@ export function extractPublicBranding(
     tagline:
       readString(bootstrap, ["publicConfig", "site", "branding", "tagline"]) ||
       fallbackBranding.tagline ||
-      "One stop solution for all by M.D. madam",
+      "One stop solution for all by Mrs. Madhuri Deulkar Allies M.D. Madam",
     timezone: bootstrap.site.timezone ?? "Asia/Kolkata",
   };
 }

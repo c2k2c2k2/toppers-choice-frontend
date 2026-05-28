@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Topper's Choice",
-    short_name: "Topper's Choice",
+    name: "Toppers' Choice",
+    short_name: "Toppers' Choice",
     description:
       "Exam preparation across public discovery, student learning, and admin operations.",
     start_url: "/",

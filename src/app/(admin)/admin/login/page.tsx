@@ -10,7 +10,7 @@ type AdminLoginPageProps = {
 export const metadata: Metadata = {
   title: "Admin Login",
   description:
-    "Sign in to manage Topper's Choice content, students, plans, and operations.",
+    "Sign in to manage Toppers' Choice content, students, plans, and operations.",
 };
 
 export default async function AdminLoginPage({

@@ -11,7 +11,7 @@ export async function generateMetadata() {
   return buildPublicMetadata({
     title: "Pricing",
     description:
-      "Compare Topper's Choice plans and continue to the student app when you are ready to enroll.",
+      "Compare Toppers' Choice plans and continue to the student app when you are ready to enroll.",
     path: "/pricing",
   });
 }
@@ -29,7 +29,7 @@ export default async function PricingPage() {
       <PublicPageHero
         eyebrow="Plans"
         title="Choose the plan that fits your preparation."
-        description="Compare the available Topper's Choice plans here. When you are ready, continue to the student app to sign in and complete enrollment."
+        description="Compare the available Toppers' Choice plans here. When you are ready, continue to the student app to sign in and complete enrollment."
         actions={[
           { label: "Open student plans", href: "/student/plans?intent=all&source=public-pricing&returnTo=%2Fpricing", tone: "primary" },
           { label: "Talk to support", href: supportHref, tone: "secondary" },

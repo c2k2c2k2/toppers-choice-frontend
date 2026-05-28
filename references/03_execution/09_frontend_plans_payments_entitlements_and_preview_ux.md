@@ -6,7 +6,7 @@
 
 ## Prompt
 ```text
-We are implementing Topper's Choice frontend step F09: plans, checkout, entitlements, and premium-preview UX.
+We are implementing Toppers' Choice frontend step F09: plans, checkout, entitlements, and premium-preview UX.
 
 Read these references first:
 - references/01_product/01_toppers_choice_product_understanding.md
