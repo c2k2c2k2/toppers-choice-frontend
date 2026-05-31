@@ -46,6 +46,7 @@ import {
   AdminQuestionReferenceEditor,
   buildQuestionReferenceRows,
   serializeQuestionReferenceRows,
+  type AdminQuestionReferenceOption,
   type AdminQuestionReferenceRow,
 } from "@/components/admin/admin-question-reference-editor";
 import { AdminRichHtmlField } from "@/components/admin/admin-rich-html-field";
@@ -277,6 +278,12 @@ export function AdminAssessmentsScreen({
   const [testStatus, setTestStatus] = useState<TestStatus | "">("");
   const [testFamily, setTestFamily] = useState<TestFamily | "">("");
   const [testSubjectId, setTestSubjectId] = useState("");
+  const [testQuestionSearch, setTestQuestionSearch] = useState("");
+  const [testQuestionStatus, setTestQuestionStatus] =
+    useState<QuestionStatus | "">("PUBLISHED");
+  const [testQuestionDifficulty, setTestQuestionDifficulty] =
+    useState<QuestionDifficulty | "">("");
+  const [testQuestionSubjectId, setTestQuestionSubjectId] = useState("");
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
   const [testForm, setTestForm] = useState<TestFormState>(EMPTY_TEST_FORM_STATE);
   const [message, setMessage] = useState<string | null>(null);
@@ -330,6 +337,31 @@ export function AdminAssessmentsScreen({
     staleTime: 30_000,
   });
 
+  const testQuestionPickerQuery = useAuthenticatedQuery({
+    enabled: initialTab === "tests" && isTestEditorMode && canReadQuestions,
+    queryFn: (accessToken) =>
+      listAdminQuestions(accessToken, {
+        difficulty: testQuestionDifficulty || undefined,
+        search: testQuestionSearch.trim() || undefined,
+        status: testQuestionStatus || undefined,
+        subjectId:
+          testQuestionSubjectId || testForm.subjectId.trim() || undefined,
+      }),
+    queryKey: adminQueryKeys.questions({
+      difficulty: testQuestionDifficulty || null,
+      examTrackId: null,
+      hasMedia: null,
+      mediumId: null,
+      search: testQuestionSearch.trim() || null,
+      status: testQuestionStatus || null,
+      subjectId: testQuestionSubjectId || testForm.subjectId.trim() || null,
+      topicId: null,
+      type: null,
+    }),
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+  });
+
   const questionDetailQuery = useAuthenticatedQuery({
     enabled: initialTab === "questions" && canReadQuestions && Boolean(selectedQuestionId),
     queryFn: (accessToken) => getAdminQuestion(selectedQuestionId ?? "", accessToken),
@@ -355,6 +387,20 @@ export function AdminAssessmentsScreen({
 
   const selectedQuestion = questionDetailQuery.data ?? null;
   const selectedTest = testDetailQuery.data ?? null;
+  const testQuestionOptions: AdminQuestionReferenceOption[] =
+    testQuestionPickerQuery.data?.items.map((question) => ({
+      code: typeof question.code === "string" ? question.code : null,
+      difficulty: question.difficulty,
+      id: question.id,
+      statementPreviewText:
+        typeof question.statementPreviewText === "string"
+          ? question.statementPreviewText
+          : null,
+      status: question.status,
+      subjectName: question.subject.name,
+      topicName: question.topic?.name ?? null,
+      type: question.type,
+    })) ?? [];
 
   useEffect(() => {
     setQuestionForm(buildQuestionFormState(selectedQuestion));
@@ -1290,8 +1336,67 @@ export function AdminAssessmentsScreen({
                 }
               />
               <AdminQuestionReferenceEditor
-                hint="Add the question IDs in the order they should appear, along with positive and negative marks."
+                hint="Search the question bank, add rows, reorder the lineup, and adjust marks."
                 label="Question lineup"
+                questionOptions={testQuestionOptions}
+                questionOptionsLoading={testQuestionPickerQuery.isLoading}
+                pickerControls={
+                  <>
+                    <AdminInput
+                      label="Search"
+                      value={testQuestionSearch}
+                      onChange={(event) =>
+                        setTestQuestionSearch(event.target.value)
+                      }
+                    />
+                    <AdminSelect
+                      label="Status"
+                      value={testQuestionStatus}
+                      onChange={(event) =>
+                        setTestQuestionStatus(
+                          event.target.value as QuestionStatus | "",
+                        )
+                      }
+                    >
+                      <option value="">All statuses</option>
+                      {QUESTION_STATUS_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </AdminSelect>
+                    <AdminSelect
+                      label="Difficulty"
+                      value={testQuestionDifficulty}
+                      onChange={(event) =>
+                        setTestQuestionDifficulty(
+                          event.target.value as QuestionDifficulty | "",
+                        )
+                      }
+                    >
+                      <option value="">All difficulties</option>
+                      {QUESTION_DIFFICULTY_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </AdminSelect>
+                    <AdminSelect
+                      label="Subject"
+                      value={testQuestionSubjectId || testForm.subjectId}
+                      onChange={(event) =>
+                        setTestQuestionSubjectId(event.target.value)
+                      }
+                    >
+                      <option value="">Test subject</option>
+                      {taxonomy.subjects.map((subject) => (
+                        <option key={subject.id} value={subject.id}>
+                          {subject.name}
+                        </option>
+                      ))}
+                    </AdminSelect>
+                  </>
+                }
                 rows={testForm.questions}
                 onChange={(rows) =>
                   setTestForm((current) => ({

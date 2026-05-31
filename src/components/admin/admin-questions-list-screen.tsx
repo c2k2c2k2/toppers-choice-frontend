@@ -9,14 +9,18 @@ import { useAuthenticatedMutation, useAuthenticatedQuery, useAuthSession } from 
 import {
   deleteAdminQuestion,
   formatAdminDateTime,
+  getAdminTest,
   getApiErrorMessage,
   listAdminQuestions,
+  listAdminTests,
   publishAdminQuestion,
   unpublishAdminQuestion,
+  updateAdminTest,
   type QuestionDifficulty,
   type QuestionStatus,
   type QuestionSummary,
   type QuestionType,
+  type TestSummary,
 } from "@/lib/admin";
 import { AdminDataTable } from "@/components/admin/admin-data-table";
 import { AdminFilterBar } from "@/components/admin/admin-filter-bar";
@@ -74,6 +78,13 @@ function actionButtonClass(tone: "default" | "danger" = "default") {
     tone === "danger"
       ? "border-[rgba(163,39,32,0.16)] bg-[rgba(255,244,242,0.92)] hover:bg-[rgba(255,234,231,0.98)]"
       : "border-[rgba(0,30,64,0.1)] bg-white hover:bg-[rgba(0,51,102,0.04)]",
+    "disabled:cursor-not-allowed disabled:opacity-45",
+  ].join(" ");
+}
+
+function actionTextButtonClass() {
+  return [
+    "inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[rgba(0,30,64,0.1)] bg-white px-3 text-xs font-semibold text-[color:var(--brand)] transition-colors hover:bg-[rgba(0,51,102,0.04)]",
     "disabled:cursor-not-allowed disabled:opacity-45",
   ].join(" ");
 }
@@ -217,6 +228,39 @@ function DeleteIcon() {
   );
 }
 
+function AddToTestIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 20 20"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M10 4.167v11.666"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M4.167 10h11.666"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M3.75 4.583h12.5v10.834H3.75z"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+    </svg>
+  );
+}
+
 export function AdminQuestionsListScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -225,6 +269,8 @@ export function AdminQuestionsListScreen() {
   const canReadQuestions = authSession.hasPermission("academics.questions.read");
   const canManageQuestions = authSession.hasPermission("academics.questions.manage");
   const canPublishQuestions = authSession.hasPermission("academics.questions.publish");
+  const canReadTests = authSession.hasPermission("academics.tests.read");
+  const canManageTests = authSession.hasPermission("academics.tests.manage");
   const {
     searchInputValue: searchValue,
     searchQueryValue,
@@ -236,6 +282,9 @@ export function AdminQuestionsListScreen() {
   const [subjectId, setSubjectId] = useState("");
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState<string | null>(null);
+  const [addToTestQuestion, setAddToTestQuestion] =
+    useState<QuestionSummary | null>(null);
+  const [targetTestId, setTargetTestId] = useState("");
 
   const questionsQuery = useAuthenticatedQuery({
     enabled: canReadQuestions,
@@ -277,6 +326,68 @@ export function AdminQuestionsListScreen() {
       );
       await queryClient.invalidateQueries({
         queryKey: ["admin", "questions"],
+      });
+    },
+  });
+  const testsQuery = useAuthenticatedQuery({
+    enabled: Boolean(addToTestQuestion) && canReadTests && canManageTests,
+    queryFn: (accessToken) =>
+      listAdminTests(accessToken, {
+        status: "DRAFT",
+      }),
+    queryKey: adminQueryKeys.tests({
+      examTrackId: null,
+      family: null,
+      mediumId: null,
+      search: null,
+      status: "DRAFT",
+      subjectId: null,
+    }),
+    placeholderData: keepPreviousData,
+    staleTime: 15_000,
+  });
+  const addToTestMutation = useAuthenticatedMutation({
+    mutationFn: async (
+      input: { questionId: string; testId: string },
+      accessToken,
+    ) => {
+      const test = await getAdminTest(input.testId, accessToken);
+      const alreadyAdded = test.questions.some(
+        (question) => question.questionId === input.questionId,
+      );
+
+      if (alreadyAdded) {
+        throw new Error("This question is already added to the selected test.");
+      }
+
+      return updateAdminTest(
+        input.testId,
+        {
+          accessType: test.accessType,
+          questions: [
+            ...test.questions.map((question) => ({
+              negativeMarks: question.negativeMarks,
+              orderIndex: question.orderIndex,
+              positiveMarks: question.positiveMarks,
+              questionId: question.questionId,
+            })),
+            {
+              negativeMarks: 0,
+              orderIndex: test.questions.length + 1,
+              positiveMarks: 1,
+              questionId: input.questionId,
+            },
+          ],
+        },
+        accessToken,
+      );
+    },
+    onSuccess: async (test) => {
+      setMessage(`Question added to ${test.title}.`);
+      setAddToTestQuestion(null);
+      setTargetTestId("");
+      await queryClient.invalidateQueries({
+        queryKey: ["admin", "tests"],
       });
     },
   });
@@ -467,6 +578,95 @@ export function AdminQuestionsListScreen() {
         </AdminInlineNotice>
       ) : null}
 
+      {addToTestMutation.error ? (
+        <AdminInlineNotice tone="warning">
+          {getApiErrorMessage(
+            addToTestMutation.error,
+            "The question could not be added to the selected test.",
+          )}
+        </AdminInlineNotice>
+      ) : null}
+
+      {addToTestQuestion ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(0,14,32,0.38)] p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-question-to-test-title"
+          onClick={() => {
+            if (!addToTestMutation.isPending) {
+              setAddToTestQuestion(null);
+              setTargetTestId("");
+            }
+          }}
+        >
+          <div
+            className="grid w-full max-w-xl gap-4 rounded-[24px] border border-[rgba(0,30,64,0.1)] bg-white p-6 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="grid gap-1">
+              <h2
+                id="add-question-to-test-title"
+                className="tc-display text-2xl font-semibold tracking-tight text-[color:var(--brand)]"
+              >
+                Add question to test
+              </h2>
+              <p className="text-sm leading-6 text-[color:var(--muted)]">
+                {readStringValue(addToTestQuestion.statementPreviewText) ||
+                  readStringValue(addToTestQuestion.code) ||
+                  addToTestQuestion.id}
+              </p>
+            </div>
+            <AdminSelect
+              label="Draft test"
+              value={targetTestId}
+              onChange={(event) => setTargetTestId(event.target.value)}
+            >
+              <option value="">
+                {testsQuery.isLoading ? "Loading tests..." : "Select test"}
+              </option>
+              {(testsQuery.data?.items ?? []).map((test: TestSummary) => (
+                <option key={test.id} value={test.id}>
+                  {test.title} ({test.questionCount} questions)
+                </option>
+              ))}
+            </AdminSelect>
+            {!testsQuery.isLoading && (testsQuery.data?.items.length ?? 0) === 0 ? (
+              <AdminInlineNotice tone="warning">
+                No draft tests are available. Create a draft test first, then add
+                this question to its lineup.
+              </AdminInlineNotice>
+            ) : null}
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                className="tc-button-secondary"
+                disabled={addToTestMutation.isPending}
+                onClick={() => {
+                  setAddToTestQuestion(null);
+                  setTargetTestId("");
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="tc-button-primary"
+                disabled={!targetTestId || addToTestMutation.isPending}
+                onClick={() =>
+                  addToTestMutation.mutate({
+                    questionId: addToTestQuestion.id,
+                    testId: targetTestId,
+                  })
+                }
+              >
+                {addToTestMutation.isPending ? "Adding..." : "Add to test"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <AdminDataTable
         rows={paginatedRows}
         getRowId={(row) => row.id}
@@ -548,9 +748,30 @@ export function AdminQuestionsListScreen() {
           },
           {
             header: "Actions",
-            className: "w-40 whitespace-nowrap",
+            className: "w-72 whitespace-nowrap",
             render: (row: QuestionTableRow) => (
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  aria-label="Add question to test"
+                  className={actionTextButtonClass()}
+                  disabled={
+                    !canReadTests ||
+                    !canManageTests ||
+                    addToTestMutation.isPending ||
+                    deleteMutation.isPending
+                  }
+                  title="Add question to test"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setMessage(null);
+                    setAddToTestQuestion(row);
+                    setTargetTestId("");
+                  }}
+                >
+                  <AddToTestIcon />
+                  Add to test
+                </button>
                 <button
                   type="button"
                   aria-label="Edit question"
