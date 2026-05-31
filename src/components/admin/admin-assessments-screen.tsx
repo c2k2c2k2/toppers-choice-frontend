@@ -10,6 +10,7 @@ import {
   createAdminQuestion,
   createAdminTest,
   formatAdminDateTime,
+  generateAdminTestQuestions,
   getAdminQuestion,
   getAdminTest,
   getApiErrorMessage,
@@ -102,6 +103,30 @@ interface TestFormState {
   title: string;
 }
 
+interface TestGeneratorFormState {
+  difficulty: QuestionDifficulty | "";
+  negativeMarks: string;
+  positiveMarks: string;
+  questionCount: string;
+  randomize: boolean;
+  replaceExisting: boolean;
+  subjectId: string;
+  topicId: string;
+  type: QuestionType | "";
+}
+
+interface TestGeneratorSectionFormRow {
+  difficulty: QuestionDifficulty | "";
+  id: string;
+  label: string;
+  negativeMarks: string;
+  positiveMarks: string;
+  questionCount: string;
+  subjectId: string;
+  topicId: string;
+  type: QuestionType | "";
+}
+
 const QUESTION_TYPE_OPTIONS: QuestionType[] = [
   "SINGLE_CHOICE",
   "MULTIPLE_CHOICE",
@@ -152,6 +177,38 @@ const EMPTY_TEST_FORM_STATE: TestFormState = {
   title: "",
 };
 
+const EMPTY_TEST_GENERATOR_FORM_STATE: TestGeneratorFormState = {
+  difficulty: "",
+  negativeMarks: "0",
+  positiveMarks: "1",
+  questionCount: "20",
+  randomize: true,
+  replaceExisting: true,
+  subjectId: "",
+  topicId: "",
+  type: "",
+};
+
+function createTestGeneratorSectionRow(
+  partial?: Partial<TestGeneratorSectionFormRow>,
+): TestGeneratorSectionFormRow {
+  return {
+    difficulty: "",
+    id:
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `test-generator-section-${Math.random().toString(36).slice(2, 10)}`,
+    label: "",
+    negativeMarks: "0",
+    positiveMarks: "1",
+    questionCount: "10",
+    subjectId: "",
+    topicId: "",
+    type: "",
+    ...partial,
+  };
+}
+
 function toDatetimeLocalValue(value: string | null | undefined) {
   if (!value) {
     return "";
@@ -168,6 +225,15 @@ function toIsoDateTime(value: string) {
   }
 
   return new Date(value).toISOString();
+}
+
+function parseOptionalNumber(value: string) {
+  if (!value.trim()) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 function buildQuestionFormState(
@@ -286,6 +352,11 @@ export function AdminAssessmentsScreen({
   const [testQuestionSubjectId, setTestQuestionSubjectId] = useState("");
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
   const [testForm, setTestForm] = useState<TestFormState>(EMPTY_TEST_FORM_STATE);
+  const [testGeneratorForm, setTestGeneratorForm] =
+    useState<TestGeneratorFormState>(EMPTY_TEST_GENERATOR_FORM_STATE);
+  const [testGeneratorSections, setTestGeneratorSections] = useState<
+    TestGeneratorSectionFormRow[]
+  >([]);
   const [message, setMessage] = useState<string | null>(null);
   const isTestEditorMode = initialTab === "tests" && testView === "editor";
   const isTestListMode = initialTab === "tests" && testView === "list";
@@ -518,8 +589,8 @@ export function AdminAssessmentsScreen({
         title: testForm.title.trim(),
       };
 
-      if (!input.title || !input.durationMinutes || input.questions.length === 0) {
-        throw new Error("Title, duration, and at least one question are required.");
+      if (!input.title || !input.durationMinutes) {
+        throw new Error("Title and duration are required.");
       }
 
       const normalizedInput = {
@@ -541,6 +612,53 @@ export function AdminAssessmentsScreen({
       if (isTestEditorMode) {
         router.replace(`/admin/tests/${test.id}`);
       }
+    },
+  });
+
+  const testGenerateMutation = useAuthenticatedMutation({
+    mutationFn: async (_: void, accessToken) => {
+      const activeTestId = selectedTestId ?? testId;
+      if (!activeTestId) {
+        throw new Error("Save the test before generating questions.");
+      }
+
+      const sections =
+        testGeneratorSections.length > 0
+          ? testGeneratorSections.map((section) => ({
+              difficulty: section.difficulty || undefined,
+              label: section.label.trim() || undefined,
+              negativeMarks: parseOptionalNumber(section.negativeMarks),
+              positiveMarks: parseOptionalNumber(section.positiveMarks),
+              questionCount: parseOptionalInteger(section.questionCount),
+              subjectId: section.subjectId.trim() || undefined,
+              topicIds: section.topicId ? [section.topicId] : undefined,
+              type: section.type || undefined,
+            }))
+          : undefined;
+      const input = {
+        difficulty: testGeneratorForm.difficulty || undefined,
+        negativeMarks: parseOptionalNumber(testGeneratorForm.negativeMarks),
+        positiveMarks: parseOptionalNumber(testGeneratorForm.positiveMarks),
+        questionCount: parseOptionalInteger(testGeneratorForm.questionCount),
+        randomize: testGeneratorForm.randomize,
+        replaceExisting: testGeneratorForm.replaceExisting,
+        sections,
+        subjectId: testGeneratorForm.subjectId.trim() || undefined,
+        topicIds: testGeneratorForm.topicId ? [testGeneratorForm.topicId] : undefined,
+        type: testGeneratorForm.type || undefined,
+      };
+
+      if (!input.sections && !input.questionCount) {
+        throw new Error("Question count is required.");
+      }
+
+      return generateAdminTestQuestions(activeTestId, input, accessToken);
+    },
+    onSuccess: async (test) => {
+      setSelectedTestId(test.id);
+      setTestForm(buildTestFormState(test));
+      setMessage("Question lineup generated.");
+      await queryClient.invalidateQueries({ queryKey: ["admin", "tests"] });
     },
   });
 
@@ -814,6 +932,14 @@ export function AdminAssessmentsScreen({
       {initialTab === "tests" && testSaveMutation.error ? (
         <AdminInlineNotice tone="warning">
           {getApiErrorMessage(testSaveMutation.error, "The test could not be saved.")}
+        </AdminInlineNotice>
+      ) : null}
+      {initialTab === "tests" && testGenerateMutation.error ? (
+        <AdminInlineNotice tone="warning">
+          {getApiErrorMessage(
+            testGenerateMutation.error,
+            "The question lineup could not be generated.",
+          )}
         </AdminInlineNotice>
       ) : null}
       {initialTab === "tests" && testPublishMutation.error ? (
@@ -1335,6 +1461,396 @@ export function AdminAssessmentsScreen({
                   }))
                 }
               />
+              <div className="grid gap-4 rounded-[22px] border border-[rgba(0,30,64,0.08)] bg-white/72 p-4">
+                <div className="grid gap-1">
+                  <h3 className="text-base font-semibold text-[color:var(--brand)]">
+                    Generate question lineup
+                  </h3>
+                  <p className="text-sm leading-6 text-[color:var(--muted)]">
+                    Build a draft lineup automatically from published questions, then
+                    review or edit it below.
+                  </p>
+                </div>
+                <div className="grid gap-4 md:grid-cols-4">
+                  <AdminInput
+                    label="Question count"
+                    type="number"
+                    value={testGeneratorForm.questionCount}
+                    onChange={(event) =>
+                      setTestGeneratorForm((current) => ({
+                        ...current,
+                        questionCount: event.target.value,
+                      }))
+                    }
+                  />
+                  <AdminSelect
+                    label="Subject"
+                    value={testGeneratorForm.subjectId || testForm.subjectId}
+                    onChange={(event) =>
+                      setTestGeneratorForm((current) => ({
+                        ...current,
+                        subjectId: event.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">Test subject</option>
+                    {taxonomy.subjects.map((subject) => (
+                      <option key={subject.id} value={subject.id}>
+                        {subject.name}
+                      </option>
+                    ))}
+                  </AdminSelect>
+                  <AdminSelect
+                    label="Difficulty"
+                    value={testGeneratorForm.difficulty}
+                    onChange={(event) =>
+                      setTestGeneratorForm((current) => ({
+                        ...current,
+                        difficulty: event.target.value as QuestionDifficulty | "",
+                      }))
+                    }
+                  >
+                    <option value="">Any difficulty</option>
+                    {QUESTION_DIFFICULTY_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </AdminSelect>
+                  <AdminSelect
+                    label="Type"
+                    value={testGeneratorForm.type}
+                    onChange={(event) =>
+                      setTestGeneratorForm((current) => ({
+                        ...current,
+                        type: event.target.value as QuestionType | "",
+                      }))
+                    }
+                  >
+                    <option value="">Any type</option>
+                    {QUESTION_TYPE_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option.replaceAll("_", " ")}
+                      </option>
+                    ))}
+                  </AdminSelect>
+                </div>
+                <AdminSelect
+                  label="Topic"
+                  hint="Optional. Leave blank to use any topic in the selected subject."
+                  value={testGeneratorForm.topicId}
+                  onChange={(event) =>
+                    setTestGeneratorForm((current) => ({
+                      ...current,
+                      topicId: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">Any topic</option>
+                  {taxonomy.topics
+                    .filter(
+                      (topic) =>
+                        !(testGeneratorForm.subjectId || testForm.subjectId) ||
+                        topic.subjectId ===
+                          (testGeneratorForm.subjectId || testForm.subjectId),
+                    )
+                    .map((topic) => (
+                      <option key={topic.id} value={topic.id}>
+                        {topic.name}
+                      </option>
+                    ))}
+                </AdminSelect>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <AdminInput
+                    label="Positive marks"
+                    type="number"
+                    value={testGeneratorForm.positiveMarks}
+                    onChange={(event) =>
+                      setTestGeneratorForm((current) => ({
+                        ...current,
+                        positiveMarks: event.target.value,
+                      }))
+                    }
+                  />
+                  <AdminInput
+                    label="Negative marks"
+                    type="number"
+                    value={testGeneratorForm.negativeMarks}
+                    onChange={(event) =>
+                      setTestGeneratorForm((current) => ({
+                        ...current,
+                        negativeMarks: event.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="grid gap-3 rounded-[18px] border border-[rgba(0,30,64,0.08)] bg-white/72 p-4">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <h4 className="text-sm font-semibold text-[color:var(--brand)]">
+                        Exam pattern sections
+                      </h4>
+                      <p className="mt-1 text-xs leading-5 text-[color:var(--muted)]">
+                        Add sections when a paper needs fixed parts like History,
+                        Polity, Reasoning, or English.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="tc-button-secondary"
+                      onClick={() =>
+                        setTestGeneratorSections((current) => [
+                          ...current,
+                          createTestGeneratorSectionRow({
+                            subjectId:
+                              testGeneratorForm.subjectId || testForm.subjectId,
+                          }),
+                        ])
+                      }
+                    >
+                      Add section
+                    </button>
+                  </div>
+                  {testGeneratorSections.length === 0 ? (
+                    <div className="rounded-[16px] border border-dashed border-[rgba(0,30,64,0.12)] bg-white/68 p-4 text-sm leading-6 text-[color:var(--muted)]">
+                      No sections added. The generator will use the simple rules
+                      above.
+                    </div>
+                  ) : null}
+                  {testGeneratorSections.map((section, index) => (
+                    <div
+                      key={section.id}
+                      className="grid gap-3 rounded-[16px] border border-[rgba(0,30,64,0.08)] bg-white/82 p-4"
+                    >
+                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <h5 className="text-sm font-semibold text-[color:var(--brand)]">
+                          Section {index + 1}
+                        </h5>
+                        <button
+                          type="button"
+                          className="tc-button-secondary"
+                          onClick={() =>
+                            setTestGeneratorSections((current) =>
+                              current.filter((row) => row.id !== section.id),
+                            )
+                          }
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-3">
+                        <AdminInput
+                          label="Section name"
+                          value={section.label}
+                          onChange={(event) =>
+                            setTestGeneratorSections((current) =>
+                              current.map((row) =>
+                                row.id === section.id
+                                  ? { ...row, label: event.target.value }
+                                  : row,
+                              ),
+                            )
+                          }
+                        />
+                        <AdminInput
+                          label="Questions"
+                          type="number"
+                          value={section.questionCount}
+                          onChange={(event) =>
+                            setTestGeneratorSections((current) =>
+                              current.map((row) =>
+                                row.id === section.id
+                                  ? { ...row, questionCount: event.target.value }
+                                  : row,
+                              ),
+                            )
+                          }
+                        />
+                        <AdminSelect
+                          label="Subject"
+                          value={section.subjectId}
+                          onChange={(event) =>
+                            setTestGeneratorSections((current) =>
+                              current.map((row) =>
+                                row.id === section.id
+                                  ? {
+                                      ...row,
+                                      subjectId: event.target.value,
+                                      topicId: "",
+                                    }
+                                  : row,
+                              ),
+                            )
+                          }
+                        >
+                          <option value="">Test subject</option>
+                          {taxonomy.subjects.map((subject) => (
+                            <option key={subject.id} value={subject.id}>
+                              {subject.name}
+                            </option>
+                          ))}
+                        </AdminSelect>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-3">
+                        <AdminSelect
+                          label="Topic"
+                          value={section.topicId}
+                          onChange={(event) =>
+                            setTestGeneratorSections((current) =>
+                              current.map((row) =>
+                                row.id === section.id
+                                  ? { ...row, topicId: event.target.value }
+                                  : row,
+                              ),
+                            )
+                          }
+                        >
+                          <option value="">Any topic</option>
+                          {taxonomy.topics
+                            .filter(
+                              (topic) =>
+                                !section.subjectId ||
+                                topic.subjectId === section.subjectId,
+                            )
+                            .map((topic) => (
+                              <option key={topic.id} value={topic.id}>
+                                {topic.name}
+                              </option>
+                            ))}
+                        </AdminSelect>
+                        <AdminSelect
+                          label="Difficulty"
+                          value={section.difficulty}
+                          onChange={(event) =>
+                            setTestGeneratorSections((current) =>
+                              current.map((row) =>
+                                row.id === section.id
+                                  ? {
+                                      ...row,
+                                      difficulty: event.target
+                                        .value as QuestionDifficulty | "",
+                                    }
+                                  : row,
+                              ),
+                            )
+                          }
+                        >
+                          <option value="">Any difficulty</option>
+                          {QUESTION_DIFFICULTY_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </AdminSelect>
+                        <AdminSelect
+                          label="Type"
+                          value={section.type}
+                          onChange={(event) =>
+                            setTestGeneratorSections((current) =>
+                              current.map((row) =>
+                                row.id === section.id
+                                  ? {
+                                      ...row,
+                                      type: event.target.value as QuestionType | "",
+                                    }
+                                  : row,
+                              ),
+                            )
+                          }
+                        >
+                          <option value="">Any type</option>
+                          {QUESTION_TYPE_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option.replaceAll("_", " ")}
+                            </option>
+                          ))}
+                        </AdminSelect>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <AdminInput
+                          label="Positive marks"
+                          type="number"
+                          value={section.positiveMarks}
+                          onChange={(event) =>
+                            setTestGeneratorSections((current) =>
+                              current.map((row) =>
+                                row.id === section.id
+                                  ? {
+                                      ...row,
+                                      positiveMarks: event.target.value,
+                                    }
+                                  : row,
+                              ),
+                            )
+                          }
+                        />
+                        <AdminInput
+                          label="Negative marks"
+                          type="number"
+                          value={section.negativeMarks}
+                          onChange={(event) =>
+                            setTestGeneratorSections((current) =>
+                              current.map((row) =>
+                                row.id === section.id
+                                  ? {
+                                      ...row,
+                                      negativeMarks: event.target.value,
+                                    }
+                                  : row,
+                              ),
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="flex items-center gap-3 rounded-[18px] border border-[rgba(0,30,64,0.08)] bg-white/72 px-4 py-3 text-sm font-medium text-[color:var(--brand)]">
+                    <input
+                      type="checkbox"
+                      checked={testGeneratorForm.replaceExisting}
+                      onChange={(event) =>
+                        setTestGeneratorForm((current) => ({
+                          ...current,
+                          replaceExisting: event.target.checked,
+                        }))
+                      }
+                    />
+                    Replace existing lineup.
+                  </label>
+                  <label className="flex items-center gap-3 rounded-[18px] border border-[rgba(0,30,64,0.08)] bg-white/72 px-4 py-3 text-sm font-medium text-[color:var(--brand)]">
+                    <input
+                      type="checkbox"
+                      checked={testGeneratorForm.randomize}
+                      onChange={(event) =>
+                        setTestGeneratorForm((current) => ({
+                          ...current,
+                          randomize: event.target.checked,
+                        }))
+                      }
+                    />
+                    Randomize selected questions.
+                  </label>
+                </div>
+                <div className="flex justify-start">
+                  <button
+                    type="button"
+                    className="tc-button-secondary"
+                    disabled={
+                      !canManageTests ||
+                      testSaveMutation.isPending ||
+                      testGenerateMutation.isPending ||
+                      !(selectedTestId || testId)
+                    }
+                    onClick={() => testGenerateMutation.mutate()}
+                  >
+                    {testGenerateMutation.isPending
+                      ? "Generating..."
+                      : "Generate lineup"}
+                  </button>
+                </div>
+              </div>
               <AdminQuestionReferenceEditor
                 hint="Search the question bank, add rows, reorder the lineup, and adjust marks."
                 label="Question lineup"

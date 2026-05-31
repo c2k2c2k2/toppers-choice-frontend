@@ -276,6 +276,8 @@ export const apiRoutes = {
     tests: {
       list: "/admin/tests",
       detail: (testId: string) => `/admin/tests/${encodeURIComponent(testId)}`,
+      generateQuestions: (testId: string) =>
+        `/admin/tests/${encodeURIComponent(testId)}/generate-questions`,
       publish: (testId: string) =>
         `/admin/tests/${encodeURIComponent(testId)}/publish`,
       unpublish: (testId: string) =>

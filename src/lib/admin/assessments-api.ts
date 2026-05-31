@@ -7,6 +7,7 @@ import type {
   AdminTestListQuery,
   CreateQuestionInput,
   CreateTestInput,
+  GenerateTestQuestionsInput,
   QuestionDetail,
   QuestionsListResponse,
   TestDetail,
@@ -125,6 +126,18 @@ export async function updateAdminTest(
 ) {
   return apiRequest<TestDetail>(apiRoutes.admin.tests.detail(testId), {
     method: "PATCH",
+    accessToken,
+    body: input,
+  });
+}
+
+export async function generateAdminTestQuestions(
+  testId: string,
+  input: GenerateTestQuestionsInput,
+  accessToken: string,
+) {
+  return apiRequest<TestDetail>(apiRoutes.admin.tests.generateQuestions(testId), {
+    method: "POST",
     accessToken,
     body: input,
   });

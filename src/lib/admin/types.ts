@@ -131,6 +131,21 @@ export type TestsListResponse = components["schemas"]["TestsListResponseDto"];
 export type TestQuestionInput = components["schemas"]["TestQuestionInputDto"];
 export type CreateTestInput = components["schemas"]["CreateTestDto"];
 export type UpdateTestInput = components["schemas"]["UpdateTestDto"];
+export interface GenerateTestQuestionRuleInput {
+  difficulty?: QuestionDifficulty;
+  label?: string;
+  negativeMarks?: number;
+  positiveMarks?: number;
+  questionCount?: number;
+  subjectId?: string;
+  topicIds?: string[];
+  type?: QuestionType;
+}
+export interface GenerateTestQuestionsInput extends GenerateTestQuestionRuleInput {
+  randomize?: boolean;
+  replaceExisting?: boolean;
+  sections?: GenerateTestQuestionRuleInput[];
+}
 
 export type NotificationTemplate =
   components["schemas"]["NotificationTemplateResponseDto"];
