@@ -10,6 +10,7 @@ import { getPublicCmsPage, resolvePublicCms } from "@/lib/cms";
 import type { CmsBanner, CmsPage, CmsResolveResponse } from "@/lib/cms/types";
 import { listPublicPlans } from "@/lib/payments";
 import type { PublicPlan } from "@/lib/payments/types";
+import { getPublicTrialPolicy, type TrialPolicy } from "@/lib/trial";
 import {
   FALLBACK_PLAN_PREVIEWS,
   FALLBACK_PUBLIC_BOOTSTRAP,
@@ -139,6 +140,24 @@ const getPublicPlansSnapshot = cache(async () => {
   }
 });
 
+const FALLBACK_TRIAL_POLICY: TrialPolicy = {
+  enabled: true,
+  totalSeconds: 20 * 60,
+  totalMinutes: 20,
+  heartbeatSeconds: 30,
+  maxHeartbeatGapSeconds: 90,
+};
+
+const getPublicTrialPolicySnapshot = cache(async () => {
+  try {
+    return await getPublicTrialPolicy(
+      buildPublicRequestOptions(["public-trial-policy"]),
+    );
+  } catch {
+    return FALLBACK_TRIAL_POLICY;
+  }
+});
+
 const getOptionalCmsPage = cache(async (slug: string) => {
   try {
     return await getPublicCmsPage(
@@ -234,10 +253,11 @@ export const getPublicShellChrome = cache(
 );
 
 export const getPublicHomeContent = cache(async (): Promise<PublicHomeContent> => {
-  const [bootstrapResult, cmsResult, plansResult] = await Promise.all([
+  const [bootstrapResult, cmsResult, plansResult, trialPolicy] = await Promise.all([
     getBootstrapSnapshot(),
     getResolvedPublicCms(),
     getPublicPlansSnapshot(),
+    getPublicTrialPolicySnapshot(),
   ]);
 
   return {
@@ -251,6 +271,7 @@ export const getPublicHomeContent = cache(async (): Promise<PublicHomeContent> =
     plans: plansResult.items,
     planPreviews: FALLBACK_PLAN_PREVIEWS,
     sections: resolveHomeSections(cmsResult.data),
+    trialPolicy,
     trackDefinitions: PUBLIC_TRACK_DEFINITIONS,
   };
 });

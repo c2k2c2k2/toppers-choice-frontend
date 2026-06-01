@@ -14,9 +14,16 @@ export const apiRoutes = {
     catalog: "/public/catalog",
     plans: "/public/plans",
     plan: (planId: string) => `/public/plans/${encodeURIComponent(planId)}`,
+    trialPolicy: "/public/trial/policy",
   },
   entitlements: {
     me: "/entitlements/me",
+  },
+  trial: {
+    me: "/trial/me",
+    start: "/trial/start",
+    heartbeat: "/trial/heartbeat",
+    stop: "/trial/stop",
   },
   payments: {
     checkout: "/payments/checkout",

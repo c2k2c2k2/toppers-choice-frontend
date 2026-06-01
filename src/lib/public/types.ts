@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { PublicBootstrapResponse } from "@/lib/api/site";
 import type { CmsPage, CmsResolveResponse } from "@/lib/cms/types";
 import type { PublicPlan } from "@/lib/payments/types";
+import type { TrialPolicy } from "@/lib/trial";
 
 export interface PublicBranding {
   address: string;
@@ -72,6 +73,7 @@ export interface PublicHomeContent {
   plans: PublicPlan[];
   planPreviews: PublicPlanPreview[];
   sections: CmsResolveResponse["sections"];
+  trialPolicy: TrialPolicy;
   trackDefinitions: PublicTrackDefinition[];
 }
 

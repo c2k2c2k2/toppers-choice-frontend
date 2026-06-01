@@ -76,6 +76,10 @@ function isActivePath(pathname: string, href?: string) {
     return false;
   }
 
+  if (href === "/student") {
+    return pathname === href;
+  }
+
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

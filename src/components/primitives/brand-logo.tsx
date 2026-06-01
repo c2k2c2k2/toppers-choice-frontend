@@ -46,6 +46,7 @@ export function BrandLogo({
         width={asset.width}
         height={asset.height}
         priority={priority}
+        loading={priority ? "eager" : undefined}
         sizes={sizes}
         className={buildClassName("h-auto w-full object-contain", imageClassName)}
       />

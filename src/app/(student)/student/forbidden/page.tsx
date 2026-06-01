@@ -18,15 +18,11 @@ export default function StudentForbiddenPage() {
       </h1>
       <p className="tc-muted mt-4 max-w-2xl text-base leading-7">
         If you signed in as a student, return to the student login page and try
-        again. If you were trying to access internal tools, use the admin login
-        instead.
+        again.
       </p>
       <div className="mt-6 flex flex-wrap gap-3">
         <Link href="/student/login" className="tc-button-primary">
           Student login
-        </Link>
-        <Link href="/admin/login" className="tc-button-secondary">
-          Admin login
         </Link>
       </div>
     </section>

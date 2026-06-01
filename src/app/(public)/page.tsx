@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandMark } from "@/components/primitives/brand-logo";
 import { MarathiText } from "@/components/primitives/marathi-text";
 import { TextContent } from "@/components/primitives/text-content";
 import { PublicSectionRenderer } from "@/components/public/public-section-renderer";
@@ -171,6 +172,29 @@ function HomeSectionHeading({
   );
 }
 
+function formatPublicPlanPrice(plan: {
+  currencyCode: string;
+  pricePaise: number;
+}) {
+  return new Intl.NumberFormat("en-IN", {
+    currency: plan.currencyCode,
+    maximumFractionDigits: 0,
+    style: "currency",
+  }).format(plan.pricePaise / 100);
+}
+
+function formatPublicPlanDuration(durationDays: number) {
+  if (durationDays >= 365) {
+    return "year";
+  }
+
+  if (durationDays >= 28 && durationDays <= 31) {
+    return "month";
+  }
+
+  return `${durationDays} days`;
+}
+
 export async function generateMetadata() {
   const content = await getPublicHomeContent();
 
@@ -192,18 +216,18 @@ export default async function PublicHomePage() {
     .slice(0, 3);
   const heroActions = [
     {
-      label: content.banner?.ctaLabel ?? "Explore Study Materials",
-      href: content.banner?.ctaHref ?? "/tracks/mpsc-allied",
+      label: `Start ${content.trialPolicy.totalMinutes}-min free trial`,
+      href: "/student/login?mode=signup",
       tone: "primary" as const,
     },
     {
       label: readString(
-        content.banner?.metaJson?.secondaryCtaLabel,
-        "Take a Free Practice Test",
+        content.banner?.ctaLabel,
+        "Explore Study Materials",
       ),
       href: readString(
-        content.banner?.metaJson?.secondaryCtaHref,
-        "/student/login",
+        content.banner?.ctaHref,
+        "/tracks/mpsc-allied",
       ),
       tone: "secondary" as const,
     },
@@ -217,6 +241,7 @@ export default async function PublicHomePage() {
   const introParagraphs = readStringArray(introSection?.bodyJson?.paragraphs).slice(0, 2);
   const ctaItems = readRecordArray(ctaSection?.bodyJson?.items).slice(0, 2);
   const livePlans = content.plans.length > 0 ? content.plans : [];
+  const featuredPlans = livePlans.slice(0, 2);
   const planLabels =
     livePlans.length > 0
       ? livePlans.slice(0, 3).map((plan) => plan.name)
@@ -356,6 +381,13 @@ export default async function PublicHomePage() {
                 }
               />
             </div>
+
+            {content.trialPolicy.enabled ? (
+              <div className="mt-5 flex w-fit flex-wrap items-center gap-2 rounded-[1rem] bg-white/10 px-4 py-3 text-sm font-semibold text-white/86 ring-1 ring-white/12">
+                <span className="inline-flex h-2 w-2 rounded-full bg-[color:var(--accent-glow)]" />
+                Free {content.trialPolicy.totalMinutes}-minute trial. Use it in parts.
+              </div>
+            ) : null}
 
             <TextContent
               as="h1"
@@ -530,6 +562,80 @@ export default async function PublicHomePage() {
         </section>
       ) : null}
 
+      <section className="grid gap-5 rounded-[32px] bg-[color:var(--surface)] px-5 py-6 md:px-7 md:py-8 xl:grid-cols-[0.95fr_1.05fr] xl:items-center">
+        <div className="space-y-4">
+          <p className="tc-overline">Free trial</p>
+          <h2 className="tc-display text-3xl font-extrabold tracking-tight text-[color:var(--brand)] md:text-5xl">
+            Try the platform before choosing a plan.
+          </h2>
+          <p className="tc-muted max-w-2xl text-base leading-8">
+            New students get {content.trialPolicy.totalMinutes} minutes of platform
+            access. The time is metered only while the student app is active, so
+            they can split it across multiple visits.
+          </p>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Link href="/student/login?mode=signup" className="tc-button-primary">
+              Start free trial
+            </Link>
+            <Link href="/pricing" className="tc-button-secondary">
+              Compare plans
+            </Link>
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          {(featuredPlans.length > 0
+            ? featuredPlans
+            : content.planPreviews.slice(0, 2)
+          ).map((plan) => {
+            const isLivePlan = "pricePaise" in plan;
+            const priceLabel = isLivePlan
+              ? formatPublicPlanPrice(plan)
+              : plan.priceLabel;
+            const durationLabel = isLivePlan
+              ? `per ${formatPublicPlanDuration(plan.durationDays)}`
+              : plan.durationLabel;
+            const features = isLivePlan
+              ? Array.isArray(plan.metadataJson?.features)
+                ? plan.metadataJson.features.filter(
+                    (feature): feature is string => typeof feature === "string",
+                  )
+                : plan.entitlements.map((entitlement) =>
+                    entitlement.entitlementKind.replace(/_/g, " ").toLowerCase(),
+                  )
+              : plan.features;
+
+            return (
+              <article
+                key={plan.name}
+                className="tc-public-surface rounded-[26px] p-5"
+              >
+                <p className="tc-overline">{isLivePlan ? "Live plan" : plan.badge}</p>
+                <h3 className="tc-display mt-3 text-2xl font-bold tracking-tight text-[color:var(--brand)]">
+                  {plan.name}
+                </h3>
+                <div className="mt-4 flex items-end gap-2">
+                  <span className="text-3xl font-extrabold text-[color:var(--brand)]">
+                    {priceLabel}
+                  </span>
+                  <span className="pb-1 text-sm font-semibold text-[color:var(--muted)]">
+                    {durationLabel}
+                  </span>
+                </div>
+                <ul className="mt-5 grid gap-3 text-sm leading-6 text-[color:var(--muted)]">
+                  {features.slice(0, 3).map((feature) => (
+                    <li key={feature} className="flex gap-3">
+                      <span className="mt-2 inline-flex h-2 w-2 shrink-0 rounded-full bg-[color:var(--accent-glow)]" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
       <section className="space-y-8">
         <HomeSectionHeading
           title="The Toppers' Choice Advantage"
@@ -635,8 +741,14 @@ export default async function PublicHomePage() {
           <div className="absolute -left-10 top-8 h-40 w-40 rounded-full bg-[rgba(255,184,111,0.24)] blur-3xl" />
           <div className="absolute -right-10 bottom-8 h-44 w-44 rounded-full bg-[rgba(0,51,102,0.12)] blur-3xl" />
           <div className="relative flex min-h-[28rem] flex-col justify-between">
-            <div className="mx-auto flex h-52 w-52 items-center justify-center rounded-full bg-[linear-gradient(180deg,#1a3f6c_0%,#071b35_100%)] text-6xl font-extrabold tracking-tight text-white shadow-[0_26px_60px_rgba(0,30,64,0.18)] md:h-60 md:w-60 md:text-7xl">
-              TC
+            <div className="mx-auto flex h-52 w-52 items-center justify-center rounded-full bg-white/88 p-8 shadow-[0_26px_60px_rgba(0,30,64,0.18)] ring-1 ring-[rgba(0,30,64,0.08)] md:h-60 md:w-60 md:p-10">
+              <BrandMark
+                alt=""
+                priority
+                sizes="240px"
+                className="w-full"
+                imageClassName="drop-shadow-[0_18px_34px_rgba(0,30,64,0.16)]"
+              />
             </div>
             <div className="tc-public-surface w-fit rounded-[1.4rem] px-5 py-4">
               <div className="flex items-center gap-3">
@@ -689,8 +801,8 @@ export default async function PublicHomePage() {
 
           <div className="tc-public-surface rounded-[30px] p-6">
             <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(0,51,102,0.08)] text-lg font-extrabold text-[color:var(--brand)]">
-                TC
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white p-2 shadow-[0_10px_24px_rgba(0,30,64,0.08)] ring-1 ring-[rgba(0,51,102,0.08)]">
+                <BrandMark alt="" sizes="56px" className="w-full" />
               </div>
               <div>
                 <p className="text-lg font-bold text-[color:var(--brand)]">

@@ -23,8 +23,8 @@ const SURFACE_CONFIG: Record<
     description: string;
     eyebrow: string;
     highlights: string[];
-    otherSurfaceHref: string;
-    otherSurfaceLabel: string;
+    otherSurfaceHref?: string;
+    otherSurfaceLabel?: string;
     title: string;
   }
 > = {
@@ -32,16 +32,10 @@ const SURFACE_CONFIG: Record<
     accentColor: "var(--accent-student)",
     allowSignup: true,
     description:
-      "Sign in to continue your notes, practice, tests, announcements, and purchased access from one place.",
-    eyebrow: "Student sign in",
-    highlights: [
-      "Open notes, practice, tests, and updates from one dashboard",
-      "Keep your study progress linked to the same account",
-      "Use the same login when you buy or renew access",
-    ],
-    otherSurfaceHref: "/admin/login",
-    otherSurfaceLabel: "Admin login",
-    title: "Welcome back, student.",
+      "Create an account or sign in to continue studying.",
+    eyebrow: "Student access",
+    highlights: [],
+    title: "Start learning.",
   },
   admin: {
     accentColor: "var(--accent-admin)",
@@ -65,22 +59,30 @@ function getSurfaceType(surface: AuthSurface): UserType {
 }
 
 export function AuthLoginCard({
+  initialMode = "login",
   redirectTo,
   surface,
 }: Readonly<{
+  initialMode?: AuthMode;
   redirectTo: string | null | undefined;
   surface: AuthSurface;
 }>) {
   const authSession = useAuthSession();
   const router = useRouter();
-  const [mode, setMode] = useState<AuthMode>("login");
+  const config = SURFACE_CONFIG[surface];
+  const [mode, setMode] = useState<AuthMode>(
+    config.allowSignup && initialMode === "signup" ? "signup" : "login",
+  );
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const config = SURFACE_CONFIG[surface];
+  useEffect(() => {
+    setMode(config.allowSignup && initialMode === "signup" ? "signup" : "login");
+    setErrorMessage(null);
+  }, [config.allowSignup, initialMode]);
 
   useEffect(() => {
     if (!authSession.isReady || !authSession.isAuthenticated || !authSession.user) {
@@ -154,9 +156,9 @@ export function AuthLoginCard({
   }
 
   return (
-    <section className="tc-card mx-auto w-full max-w-5xl rounded-[32px] p-6 md:p-8">
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <div className="tc-hero rounded-[30px] p-6">
+    <section className="tc-card mx-auto w-full max-w-4xl rounded-[24px] p-4 md:p-6">
+      <div className="grid gap-5 lg:grid-cols-[0.82fr_1.18fr]">
+        <div className={`tc-hero rounded-[22px] p-5 ${surface === "student" ? "hidden lg:block" : ""}`}>
           <div className="inline-flex rounded-[24px] bg-white/10 px-4 py-3 shadow-[0_16px_34px_rgba(0,30,64,0.18)] backdrop-blur-sm">
             <BrandLockup
               alt="Toppers' Choice"
@@ -166,31 +168,43 @@ export function AuthLoginCard({
             />
           </div>
           <p
-            className="tc-kicker mt-6"
+            className="tc-kicker mt-5"
             style={{ color: "rgba(255, 184, 111, 0.92)" }}
           >
             {config.eyebrow}
           </p>
-          <h1 className="tc-display mt-4 text-3xl font-semibold tracking-tight md:text-4xl">
+          <h1 className="tc-display mt-3 text-2xl font-semibold tracking-tight md:text-3xl">
             {config.title}
           </h1>
-          <p className="tc-muted mt-4 max-w-xl text-base leading-7">
+          <p className="tc-muted mt-3 max-w-xl text-sm leading-6">
             {config.description}
           </p>
 
-          <div className="mt-6 grid gap-3">
+          {config.highlights.length > 0 ? (
+          <div className="mt-5 grid gap-2">
             {config.highlights.map((item) => (
               <div
                 key={item}
-                className="rounded-[22px] border border-white/12 bg-white/10 px-4 py-3 text-sm text-white/88"
+                className="rounded-[18px] border border-white/12 bg-white/10 px-4 py-3 text-sm text-white/88"
               >
                 {item}
               </div>
             ))}
           </div>
+          ) : null}
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-4">
+          {surface === "student" ? (
+            <div className="flex items-center gap-3 lg:hidden">
+              <BrandLockup
+                alt="Toppers' Choice"
+                priority
+                sizes="160px"
+                className="w-40 max-w-full"
+              />
+            </div>
+          ) : null}
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -218,7 +232,7 @@ export function AuthLoginCard({
             ) : null}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "signup" ? (
               <label className="tc-form-field">
                 <span className="tc-form-label">Full name</span>
@@ -293,13 +307,15 @@ export function AuthLoginCard({
               <Link href="/" className="tc-button-secondary">
                 Back to public home
               </Link>
-              <Link href={config.otherSurfaceHref} className="tc-button-secondary">
-                {config.otherSurfaceLabel}
-              </Link>
+              {config.otherSurfaceHref && config.otherSurfaceLabel ? (
+                <Link href={config.otherSurfaceHref} className="tc-button-secondary">
+                  {config.otherSurfaceLabel}
+                </Link>
+              ) : null}
             </div>
           </form>
 
-          <div className="tc-panel rounded-[28px] p-5">
+          <div className={`tc-panel rounded-[20px] p-4 ${surface === "student" ? "hidden" : ""}`}>
             <p className="tc-overline" style={{ color: config.accentColor }}>
               Helpful note
             </p>

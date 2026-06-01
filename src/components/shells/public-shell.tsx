@@ -50,7 +50,7 @@ export async function PublicShell({
             <Link href="/student/login" className="tc-button-secondary">
               Login
             </Link>
-            <Link href="/pricing" className="tc-button-primary">
+            <Link href="/student/login?mode=signup" className="tc-button-primary">
               Get Started
             </Link>
           </div>

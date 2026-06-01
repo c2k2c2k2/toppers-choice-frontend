@@ -3,6 +3,7 @@ import { AuthLoginCard } from "@/components/auth/auth-login-card";
 
 type StudentLoginPageProps = {
   searchParams: Promise<{
+    mode?: string | string[] | undefined;
     redirect?: string | string[] | undefined;
   }>;
 };
@@ -20,6 +21,16 @@ export default async function StudentLoginPage({
   const redirectTo = Array.isArray(resolvedSearchParams.redirect)
     ? resolvedSearchParams.redirect[0]
     : resolvedSearchParams.redirect;
+  const mode = Array.isArray(resolvedSearchParams.mode)
+    ? resolvedSearchParams.mode[0]
+    : resolvedSearchParams.mode;
+  const initialMode = mode === "signup" ? "signup" : "login";
 
-  return <AuthLoginCard surface="student" redirectTo={redirectTo} />;
+  return (
+    <AuthLoginCard
+      surface="student"
+      redirectTo={redirectTo}
+      initialMode={initialMode}
+    />
+  );
 }
