@@ -85,11 +85,13 @@ export function StudentTestsHubScreen() {
   }, [activeExamTrackCode, setActiveExamTrackCode, snapshot?.selectedTrack?.code]);
 
   useEffect(() => {
-    if (!snapshot?.selectedMedium?.code || activeMediumCode) {
+    if (!snapshot?.selectedMedium?.code) {
       return;
     }
 
-    setActiveMediumCode(snapshot.selectedMedium.code);
+    if (!activeMediumCode || activeMediumCode !== snapshot.selectedMedium.code) {
+      setActiveMediumCode(snapshot.selectedMedium.code);
+    }
   }, [activeMediumCode, setActiveMediumCode, snapshot?.selectedMedium?.code]);
 
   const subjects = snapshot?.subjects ?? [];

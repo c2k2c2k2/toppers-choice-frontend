@@ -101,7 +101,10 @@ export function StudentStructuredContentHubScreen() {
   }, [activeExamTrackCode, setActiveExamTrackCode, snapshot?.selectedTrack?.code]);
 
   useEffect(() => {
-    if (snapshot?.selectedMedium?.code && !activeMediumCode) {
+    if (
+      snapshot?.selectedMedium?.code &&
+      (!activeMediumCode || activeMediumCode !== snapshot.selectedMedium.code)
+    ) {
       setActiveMediumCode(snapshot.selectedMedium.code);
     }
   }, [activeMediumCode, setActiveMediumCode, snapshot?.selectedMedium?.code]);

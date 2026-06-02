@@ -1093,6 +1093,13 @@ function AdminQuestionEditorForm({
   const [form, setForm] = useState<QuestionFormState>(() =>
     buildInitialQuestionForm(question, resolvedDefaults),
   );
+  const [examTrackId, setExamTrackId] = useState(() => {
+    const initialSubjectId = readStringValue(question?.subjectId) || resolvedDefaults.subjectId;
+    return (
+      taxonomy.subjects.find((subject) => subject.id === initialSubjectId)?.examTrackId ??
+      ""
+    );
+  });
   const [message, setMessage] = useState<string | null>(null);
   const [isCodeManual, setIsCodeManual] = useState<boolean>(
     Boolean(question?.code),
@@ -1118,6 +1125,9 @@ function AdminQuestionEditorForm({
       null,
     [form.subjectId, taxonomy.subjects],
   );
+  const subjectOptions = examTrackId
+    ? taxonomy.subjectsByExamTrackId[examTrackId] ?? []
+    : taxonomy.subjects;
 
   const visibleLanguages = useMemo(
     () => getActiveLanguageKeys(form.languageMode),
@@ -1775,6 +1785,29 @@ function AdminQuestionEditorForm({
 
               <AdminSelect
                 disabled={!canManageQuestions || isBusy}
+                label="Exam track"
+                value={examTrackId}
+                onChange={(event) => {
+                  setExamTrackId(event.target.value);
+                  setIsCodeManual(false);
+                  setForm((current) => ({
+                    ...current,
+                    code: "",
+                    subjectId: "",
+                    topicId: "",
+                  }));
+                }}
+              >
+                <option value="">Select exam track</option>
+                {taxonomy.examTracks.map((track) => (
+                  <option key={track.id} value={track.id}>
+                    {track.name}
+                  </option>
+                ))}
+              </AdminSelect>
+
+              <AdminSelect
+                disabled={!canManageQuestions || isBusy}
                 label="Subject"
                 value={form.subjectId}
                 onChange={(event) => {
@@ -1788,7 +1821,7 @@ function AdminQuestionEditorForm({
                 }}
               >
                 <option value="">Select subject</option>
-                {taxonomy.subjects.map((subject) => (
+                {subjectOptions.map((subject) => (
                   <option key={subject.id} value={subject.id}>
                     {subject.name}
                   </option>

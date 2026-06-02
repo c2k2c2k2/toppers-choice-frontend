@@ -43,7 +43,7 @@ export function StudentSubjectCatalogScreen({
   const snapshot = catalog
     ? buildStudentCatalogSnapshot(catalog, {
         examTrackCode: searchParams.get("track") ?? activeExamTrackCode,
-        mediumCode: searchParams.get("medium") ?? activeMediumCode,
+        mediumCode: activeMediumCode,
       })
     : null;
   const subject =

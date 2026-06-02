@@ -2823,6 +2823,7 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             shortName?: Record<string, never> | null;
+            defaultMediumId?: string | null;
         };
         MediumResponseDto: {
             id: string;
@@ -2926,6 +2927,10 @@ export interface components {
             isActive: boolean;
             /** @example MPSC */
             shortName?: string;
+            /**
+             * @example cmag4b4ph0000x5r7snyza456
+             */
+            defaultMediumId?: string | null;
         };
         UpdateExamTrackDto: {
             /** @example MPSC */
@@ -2950,6 +2955,10 @@ export interface components {
             isActive: boolean;
             /** @example MPSC */
             shortName?: string;
+            /**
+             * @example cmag4b4ph0000x5r7snyza456
+             */
+            defaultMediumId?: string | null;
         };
         ReorderTaxonomyDto: {
             /**

@@ -138,7 +138,6 @@ export function StudentStructuredContentListScreen({
   const [searchValue, setSearchValue] = useState("");
   const deferredSearchValue = useDeferredValue(searchValue.trim());
   const requestedTrack = searchParams.get("track");
-  const requestedMedium = searchParams.get("medium");
   const definition = getContentFamilyDefinition(family);
 
   const catalogQuery = useAuthenticatedQuery({
@@ -163,7 +162,7 @@ export function StudentStructuredContentListScreen({
   const snapshot = catalog
     ? buildStudentCatalogSnapshot(catalog, {
         examTrackCode: requestedTrack ?? activeExamTrackCode,
-        mediumCode: requestedMedium ?? activeMediumCode,
+        mediumCode: activeMediumCode,
       })
     : null;
 
@@ -252,9 +251,6 @@ export function StudentStructuredContentListScreen({
               <span className="tc-stat-chip">
                 Track: {getTrackLabel(snapshot.selectedTrack)}
               </span>
-              <span className="tc-stat-chip">
-                Medium: {snapshot.selectedMedium?.name ?? "All mediums"}
-              </span>
               <span className="tc-stat-chip">{filteredItems.length} results</span>
             </div>
           </div>
@@ -287,7 +283,7 @@ export function StudentStructuredContentListScreen({
       </section>
 
       <section className="tc-student-panel rounded-[28px] p-6">
-        <div className="grid gap-5 xl:grid-cols-[1fr_1fr_1.1fr]">
+        <div className="grid gap-5 xl:grid-cols-[1fr_1.1fr]">
           <div className="space-y-3">
             <p className="tc-overline">Exam track</p>
             <div className="flex flex-wrap gap-2">
@@ -299,30 +295,10 @@ export function StudentStructuredContentListScreen({
                   data-active={snapshot.selectedTrack?.id === examTrack.id}
                   onClick={() => {
                     setActiveExamTrackCode(examTrack.code);
-                    updateFilters({ track: examTrack.code });
+                    updateFilters({ medium: null, track: examTrack.code });
                   }}
                 >
                   {getTrackLabel(examTrack)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <p className="tc-overline">Study medium</p>
-            <div className="flex flex-wrap gap-2">
-              {catalog.mediums.map((medium) => (
-                <button
-                  key={medium.id}
-                  type="button"
-                  className="tc-filter-chip"
-                  data-active={snapshot.selectedMedium?.id === medium.id}
-                  onClick={() => {
-                    setActiveMediumCode(medium.code);
-                    updateFilters({ medium: medium.code });
-                  }}
-                >
-                  {medium.name}
                 </button>
               ))}
             </div>

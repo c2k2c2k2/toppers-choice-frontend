@@ -35,8 +35,10 @@ export function resolveSelectedExamTrack(
 export function resolveSelectedMedium(
   catalog: StudentCatalogResponse,
   codeOrSlug?: string | null,
+  defaultMediumId?: string | null,
 ) {
   return (
+    catalog.mediums.find((medium) => defaultMediumId && medium.id === defaultMediumId) ??
     catalog.mediums.find((medium) => matchesCode(medium, codeOrSlug)) ??
     catalog.mediums[0] ??
     null
@@ -85,7 +87,11 @@ export function buildStudentCatalogSnapshot(
   } = {},
 ): StudentCatalogSnapshot {
   const selectedTrack = resolveSelectedExamTrack(catalog, options.examTrackCode);
-  const selectedMedium = resolveSelectedMedium(catalog, options.mediumCode);
+  const selectedMedium = resolveSelectedMedium(
+    catalog,
+    options.mediumCode,
+    selectedTrack?.defaultMediumId ?? null,
+  );
 
   return {
     selectedTrack,
@@ -121,10 +127,6 @@ export function buildSubjectCatalogHref(
 
   if (options.examTrackCode) {
     searchParams.set("track", options.examTrackCode);
-  }
-
-  if (options.mediumCode) {
-    searchParams.set("medium", options.mediumCode);
   }
 
   const queryString = searchParams.toString();

@@ -335,6 +335,7 @@ export function AdminAssessmentsScreen({
   const [questionStatus, setQuestionStatus] = useState<QuestionStatus | "">("");
   const [questionType, setQuestionType] = useState<QuestionType | "">("");
   const [questionDifficulty, setQuestionDifficulty] = useState<QuestionDifficulty | "">("");
+  const [questionExamTrackId, setQuestionExamTrackId] = useState("");
   const [questionSubjectId, setQuestionSubjectId] = useState("");
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
   const [questionForm, setQuestionForm] = useState<QuestionFormState>(
@@ -343,6 +344,7 @@ export function AdminAssessmentsScreen({
 
   const [testStatus, setTestStatus] = useState<TestStatus | "">("");
   const [testFamily, setTestFamily] = useState<TestFamily | "">("");
+  const [testExamTrackId, setTestExamTrackId] = useState("");
   const [testSubjectId, setTestSubjectId] = useState("");
   const [testQuestionSearch, setTestQuestionSearch] = useState("");
   const [testQuestionStatus, setTestQuestionStatus] =
@@ -358,6 +360,15 @@ export function AdminAssessmentsScreen({
     TestGeneratorSectionFormRow[]
   >([]);
   const [message, setMessage] = useState<string | null>(null);
+  const questionSubjectOptions = questionExamTrackId
+    ? taxonomy.subjectsByExamTrackId[questionExamTrackId] ?? []
+    : taxonomy.subjects;
+  const testSubjectOptions = testExamTrackId
+    ? taxonomy.subjectsByExamTrackId[testExamTrackId] ?? []
+    : taxonomy.subjects;
+  const testFormSubjectOptions = testForm.examTrackId
+    ? taxonomy.subjectsByExamTrackId[testForm.examTrackId] ?? []
+    : taxonomy.subjects;
   const isTestEditorMode = initialTab === "tests" && testView === "editor";
   const isTestListMode = initialTab === "tests" && testView === "list";
   const isCreatingTest = isTestEditorMode && !testId;
@@ -848,6 +859,24 @@ export function AdminAssessmentsScreen({
               </select>
             </label>
             <label className="tc-form-field min-w-[12rem]">
+              <span className="tc-form-label">Exam track</span>
+              <select
+                value={questionExamTrackId}
+                onChange={(event) => {
+                  setQuestionExamTrackId(event.target.value);
+                  setQuestionSubjectId("");
+                }}
+                className="tc-input"
+              >
+                <option value="">All exam tracks</option>
+                {taxonomy.examTracks.map((track) => (
+                  <option key={track.id} value={track.id}>
+                    {track.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="tc-form-field min-w-[12rem]">
               <span className="tc-form-label">Subject</span>
               <select
                 value={questionSubjectId}
@@ -855,7 +884,7 @@ export function AdminAssessmentsScreen({
                 className="tc-input"
               >
                 <option value="">All subjects</option>
-                {taxonomy.subjects.map((subject) => (
+                {questionSubjectOptions.map((subject) => (
                   <option key={subject.id} value={subject.id}>
                     {subject.name}
                   </option>
@@ -896,6 +925,24 @@ export function AdminAssessmentsScreen({
               </select>
             </label>
             <label className="tc-form-field min-w-[12rem]">
+              <span className="tc-form-label">Exam track</span>
+              <select
+                value={testExamTrackId}
+                onChange={(event) => {
+                  setTestExamTrackId(event.target.value);
+                  setTestSubjectId("");
+                }}
+                className="tc-input"
+              >
+                <option value="">All exam tracks</option>
+                {taxonomy.examTracks.map((track) => (
+                  <option key={track.id} value={track.id}>
+                    {track.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="tc-form-field min-w-[12rem]">
               <span className="tc-form-label">Subject</span>
               <select
                 value={testSubjectId}
@@ -903,7 +950,7 @@ export function AdminAssessmentsScreen({
                 className="tc-input"
               >
                 <option value="">All subjects</option>
-                {taxonomy.subjects.map((subject) => (
+                {testSubjectOptions.map((subject) => (
                   <option key={subject.id} value={subject.id}>
                     {subject.name}
                   </option>
@@ -1344,6 +1391,7 @@ export function AdminAssessmentsScreen({
                     setTestForm((current) => ({
                       ...current,
                       examTrackId: event.target.value,
+                      subjectId: "",
                     }))
                   }
                 >
@@ -1365,7 +1413,7 @@ export function AdminAssessmentsScreen({
                   }
                 >
                   <option value="">Optional subject</option>
-                  {taxonomy.subjects.map((subject) => (
+                  {testFormSubjectOptions.map((subject) => (
                     <option key={subject.id} value={subject.id}>
                       {subject.name}
                     </option>

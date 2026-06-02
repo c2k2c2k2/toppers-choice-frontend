@@ -58,6 +58,7 @@ type TaxonomyRecord = ExamTrack | Medium | Subject | Topic | Tag
 
 interface TaxonomyFormState {
   code: string
+  defaultMediumId: string
   description: string
   examTrackId: string
   isActive: boolean
@@ -80,6 +81,7 @@ const ENTITY_LABELS: Record<AdminTaxonomyEntity, string> = {
 
 const EMPTY_FORM_STATE: TaxonomyFormState = {
   code: "",
+  defaultMediumId: "",
   description: "",
   examTrackId: "",
   isActive: true,
@@ -109,6 +111,10 @@ function buildFormState(record: TaxonomyRecord | null): TaxonomyFormState {
 
   return {
     code: record.code,
+    defaultMediumId:
+      "defaultMediumId" in record && typeof record.defaultMediumId === "string"
+        ? record.defaultMediumId
+        : "",
     description: typeof record.description === "string" ? record.description : "",
     examTrackId: "examTrackId" in record ? record.examTrackId : "",
     isActive: record.isActive,
@@ -201,6 +207,7 @@ function getSingleEntityLabel(entity: AdminTaxonomyEntity) {
 function getEntityRows(input: {
   entity: AdminTaxonomyEntity
   examTracks: ExamTrack[]
+  examTrackFilter?: string
   mediums: Medium[]
   searchValue: string
   subjects: Subject[]
@@ -208,6 +215,14 @@ function getEntityRows(input: {
   topics: Topic[]
 }) {
   const loweredSearch = input.searchValue.trim().toLowerCase()
+  const linkedSubjectIds =
+    input.entity === "topics" && input.examTrackFilter
+      ? new Set(
+          input.subjects
+            .filter((subject) => subject.examTrackId === input.examTrackFilter)
+            .map((subject) => subject.id),
+        )
+      : null
   const source =
     input.entity === "examTracks"
       ? sortByOrderIndex(input.examTracks)
@@ -216,7 +231,11 @@ function getEntityRows(input: {
         : input.entity === "subjects"
           ? sortByOrderIndex(input.subjects)
           : input.entity === "topics"
-            ? sortByOrderIndex(input.topics)
+            ? sortByOrderIndex(
+                linkedSubjectIds
+                  ? input.topics.filter((topic) => linkedSubjectIds.has(topic.subjectId))
+                  : input.topics,
+              )
             : sortByOrderIndex(input.tags)
 
   if (!loweredSearch) {
@@ -357,7 +376,8 @@ function AdminTaxonomyListScreen({
 
   const queries = useTaxonomyQueries({
     canRead,
-    examTrackFilter: entity === "subjects" ? examTrackFilter : undefined,
+    examTrackFilter:
+      entity === "subjects" || entity === "topics" ? examTrackFilter : undefined,
     subjectFilter: entity === "topics" ? subjectFilter : undefined,
   })
 
@@ -374,6 +394,8 @@ function AdminTaxonomyListScreen({
       getEntityRows({
         entity,
         examTracks: queries.examTracksQuery.data ?? [],
+        examTrackFilter:
+          entity === "topics" || entity === "subjects" ? examTrackFilter : undefined,
         mediums: queries.mediumsQuery.data ?? [],
         searchValue,
         subjects: queries.subjectsQuery.data ?? [],
@@ -382,6 +404,7 @@ function AdminTaxonomyListScreen({
       }),
     [
       entity,
+      examTrackFilter,
       queries.examTracksQuery.data,
       queries.mediumsQuery.data,
       queries.subjectsQuery.data,
@@ -541,18 +564,35 @@ function AdminTaxonomyListScreen({
           </AdminSelect>
         ) : null}
         {entity === "topics" ? (
-          <AdminSelect
-            label="Subject"
-            value={subjectFilter}
-            onChange={(event) => setSubjectFilter(event.target.value)}
-          >
-            <option value="">All subjects</option>
-            {sortByOrderIndex(queries.subjectsQuery.data ?? []).map((subject) => (
-              <option key={subject.id} value={subject.id}>
-                {subject.name}
-              </option>
-            ))}
-          </AdminSelect>
+          <>
+            <AdminSelect
+              label="Exam track"
+              value={examTrackFilter}
+              onChange={(event) => {
+                setExamTrackFilter(event.target.value)
+                setSubjectFilter("")
+              }}
+            >
+              <option value="">All exam tracks</option>
+              {sortByOrderIndex(queries.examTracksQuery.data ?? []).map((track) => (
+                <option key={track.id} value={track.id}>
+                  {track.name}
+                </option>
+              ))}
+            </AdminSelect>
+            <AdminSelect
+              label="Subject"
+              value={subjectFilter}
+              onChange={(event) => setSubjectFilter(event.target.value)}
+            >
+              <option value="">All subjects</option>
+              {sortByOrderIndex(queries.subjectsQuery.data ?? []).map((subject) => (
+                <option key={subject.id} value={subject.id}>
+                  {subject.name}
+                </option>
+              ))}
+            </AdminSelect>
+          </>
         ) : null}
       </AdminFilterBar>
 
@@ -764,6 +804,7 @@ function AdminTaxonomyEditorScreen({
       key={currentRecord ? `${entity}:${currentRecord.id}:${currentRecord.updatedAt}` : `${entity}:new`}
       entity={entity}
       examTracks={queries.examTracksQuery.data ?? []}
+      mediums={queries.mediumsQuery.data ?? []}
       record={currentRecord}
       subjects={queries.subjectsQuery.data ?? []}
       topics={queries.topicsQuery.data ?? []}
@@ -774,12 +815,14 @@ function AdminTaxonomyEditorScreen({
 function AdminTaxonomyEditorForm({
   entity,
   examTracks,
+  mediums,
   record,
   subjects,
   topics,
 }: Readonly<{
   entity: AdminTaxonomyEntity
   examTracks: ExamTrack[]
+  mediums: Medium[]
   record: TaxonomyRecord | null
   subjects: Subject[]
   topics: Topic[]
@@ -811,6 +854,7 @@ function AdminTaxonomyEditorForm({
       if (entity === "examTracks") {
         const input = {
           ...sharedInput,
+          defaultMediumId: formState.defaultMediumId || null,
           shortName: formState.shortName.trim() || undefined,
         }
 
@@ -877,6 +921,32 @@ function AdminTaxonomyEditorForm({
   const selectableTopics = useMemo(
     () => topics.filter((topic) => topic.id !== currentRecord?.id),
     [currentRecord?.id, topics],
+  )
+  const selectedTopicSubject = useMemo(
+    () => subjects.find((subject) => subject.id === formState.subjectId) ?? null,
+    [formState.subjectId, subjects],
+  )
+  const selectedTopicExamTrackId =
+    entity === "topics"
+      ? formState.examTrackId || selectedTopicSubject?.examTrackId || ""
+      : formState.examTrackId
+  const topicSubjectOptions = useMemo(
+    () =>
+      entity === "topics" && selectedTopicExamTrackId
+        ? subjects.filter((subject) => subject.examTrackId === selectedTopicExamTrackId)
+        : subjects,
+    [entity, selectedTopicExamTrackId, subjects],
+  )
+  const topicParentOptions = useMemo(
+    () =>
+      selectableTopics.filter((topic) => {
+        if (!formState.subjectId) {
+          return true
+        }
+
+        return topic.subjectId === formState.subjectId
+      }),
+    [formState.subjectId, selectableTopics],
   )
 
   return (
@@ -981,15 +1051,35 @@ function AdminTaxonomyEditorForm({
           </div>
 
           {entity === "examTracks" ? (
-            <AdminFontTextField
-              disabled={!canManage}
-              label="Short name"
-              storage="plain"
-              value={formState.shortName}
-              onChange={(value) =>
-                setFormState((current) => ({ ...current, shortName: value }))
-              }
-            />
+            <div className="grid gap-4 md:grid-cols-2">
+              <AdminFontTextField
+                disabled={!canManage}
+                label="Short name"
+                storage="plain"
+                value={formState.shortName}
+                onChange={(value) =>
+                  setFormState((current) => ({ ...current, shortName: value }))
+                }
+              />
+              <AdminSelect
+                disabled={!canManage}
+                label="Default medium"
+                value={formState.defaultMediumId}
+                onChange={(event) =>
+                  setFormState((current) => ({
+                    ...current,
+                    defaultMediumId: event.target.value,
+                  }))
+                }
+              >
+                <option value="">No default medium</option>
+                {sortByOrderIndex(mediums).map((medium) => (
+                  <option key={medium.id} value={medium.id}>
+                    {medium.name}
+                  </option>
+                ))}
+              </AdminSelect>
+            </div>
           ) : null}
 
           <AdminFontTextField
@@ -1053,14 +1143,38 @@ function AdminTaxonomyEditorForm({
             <>
               <AdminSelect
                 disabled={!canManage}
+                label="Exam track"
+                value={selectedTopicExamTrackId}
+                onChange={(event) =>
+                  setFormState((current) => ({
+                    ...current,
+                    examTrackId: event.target.value,
+                    parentId: "",
+                    subjectId: "",
+                  }))
+                }
+              >
+                <option value="">Select exam track</option>
+                {sortByOrderIndex(examTracks).map((track) => (
+                  <option key={track.id} value={track.id}>
+                    {track.name}
+                  </option>
+                ))}
+              </AdminSelect>
+              <AdminSelect
+                disabled={!canManage}
                 label="Subject"
                 value={formState.subjectId}
                 onChange={(event) =>
-                  setFormState((current) => ({ ...current, subjectId: event.target.value }))
+                  setFormState((current) => ({
+                    ...current,
+                    parentId: "",
+                    subjectId: event.target.value,
+                  }))
                 }
               >
                 <option value="">Select subject</option>
-                {sortByOrderIndex(subjects).map((subject) => (
+                {sortByOrderIndex(topicSubjectOptions).map((subject) => (
                   <option key={subject.id} value={subject.id}>
                     {subject.name}
                   </option>
@@ -1075,7 +1189,7 @@ function AdminTaxonomyEditorForm({
                 }
               >
                 <option value="">Root topic</option>
-                {sortByOrderIndex(selectableTopics).map((topic) => (
+                {sortByOrderIndex(topicParentOptions).map((topic) => (
                   <option key={topic.id} value={topic.id}>
                     {topic.name}
                   </option>

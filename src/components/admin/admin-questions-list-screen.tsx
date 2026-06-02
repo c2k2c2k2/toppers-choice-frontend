@@ -279,6 +279,7 @@ export function AdminQuestionsListScreen() {
   const [status, setStatus] = useState<QuestionStatus | "">("");
   const [type, setType] = useState<QuestionType | "">("");
   const [difficulty, setDifficulty] = useState<QuestionDifficulty | "">("");
+  const [examTrackId, setExamTrackId] = useState("");
   const [subjectId, setSubjectId] = useState("");
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState<string | null>(null);
@@ -416,6 +417,10 @@ export function AdminQuestionsListScreen() {
     await deleteMutation.mutateAsync(row.id);
   }
 
+  const subjectOptions = examTrackId
+    ? taxonomy.subjectsByExamTrackId[examTrackId] ?? []
+    : taxonomy.subjects;
+
   const paginatedRows = useMemo<QuestionTableRow[]>(() => {
     const items = questionsQuery.data?.items ?? [];
     const start = (page - 1) * PAGE_SIZE;
@@ -542,6 +547,22 @@ export function AdminQuestionsListScreen() {
           ))}
         </AdminSelect>
         <AdminSelect
+          label="Exam track"
+          value={examTrackId}
+          onChange={(event) => {
+            setPage(1);
+            setExamTrackId(event.target.value);
+            setSubjectId("");
+          }}
+        >
+          <option value="">All exam tracks</option>
+          {taxonomy.examTracks.map((track) => (
+            <option key={track.id} value={track.id}>
+              {track.name}
+            </option>
+          ))}
+        </AdminSelect>
+        <AdminSelect
           label="Subject"
           value={subjectId}
           onChange={(event) => {
@@ -550,7 +571,7 @@ export function AdminQuestionsListScreen() {
           }}
         >
           <option value="">All subjects</option>
-          {taxonomy.subjects.map((subject) => (
+          {subjectOptions.map((subject) => (
             <option key={subject.id} value={subject.id}>
               {subject.name}
             </option>

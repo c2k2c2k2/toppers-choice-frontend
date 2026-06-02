@@ -53,6 +53,7 @@ export function AdminNotesListScreen() {
   } = useAdminSearchState();
   const [status, setStatus] = useState<NoteStatus | "">("");
   const [accessType, setAccessType] = useState<NoteAccessType | "">("");
+  const [examTrackId, setExamTrackId] = useState("");
   const [subjectId, setSubjectId] = useState("");
   const [topicId, setTopicId] = useState("");
   const [page, setPage] = useState(1);
@@ -100,6 +101,9 @@ export function AdminNotesListScreen() {
     },
   });
 
+  const subjectOptions = examTrackId
+    ? taxonomy.subjectsByExamTrackId[examTrackId] ?? []
+    : taxonomy.subjects;
   const topicOptions = subjectId ? taxonomy.topicsBySubjectId[subjectId] ?? [] : [];
   const paginatedRows = useMemo(() => {
     const items = notesQuery.data?.items ?? [];
@@ -209,6 +213,23 @@ export function AdminNotesListScreen() {
           ))}
         </AdminSelect>
         <AdminSelect
+          label="Exam track"
+          value={examTrackId}
+          onChange={(event) => {
+            setPage(1);
+            setExamTrackId(event.target.value);
+            setSubjectId("");
+            setTopicId("");
+          }}
+        >
+          <option value="">All exam tracks</option>
+          {taxonomy.examTracks.map((track) => (
+            <option key={track.id} value={track.id}>
+              {track.name}
+            </option>
+          ))}
+        </AdminSelect>
+        <AdminSelect
           label="Subject"
           value={subjectId}
           onChange={(event) => {
@@ -218,7 +239,7 @@ export function AdminNotesListScreen() {
           }}
         >
           <option value="">All subjects</option>
-          {taxonomy.subjects.map((subject) => (
+          {subjectOptions.map((subject) => (
             <option key={subject.id} value={subject.id}>
               {subject.name}
             </option>

@@ -81,7 +81,6 @@ export function StudentCatalogScreen() {
   const [searchValue, setSearchValue] = useState("");
   const deferredSearchValue = useDeferredValue(searchValue.trim());
   const requestedTrack = searchParams.get("track");
-  const requestedMedium = searchParams.get("medium");
 
   const catalogQuery = useAuthenticatedQuery({
     queryKey: queryKeys.student.catalog(),
@@ -93,7 +92,7 @@ export function StudentCatalogScreen() {
   const snapshot = catalog
     ? buildStudentCatalogSnapshot(catalog, {
         examTrackCode: requestedTrack ?? activeExamTrackCode,
-        mediumCode: requestedMedium ?? activeMediumCode,
+        mediumCode: activeMediumCode,
       })
     : null;
 
@@ -131,7 +130,7 @@ export function StudentCatalogScreen() {
     return (
       <LoadingState
         title="Preparing the catalog"
-        description="Loading exam tracks, mediums, subjects, and topic trees for the student app."
+        description="Loading exam tracks, subjects, and topic trees for the student app."
       />
     );
   }
@@ -193,7 +192,7 @@ export function StudentCatalogScreen() {
       </section>
 
       <section className="tc-student-panel rounded-[28px] p-6">
-        <div className="grid gap-5 xl:grid-cols-[1fr_1fr_1.1fr]">
+        <div className="grid gap-5 xl:grid-cols-[1fr_1.1fr]">
           <div className="space-y-3">
             <p className="tc-overline">Exam track</p>
             <div className="flex flex-wrap gap-2">
@@ -206,7 +205,7 @@ export function StudentCatalogScreen() {
                     data-active={snapshot.selectedTrack?.id === examTrack.id}
                     onClick={() => {
                       setActiveExamTrackCode(examTrack.code);
-                      updateFilters({ track: examTrack.code });
+                      updateFilters({ medium: null, track: examTrack.code });
                     }}
                   >
                     {getTrackLabel(examTrack)}
@@ -214,30 +213,6 @@ export function StudentCatalogScreen() {
                 ))
               ) : (
                 <span className="tc-code-chip">No tracks yet</span>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <p className="tc-overline">Study medium</p>
-            <div className="flex flex-wrap gap-2">
-              {catalog.mediums.length > 0 ? (
-                catalog.mediums.map((medium) => (
-                  <button
-                    key={medium.id}
-                    type="button"
-                    className="tc-filter-chip"
-                    data-active={snapshot.selectedMedium?.id === medium.id}
-                    onClick={() => {
-                      setActiveMediumCode(medium.code);
-                      updateFilters({ medium: medium.code });
-                    }}
-                  >
-                    {medium.name}
-                  </button>
-                ))
-              ) : (
-                <span className="tc-code-chip">No mediums yet</span>
               )}
             </div>
           </div>

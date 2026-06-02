@@ -50,7 +50,6 @@ export function StudentShell({
   const router = useRouter();
   const {
     activeExamTrackCode,
-    activeMediumCode,
     closeSidebar,
     isSidebarOpen,
     toggleSidebar,
@@ -66,7 +65,6 @@ export function StudentShell({
   });
 
   const currentTrackLabel = activeExamTrackCode ?? "Track not set";
-  const currentMediumLabel = activeMediumCode ?? "Medium not set";
   const hasActiveEntitlement =
     entitlementsQuery.data?.items.some((entitlement) =>
       isActiveEntitlement(entitlement),
@@ -312,9 +310,6 @@ export function StudentShell({
                   <span className="tc-student-chip" data-tone="soft">
                     {currentTrackLabel}
                   </span>
-                  <span className="tc-student-chip" data-tone="soft">
-                    {currentMediumLabel}
-                  </span>
                 </div>
                 <nav className="mt-4">
                   <StudentShellNavigation compact onNavigate={closeSidebar} />
@@ -345,9 +340,6 @@ export function StudentShell({
                   <div className="mt-3 flex flex-wrap gap-2">
                     <span className="tc-student-chip">
                       {currentTrackLabel}
-                    </span>
-                    <span className="tc-student-chip">
-                      {currentMediumLabel}
                     </span>
                     <span className="tc-student-chip" data-tone="accent">
                       {accessChipLabel}

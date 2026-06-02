@@ -203,8 +203,18 @@ function AdminNoteEditorForm({
   const [form, setForm] = useState<NoteFormState>(() =>
     buildInitialForm(note, taxonomy.subjects[0]?.id ?? ""),
   );
+  const [examTrackId, setExamTrackId] = useState(() => {
+    const initialSubjectId = readStringValue(note?.subjectId) || taxonomy.subjects[0]?.id || "";
+    return (
+      taxonomy.subjects.find((subject) => subject.id === initialSubjectId)?.examTrackId ??
+      ""
+    );
+  });
   const [message, setMessage] = useState<string | null>(null);
 
+  const subjectOptions = examTrackId
+    ? taxonomy.subjectsByExamTrackId[examTrackId] ?? []
+    : taxonomy.subjects;
   const selectedSubjectTopics = useMemo(
     () => (form.subjectId ? taxonomy.topicsBySubjectId[form.subjectId] ?? [] : []),
     [form.subjectId, taxonomy.topicsBySubjectId],
@@ -412,6 +422,25 @@ function AdminNoteEditorForm({
             placeholder="10"
           />
           <AdminSelect
+            label="Exam track"
+            value={examTrackId}
+            onChange={(event) => {
+              setExamTrackId(event.target.value);
+              setForm((current) => ({
+                ...current,
+                subjectId: "",
+                topicIds: [],
+              }));
+            }}
+          >
+            <option value="">Select exam track</option>
+            {taxonomy.examTracks.map((track) => (
+              <option key={track.id} value={track.id}>
+                {track.name}
+              </option>
+            ))}
+          </AdminSelect>
+          <AdminSelect
             label="Subject"
             value={form.subjectId}
             onChange={(event) =>
@@ -423,7 +452,7 @@ function AdminNoteEditorForm({
             }
           >
             <option value="">Select subject</option>
-            {taxonomy.subjects.map((subject) => (
+            {subjectOptions.map((subject) => (
               <option key={subject.id} value={subject.id}>
                 {subject.name}
               </option>

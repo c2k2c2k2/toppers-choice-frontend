@@ -19,18 +19,11 @@ import { LoadingState } from "@/components/primitives/loading-state";
 import { TextContent } from "@/components/primitives/text-content";
 import { useStudentShellStore } from "@/stores";
 
-function buildCatalogHref(
-  trackCode: string | null,
-  mediumCode: string | null,
-) {
+function buildCatalogHref(trackCode: string | null) {
   const searchParams = new URLSearchParams();
 
   if (trackCode) {
     searchParams.set("track", trackCode);
-  }
-
-  if (mediumCode) {
-    searchParams.set("medium", mediumCode);
   }
 
   const queryString = searchParams.toString();
@@ -134,11 +127,13 @@ export function StudentDashboardScreen() {
   }, [activeExamTrackCode, setActiveExamTrackCode, snapshot?.selectedTrack?.code]);
 
   useEffect(() => {
-    if (!snapshot?.selectedMedium?.code || activeMediumCode) {
+    if (!snapshot?.selectedMedium?.code) {
       return;
     }
 
-    setActiveMediumCode(snapshot.selectedMedium.code);
+    if (!activeMediumCode || activeMediumCode !== snapshot.selectedMedium.code) {
+      setActiveMediumCode(snapshot.selectedMedium.code);
+    }
   }, [activeMediumCode, setActiveMediumCode, snapshot?.selectedMedium?.code]);
 
   if (dashboardQuery.isError) {
@@ -180,15 +175,12 @@ export function StudentDashboardScreen() {
               Choose your track and continue your preparation.
             </h1>
             <p className="tc-muted mt-4 max-w-3xl text-base leading-7">
-              Select your exam track and medium once, then move to notes, practice, tests, and updates without repeating the same setup on every page.
+              Select your exam track once, then move to notes, practice, tests, and updates without repeating setup on every page.
             </p>
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <span className="tc-stat-chip">
                 Track: {getTrackLabel(snapshot.selectedTrack)}
-              </span>
-              <span className="tc-stat-chip">
-                Medium: {getMediumLabel(snapshot.selectedMedium)}
               </span>
               <span className="tc-stat-chip">
                 {snapshot.subjects.length} subjects ready
@@ -197,10 +189,7 @@ export function StudentDashboardScreen() {
 
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
-                href={buildCatalogHref(
-                  snapshot.selectedTrack?.code ?? null,
-                  snapshot.selectedMedium?.code ?? null,
-                )}
+                href={buildCatalogHref(snapshot.selectedTrack?.code ?? null)}
                 className="tc-button-primary"
               >
                 Explore catalog
@@ -240,7 +229,7 @@ export function StudentDashboardScreen() {
             Catalog focus
           </p>
           <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-            Pick your exam track and study medium once for the whole app.
+            Pick your exam track once for the whole app.
           </h2>
           <div className="mt-5 flex flex-col gap-5">
             <div className="space-y-3">
@@ -253,18 +242,6 @@ export function StudentDashboardScreen() {
                   name: getTrackLabel(examTrack),
                 }))}
                 onSelect={setActiveExamTrackCode}
-              />
-            </div>
-            <div className="space-y-3">
-              <p className="tc-overline">Study medium</p>
-              <SelectionRail
-                activeCode={snapshot.selectedMedium?.code ?? null}
-                emptyLabel="No mediums published yet"
-                items={dashboardData.catalog.mediums.map((medium) => ({
-                  code: medium.code,
-                  name: medium.name,
-                }))}
-                onSelect={setActiveMediumCode}
               />
             </div>
           </div>
@@ -528,10 +505,7 @@ export function StudentDashboardScreen() {
             </h2>
           </div>
           <Link
-            href={buildCatalogHref(
-              snapshot.selectedTrack?.code ?? null,
-              snapshot.selectedMedium?.code ?? null,
-            )}
+            href={buildCatalogHref(snapshot.selectedTrack?.code ?? null)}
             className="tc-button-secondary"
           >
             Open full catalog
