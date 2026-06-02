@@ -21,9 +21,7 @@ import {
 } from "@/lib/notes";
 import {
   buildStudentCatalogSnapshot,
-  getMediumLabel,
   getStudentCatalog,
-  getTrackLabel,
 } from "@/lib/student";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
@@ -100,9 +98,9 @@ export function StudentNotesLibraryScreen() {
   const catalog = catalogQuery.data;
   const catalogSnapshot = catalog
     ? buildStudentCatalogSnapshot(catalog, {
-        examTrackCode: activeExamTrackCode,
-        mediumCode: activeMediumCode,
-      })
+      examTrackCode: activeExamTrackCode,
+      mediumCode: activeMediumCode,
+    })
     : null;
   const selectedTrackId = catalogSnapshot?.selectedTrack?.id ?? null;
   const selectedMediumId = catalogSnapshot?.selectedMedium?.id ?? null;
@@ -220,7 +218,7 @@ export function StudentNotesLibraryScreen() {
     return (
       <ErrorState
         title="The notes library could not load."
-        description="We couldn't finish combining the student study context, note tree, and published note list from the backend."
+        description="Please try again."
         onRetry={() => {
           void catalogQuery.refetch();
           void treeQuery.refetch();
@@ -241,7 +239,7 @@ export function StudentNotesLibraryScreen() {
     return (
       <LoadingState
         title="Preparing the notes library"
-        description="Loading the active student context, note discovery tree, and reader-ready note summaries."
+        description="Loading notes."
       />
     );
   }
@@ -267,60 +265,26 @@ export function StudentNotesLibraryScreen() {
   ).length;
 
   return (
-    <div className="flex flex-col gap-6">
-      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
-        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+    <div className="flex flex-col gap-4">
+      <section className="tc-student-panel rounded-[20px] p-4">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
-              Student notes
-            </p>
-            <h1 className="tc-display mt-4 text-3xl font-semibold tracking-tight md:text-4xl">
-              Discover by subject and topic, then open a secure reader only when needed.
+            <p className="tc-overline">Notes</p>
+            <h1 className="mt-2 text-2xl font-semibold text-[color:var(--brand)]">
+              {selectedTopic?.name ?? selectedSubject?.name ?? "All notes"}
             </h1>
-            <p className="tc-muted mt-4 max-w-3xl text-base leading-7">
-              The library now combines the active student track, protected note
-              access state, preview handling, and tree-based discovery into one
-              mobile-first surface.
-            </p>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <span className="tc-stat-chip">
-                Track: {getTrackLabel(catalogSnapshot.selectedTrack)}
-              </span>
-              <span className="tc-stat-chip">
-                Medium: {getMediumLabel(catalogSnapshot.selectedMedium)}
-              </span>
-              <span className="tc-stat-chip">
-                {selectedTopic?.name ?? selectedSubject?.name ?? "All subjects"}
-              </span>
-            </div>
           </div>
-
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="tc-student-metric rounded-[24px] p-5">
-              <p className="tc-overline">Visible notes</p>
-              <p className="mt-4 text-3xl font-semibold text-white">
-                {filteredNotes.length}
-              </p>
-            </div>
-            <div className="tc-student-metric rounded-[24px] p-5">
-              <p className="tc-overline">Ready now</p>
-              <p className="mt-4 text-3xl font-semibold text-white">
-                {availableCount}
-              </p>
-            </div>
-            <div className="tc-student-metric rounded-[24px] p-5">
-              <p className="tc-overline">Previewable</p>
-              <p className="mt-4 text-3xl font-semibold text-white">
-                {previewCount}
-              </p>
-            </div>
+          <div className="flex flex-wrap gap-2">
+            <span className="tc-student-chip" data-tone="soft">
+              {filteredNotes.length} notes
+            </span>
+            <span className="tc-student-chip" data-tone="accent">
+              {availableCount} ready
+            </span>
           </div>
         </div>
-      </section>
 
-      <section className="tc-student-panel rounded-[28px] p-6">
-        <div className="grid gap-5 xl:grid-cols-[1.3fr_1fr]">
+        <div className="grid gap-4 xl:grid-cols-[1.3fr_1fr]">
           <label className="tc-form-field">
             <span className="tc-form-label">Search notes</span>
             <input
@@ -357,23 +321,21 @@ export function StudentNotesLibraryScreen() {
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-        <aside className="tc-student-panel rounded-[28px] p-5">
+      <section className="grid gap-4 xl:grid-cols-[0.85fr_1.15fr]">
+        <aside className="tc-student-panel rounded-[20px] p-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-                Notes tree
-              </p>
-              <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-                Follow the published subject map
+              <p className="tc-overline">Browse</p>
+              <h2 className="mt-2 text-xl font-semibold text-[color:var(--brand)]">
+                Subjects
               </h2>
             </div>
             <Link href="/student/catalog" className="tc-button-secondary">
-              Change context
+              Catalog
             </Link>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-4">
             <StudentNotesTree
               activeSubjectId={requestedSubjectId}
               activeTopicId={requestedTopicId}
@@ -412,11 +374,11 @@ export function StudentNotesLibraryScreen() {
             ))
           ) : (
             <EmptyState
-              eyebrow="Notes empty state"
+              eyebrow="Notes"
               title="No published notes match this selection."
-              description="The notes library is live, but the current subject, topic, search, or access filter combination did not return any note summaries."
+              description="Try another topic, search, or access filter."
               ctaHref="/student/notes"
-              ctaLabel="Reset library filters"
+              ctaLabel="Reset filters"
             />
           )}
         </div>

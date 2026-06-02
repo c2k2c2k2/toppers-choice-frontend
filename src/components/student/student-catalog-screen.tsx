@@ -17,7 +17,6 @@ import {
   flattenTopicTree,
   getStudentCatalog,
   getTrackLabel,
-  getOptionalText,
   type StudentSubject,
 } from "@/lib/student";
 import { EmptyState } from "@/components/primitives/empty-state";
@@ -37,9 +36,6 @@ function matchesSubjectSearch(subject: StudentSubject, value: string) {
 
   return [
     subject.name,
-    subject.code,
-    subject.slug,
-    getOptionalText(subject.description) ?? "",
     topicNames,
   ]
     .join(" ")
@@ -73,7 +69,6 @@ export function StudentCatalogScreen() {
   const {
     activeExamTrackCode,
     activeMediumCode,
-    lastCatalogSubjectSlug,
     setActiveExamTrackCode,
     setActiveMediumCode,
     setLastCatalogSubjectSlug,
@@ -120,7 +115,7 @@ export function StudentCatalogScreen() {
     return (
       <ErrorState
         title="The catalog could not load."
-        description="We couldn't finish loading the authenticated taxonomy catalog for the student surface."
+        description="Please try again."
         onRetry={() => void catalogQuery.refetch()}
       />
     );
@@ -130,7 +125,7 @@ export function StudentCatalogScreen() {
     return (
       <LoadingState
         title="Preparing the catalog"
-        description="Loading exam tracks, subjects, and topic trees for the student app."
+        description="Loading your subjects."
       />
     );
   }
@@ -152,49 +147,16 @@ export function StudentCatalogScreen() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
-        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-          <div>
-            <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
-              Student catalog
-            </p>
-            <h1 className="tc-display mt-4 text-3xl font-semibold tracking-tight md:text-4xl">
-              Browse the published subject map before notes and tests plug in.
-            </h1>
-            <p className="tc-muted mt-4 max-w-3xl text-base leading-7">
-              This route keeps track, medium, and subject navigation centralized
-              so later student modules can reuse the same study context.
-            </p>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="tc-student-metric rounded-[24px] p-5">
-              <p className="tc-overline">Visible subjects</p>
-              <p className="mt-4 text-3xl font-semibold text-white">
-                {filteredSubjects.length}
-              </p>
-              <p className="mt-2 text-sm text-white/72">
-                filtered for the active track and search terms
-              </p>
-            </div>
-            <div className="tc-student-metric rounded-[24px] p-5">
-              <p className="tc-overline">Last opened subject</p>
-              <p className="mt-4 text-lg font-semibold text-white">
-                {lastCatalogSubjectSlug ?? "No subject opened yet"}
-              </p>
-              <p className="mt-2 text-sm text-white/72">
-                stored in the cross-route student shell state
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="tc-student-panel rounded-[28px] p-6">
-        <div className="grid gap-5 xl:grid-cols-[1fr_1.1fr]">
+    <div className="flex flex-col gap-4">
+      <section className="tc-student-panel rounded-[20px] p-4">
+        <div className="grid gap-4 xl:grid-cols-[1fr_1.1fr]">
           <div className="space-y-3">
-            <p className="tc-overline">Exam track</p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="tc-overline">Exam track</p>
+              <span className="tc-student-chip" data-tone="soft">
+                {filteredSubjects.length} subjects
+              </span>
+            </div>
             <div className="flex flex-wrap gap-2">
               {catalog.examTracks.length > 0 ? (
                 catalog.examTracks.map((examTrack) => (
@@ -212,7 +174,9 @@ export function StudentCatalogScreen() {
                   </button>
                 ))
               ) : (
-                <span className="tc-code-chip">No tracks yet</span>
+                <span className="tc-student-chip" data-tone="soft">
+                  No tracks yet
+                </span>
               )}
             </div>
           </div>
@@ -230,7 +194,7 @@ export function StudentCatalogScreen() {
       </section>
 
       {filteredSubjects.length > 0 ? (
-        <section className="grid gap-4 xl:grid-cols-2">
+        <section className="grid gap-3 xl:grid-cols-2">
           {filteredSubjects.map((subject) => (
             <Link
               key={subject.id}
@@ -239,31 +203,31 @@ export function StudentCatalogScreen() {
                 mediumCode: snapshot.selectedMedium?.code ?? null,
               })}
               onClick={() => setLastCatalogSubjectSlug(subject.slug)}
-              className="tc-student-card rounded-[26px] p-5 transition-transform duration-200 hover:-translate-y-1"
+              className="tc-student-card rounded-[18px] p-4 transition-transform duration-200 hover:-translate-y-0.5"
             >
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-xl font-semibold text-[color:var(--brand)]">
                   {subject.name}
                 </h2>
-                <span className="tc-code-chip">{subject.code}</span>
+                <span className="tc-student-chip" data-tone="soft">
+                  {countTopics(subject.topics)} topics
+                </span>
               </div>
-              <p className="tc-muted mt-3 text-sm leading-6">
-                {getOptionalText(subject.description) ??
-                  "Topic navigation is ready for notes, practice, tests, and structured content."}
-              </p>
-              <div className="mt-5 flex flex-wrap gap-3 text-sm text-[color:var(--muted)]">
-                <span>{countTopics(subject.topics)} topics</span>
-                <span>{subject.topics.length} top-level branches</span>
-                <span>{snapshot.selectedMedium?.name ?? "All mediums"}</span>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {subject.topics.slice(0, 3).map((topic) => (
+                  <span key={topic.id} className="tc-student-chip">
+                    {topic.name}
+                  </span>
+                ))}
               </div>
             </Link>
           ))}
         </section>
       ) : (
         <EmptyState
-          eyebrow="Catalog empty state"
-          title="No catalog subjects match this selection yet."
-          description="This route is now wired to the authenticated taxonomy catalog, so newly published tracks, subjects, or topic trees will appear here without any hardcoded frontend fallback."
+          eyebrow="Catalog"
+          title="No subjects match this selection."
+          description="Try another track or search."
         />
       )}
     </div>

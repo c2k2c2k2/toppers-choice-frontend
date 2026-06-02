@@ -14,9 +14,7 @@ import {
 } from "@/lib/tests";
 import {
   buildStudentCatalogSnapshot,
-  getMediumLabel,
   getStudentCatalog,
-  getTrackLabel,
 } from "@/lib/student";
 import { TextContent } from "@/components/primitives/text-content";
 import { EmptyState } from "@/components/primitives/empty-state";
@@ -33,24 +31,6 @@ function formatTimestamp(value: string | null) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
-}
-
-function TestsMetricCard({
-  detail,
-  label,
-  value,
-}: Readonly<{
-  detail: string;
-  label: string;
-  value: string;
-}>) {
-  return (
-    <div className="tc-student-metric rounded-[24px] p-5">
-      <p className="tc-overline">{label}</p>
-      <p className="mt-4 text-3xl font-semibold text-white">{value}</p>
-      <p className="mt-2 text-sm text-white/72">{detail}</p>
-    </div>
-  );
 }
 
 export function StudentTestsHubScreen() {
@@ -136,7 +116,7 @@ export function StudentTestsHubScreen() {
     return (
       <ErrorState
         title="Timed tests could not load."
-        description="We couldn't finish loading the published tests and recent attempt history."
+        description="Please try again."
         onRetry={() => {
           void catalogQuery.refetch();
           void testsQuery.refetch();
@@ -155,7 +135,7 @@ export function StudentTestsHubScreen() {
     return (
       <LoadingState
         title="Preparing timed tests"
-        description="Loading the published test catalog, active attempt state, and recent result history."
+        description="Loading tests."
       />
     );
   }
@@ -164,8 +144,8 @@ export function StudentTestsHubScreen() {
     return (
       <EmptyState
         eyebrow="Timed tests"
-        title="Timed tests need published subject taxonomy first."
-        description="The timed-assessment shell is ready, but the current track does not have published subjects yet."
+        title="No subjects are available yet."
+        description="Open the catalog and choose another track."
         ctaHref="/student/catalog"
         ctaLabel="Open catalog"
       />
@@ -176,77 +156,43 @@ export function StudentTestsHubScreen() {
   const attempts = attemptsQuery.data?.items ?? [];
   const activeAttempt = attempts.find((attempt) => attempt.status === "ACTIVE") ?? null;
   return (
-    <div className="flex flex-col gap-6">
-      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
-        <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-          <div>
-            <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
-              Timed tests
-            </p>
-            <h1 className="tc-display mt-4 text-3xl font-semibold tracking-tight md:text-4xl">
-              Sit for the clock only when you are ready for pressure.
-            </h1>
-            <p className="tc-muted mt-4 max-w-3xl text-base leading-7">
-              Timed tests stay stricter than practice: no correctness before
-              submission, explicit attempt instructions, autosaved drafts, and a
-              full result review only after the clock stops.
-            </p>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <span className="tc-stat-chip">
-                Track: {getTrackLabel(snapshot.selectedTrack)}
-              </span>
-              <span className="tc-stat-chip">
-                Medium: {getMediumLabel(snapshot.selectedMedium)}
-              </span>
-              <span className="tc-stat-chip">{tests.length} published tests</span>
+    <div className="flex flex-col gap-4">
+      <section className="grid gap-4 xl:grid-cols-[0.82fr_1.18fr]">
+        <section className="tc-student-panel rounded-[20px] p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="tc-overline">Tests</p>
+              <h1 className="mt-2 text-2xl font-semibold text-[color:var(--brand)]">
+                Test library
+              </h1>
             </div>
+            <div className="flex flex-wrap gap-2">
+              <span className="tc-student-chip" data-tone="soft">
+                {tests.length} tests
+              </span>
+              <span className="tc-student-chip" data-tone="soft">
+                {attemptsQuery.data?.total ?? 0} attempts
+              </span>
+            </div>
+          </div>
 
-            <div className="mt-6 flex flex-wrap gap-3">
-              {activeAttempt ? (
+          {activeAttempt ? (
+            <div className="mt-4 rounded-[18px] border border-[rgba(0,51,102,0.14)] bg-[rgba(0,51,102,0.06)] p-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="font-semibold text-[color:var(--brand)]">
+                  Active attempt
+                </p>
                 <Link
                   href={`/student/tests/attempts/${activeAttempt.id}`}
                   className="tc-button-primary"
                 >
-                  Resume active attempt
+                  Resume
                 </Link>
-              ) : null}
-              <Link href="/student/practice" className="tc-button-secondary">
-                Switch to practice
-              </Link>
+              </div>
             </div>
-          </div>
+          ) : null}
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <TestsMetricCard
-              label="Published tests"
-              value={String(tests.length)}
-              detail="Visible in the current track and medium scope"
-            />
-            <TestsMetricCard
-              label="Attempt history"
-              value={String(attemptsQuery.data?.total ?? 0)}
-              detail="Recent attempts available for review"
-            />
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
-        <section className="tc-student-panel rounded-[28px] p-6">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-                Test filters
-              </p>
-              <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-                Narrow the test library
-              </h2>
-            </div>
-            <span className="tc-code-chip">{tests.length} items</span>
-          </div>
-
-          <div className="mt-5 grid gap-5">
+          <div className="mt-4 grid gap-4">
             <div className="grid gap-3">
               <p className="tc-overline">Family</p>
               <div className="flex flex-wrap gap-2">
@@ -256,7 +202,7 @@ export function StudentTestsHubScreen() {
                   data-active={familyFilter === "ALL"}
                   onClick={() => setFamilyFilter("ALL")}
                 >
-                  All families
+                  All
                 </button>
                 {TEST_FAMILY_OPTIONS.map((option) => (
                   <button
@@ -279,7 +225,7 @@ export function StudentTestsHubScreen() {
                 value={effectiveSubjectFilter}
                 onChange={(event) => setSubjectFilter(event.target.value)}
               >
-                <option value="">All scoped subjects</option>
+                <option value="">All subjects</option>
                 {subjects.map((subject) => (
                   <option key={subject.id} value={subject.id}>
                     {subject.name}
@@ -287,106 +233,81 @@ export function StudentTestsHubScreen() {
                 ))}
               </select>
             </label>
-
-            {activeAttempt ? (
-              <div className="rounded-[24px] border border-[rgba(0,51,102,0.14)] bg-[rgba(0,51,102,0.06)] px-4 py-4">
-                <p className="font-semibold text-[color:var(--brand)]">
-                  An active attempt is already running.
-                </p>
-                <p className="tc-muted mt-2 text-sm leading-6">
-                  Resume it before starting another attempt for the same test.
-                </p>
-                <Link
-                  href={`/student/tests/attempts/${activeAttempt.id}`}
-                  className="tc-button-primary mt-4"
-                >
-                  Resume active attempt
-                </Link>
-              </div>
-            ) : null}
           </div>
         </section>
 
-        <section className="tc-student-panel rounded-[28px] p-6">
+        <section className="tc-student-panel rounded-[20px] p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-                Published tests
-              </p>
-              <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-                Open instructions before the timer starts
+              <p className="tc-overline">Published</p>
+              <h2 className="mt-2 text-xl font-semibold text-[color:var(--brand)]">
+                Choose a test
               </h2>
             </div>
           </div>
 
           {tests.length > 0 ? (
-            <div className="mt-5 grid gap-4 xl:grid-cols-2">
+            <div className="mt-4 grid gap-3 xl:grid-cols-2">
               {tests.map((test) => (
-                <article key={test.id} className="tc-student-card rounded-[24px] p-5">
+                <article key={test.id} className="tc-student-card rounded-[18px] p-4">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="tc-code-chip">{getTestFamilyLabel(test.family)}</span>
-                    <span className="tc-code-chip">{test.questionCount} questions</span>
-                    <span className="tc-code-chip">{test.durationMinutes} min</span>
-                    <span className="tc-code-chip">{test.access.mode}</span>
+                    <span className="tc-student-chip">{getTestFamilyLabel(test.family)}</span>
+                    <span className="tc-student-chip">{test.questionCount} questions</span>
+                    <span className="tc-student-chip">{test.durationMinutes} min</span>
                   </div>
                   <TextContent
                     as="h3"
-                    className="mt-4 text-xl font-semibold text-[color:var(--brand)]"
+                    className="mt-3 text-xl font-semibold text-[color:var(--brand)]"
                     value={test.title}
                   />
-                  <TextContent
-                    as="p"
-                    className="tc-muted mt-3 text-sm leading-6"
-                    value={
-                      test.shortDescription ??
-                      "The test detail route will show instructions, attempt rules, and the correct start/resume action."
-                    }
-                  />
-                  <div className="mt-4 flex flex-wrap gap-3 text-sm text-[color:var(--muted)]">
+                  {test.shortDescription ? (
+                    <TextContent
+                      as="p"
+                      className="tc-muted mt-2 line-clamp-2 text-sm leading-6"
+                      value={test.shortDescription}
+                    />
+                  ) : null}
+                  <div className="mt-3 flex flex-wrap gap-3 text-sm text-[color:var(--muted)]">
                     <span>{test.maxScore} marks</span>
                     <span>{test.maxAttempts} attempts</span>
                     <span>{test.subject?.name ?? "Mixed scope"}</span>
                   </div>
                   <Link
                     href={`/student/tests/${test.id}`}
-                    className="tc-button-primary mt-5"
+                    className="tc-button-primary mt-4"
                   >
-                    Open instructions
+                    Open
                   </Link>
                 </article>
               ))}
             </div>
           ) : (
-            <div className="tc-student-card mt-5 rounded-[24px] p-5">
+            <div className="tc-student-card mt-4 rounded-[18px] p-4">
               <p className="font-semibold text-[color:var(--brand)]">
-                No published tests match the current filter.
-              </p>
-              <p className="tc-muted mt-2 text-sm leading-6">
-                Try another family or subject, or wait for the academic team to
-                publish timed tests in this scope.
+                No tests match this filter.
               </p>
             </div>
           )}
         </section>
       </section>
 
-      <section className="tc-student-panel rounded-[28px] p-6">
+      <section className="tc-student-panel rounded-[20px] p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-              Attempt history
-            </p>
-            <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-              Resume or review recent attempts
+            <p className="tc-overline">Attempts</p>
+            <h2 className="mt-2 text-xl font-semibold text-[color:var(--brand)]">
+              Recent activity
             </h2>
           </div>
-          <span className="tc-code-chip">{attempts.length} shown</span>
+          <span className="tc-student-chip" data-tone="soft">
+            {attempts.length} shown
+          </span>
         </div>
 
-        <div className="mt-5 grid gap-4 xl:grid-cols-2">
+        <div className="mt-4 grid gap-3 xl:grid-cols-2">
           {attempts.length > 0 ? (
             attempts.map((attempt) => (
-              <article key={attempt.id} className="tc-student-card rounded-[24px] p-5">
+              <article key={attempt.id} className="tc-student-card rounded-[18px] p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="tc-overline">
@@ -398,7 +319,7 @@ export function StudentTestsHubScreen() {
                       value={attempt.testSnapshot.title}
                     />
                   </div>
-                  <span className="tc-code-chip">{attempt.percentage}%</span>
+                  <span className="tc-student-chip">{attempt.percentage}%</span>
                 </div>
                 <p className="tc-muted mt-3 text-sm leading-6">
                   Started {formatTimestamp(attempt.startedAt)}.{" "}
@@ -408,19 +329,16 @@ export function StudentTestsHubScreen() {
                 </p>
                 <Link
                   href={`/student/tests/attempts/${attempt.id}`}
-                  className="tc-button-secondary mt-5"
+                  className="tc-button-secondary mt-4"
                 >
                   {attempt.status === "ACTIVE" ? "Resume attempt" : "Open result"}
                 </Link>
               </article>
             ))
           ) : (
-            <div className="tc-student-card rounded-[24px] p-5">
+            <div className="tc-student-card rounded-[18px] p-4">
               <p className="font-semibold text-[color:var(--brand)]">
                 No test attempts yet.
-              </p>
-              <p className="tc-muted mt-2 text-sm leading-6">
-                Start a timed test to unlock result review and attempt history.
               </p>
             </div>
           )}

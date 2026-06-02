@@ -22,9 +22,7 @@ import {
 import {
   buildStudentCatalogSnapshot,
   flattenTopicTree,
-  getMediumLabel,
   getStudentCatalog,
-  getTrackLabel,
 } from "@/lib/student";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
@@ -64,24 +62,6 @@ function formatTimestamp(value: string | null) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
-}
-
-function PracticeMetricCard({
-  detail,
-  label,
-  value,
-}: Readonly<{
-  detail: string;
-  label: string;
-  value: string;
-}>) {
-  return (
-    <div className="tc-student-metric rounded-[24px] p-5">
-      <p className="tc-overline">{label}</p>
-      <p className="mt-4 text-3xl font-semibold text-white">{value}</p>
-      <p className="mt-2 text-sm text-white/72">{detail}</p>
-    </div>
-  );
 }
 
 export function StudentPracticeHubScreen() {
@@ -230,7 +210,7 @@ export function StudentPracticeHubScreen() {
     return (
       <ErrorState
         title="Practice workspace could not load."
-        description="We couldn't finish loading the student catalog scope and recent practice state."
+        description="Please try again."
         onRetry={() => {
           void catalogQuery.refetch();
           void sessionsQuery.refetch();
@@ -243,7 +223,7 @@ export function StudentPracticeHubScreen() {
     return (
       <LoadingState
         title="Preparing practice workspace"
-        description="Loading the student catalog scope, recent sessions, and weak-area signals."
+        description="Loading practice."
       />
     );
   }
@@ -252,8 +232,8 @@ export function StudentPracticeHubScreen() {
     return (
       <EmptyState
         eyebrow="Practice"
-        title="Practice needs published subject taxonomy first."
-        description="The assessment surface is ready, but there are no published subjects in the current track yet, so we cannot scope question drilling safely."
+        title="No subjects are available yet."
+        description="Open the catalog and choose another track."
         ctaHref="/student/catalog"
         ctaLabel="Open catalog"
       />
@@ -303,88 +283,49 @@ export function StudentPracticeHubScreen() {
     : inlineMessage;
 
   return (
-    <div className="flex flex-col gap-6">
-      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
-        <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+    <div className="flex flex-col gap-4">
+      <section className="tc-student-panel rounded-[20px] p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
-              Practice workspace
-            </p>
-            <h1 className="tc-display mt-4 text-3xl font-semibold tracking-tight md:text-4xl">
-              Repair weak areas before they become repeat mistakes.
+            <p className="tc-overline">Practice</p>
+            <h1 className="mt-2 text-2xl font-semibold text-[color:var(--brand)]">
+              Start session
             </h1>
-            <p className="tc-muted mt-4 max-w-3xl text-base leading-7">
-              Practice stays intentionally separate from timed tests: smaller
-              decision loops, immediate correctness feedback, optional reveal,
-              and topic-first recovery when you want deliberate repetition.
-            </p>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <span className="tc-stat-chip">
-                Track: {getTrackLabel(snapshot.selectedTrack)}
-              </span>
-              <span className="tc-stat-chip">
-                Medium: {getMediumLabel(snapshot.selectedMedium)}
-              </span>
-              <span className="tc-stat-chip">
-                {subjects.length} scoped subjects
-              </span>
-            </div>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              {activeSession ? (
-                <Link
-                  href={`/student/practice/session/${activeSession.id}`}
-                  className="tc-button-primary"
-                >
-                  Resume active session
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  className="tc-button-primary"
-                  onClick={() => void handleStartPractice()}
-                  disabled={startMutation.isPending}
-                >
-                  {startMutation.isPending ? "Starting practice..." : "Start practice"}
-                </button>
-              )}
-              <Link href="/student/tests" className="tc-button-secondary">
-                Switch to timed tests
-              </Link>
-            </div>
           </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <PracticeMetricCard
-              label="Recent attempts"
-              value={String(practicedQuestionCount)}
-              detail="Questions answered in the last 7 days"
-            />
-            <PracticeMetricCard
-              label="Weak question queue"
-              value={String(weakQuestionsQuery.data?.total ?? 0)}
-              detail="Questions still showing wrong or reveal-heavy patterns"
-            />
+          <div className="flex flex-wrap gap-2">
+            <span className="tc-student-chip" data-tone="soft">
+              {practicedQuestionCount} answered
+            </span>
+            <span className="tc-student-chip" data-tone="soft">
+              {weakQuestionsQuery.data?.total ?? 0} weak
+            </span>
+            {activeSession ? (
+              <Link
+                href={`/student/practice/session/${activeSession.id}`}
+                className="tc-button-primary"
+              >
+                Resume
+              </Link>
+            ) : null}
           </div>
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-        <section className="tc-student-panel rounded-[28px] p-6">
+      <section className="grid gap-4 xl:grid-cols-[0.86fr_1.14fr]">
+        <section className="tc-student-panel rounded-[20px] p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-                Start session
-              </p>
-              <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-                Configure a focused practice run
+              <p className="tc-overline">Setup</p>
+              <h2 className="mt-2 text-xl font-semibold text-[color:var(--brand)]">
+                Practice options
               </h2>
             </div>
-            {activeSession ? <span className="tc-code-chip">1 active</span> : null}
+            {activeSession ? (
+              <span className="tc-student-chip" data-tone="accent">Active</span>
+            ) : null}
           </div>
 
-          <div className="mt-5 grid gap-5">
+          <div className="mt-4 grid gap-4">
             <div className="grid gap-3">
               <p className="tc-overline">Practice mode</p>
               <div className="grid gap-3">
@@ -405,13 +346,10 @@ export function StudentPracticeHubScreen() {
                       <p className="font-semibold text-[color:var(--brand)]">
                         {option.label}
                       </p>
-                      <span className="tc-code-chip">
+                      <span className="tc-student-chip">
                         {mode === option.value ? "Selected" : "Available"}
                       </span>
                     </div>
-                    <p className="tc-muted mt-2 text-sm leading-6">
-                      {option.description}
-                    </p>
                   </button>
                 ))}
               </div>
@@ -527,18 +465,18 @@ export function StudentPracticeHubScreen() {
           </div>
         </section>
 
-        <section className="grid gap-6">
-          <section className="tc-student-panel rounded-[28px] p-6">
+        <section className="grid gap-4">
+          <section className="tc-student-panel rounded-[20px] p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-                  Performance summary
-                </p>
-                <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-                  Subject and topic signals
+                <p className="tc-overline">Progress</p>
+                <h2 className="mt-2 text-xl font-semibold text-[color:var(--brand)]">
+                  Subject accuracy
                 </h2>
               </div>
-              <span className="tc-code-chip">{subjectProgress.length} subjects</span>
+              <span className="tc-student-chip" data-tone="soft">
+                {subjectProgress.length} subjects
+              </span>
             </div>
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -560,7 +498,7 @@ export function StudentPracticeHubScreen() {
                       <h3 className="text-lg font-semibold text-[color:var(--brand)]">
                         {item.subject.name}
                       </h3>
-                      <span className="tc-code-chip">{item.accuracyPercent}%</span>
+                      <span className="tc-student-chip">{item.accuracyPercent}%</span>
                     </div>
                     <p className="tc-muted mt-3 text-sm leading-6">
                       {item.correctCount} correct, {item.wrongCount} wrong,{" "}
@@ -620,18 +558,18 @@ export function StudentPracticeHubScreen() {
         </section>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
-        <section className="tc-student-panel rounded-[28px] p-6">
+      <section className="grid gap-4 xl:grid-cols-[1.02fr_0.98fr]">
+        <section className="tc-student-panel rounded-[20px] p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-                Weak-area queue
-              </p>
-              <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-                Jump directly into the mistakes worth fixing
+              <p className="tc-overline">Weak areas</p>
+              <h2 className="mt-2 text-xl font-semibold text-[color:var(--brand)]">
+                Review queue
               </h2>
             </div>
-            <span className="tc-code-chip">{weakQuestions.length} items</span>
+            <span className="tc-student-chip" data-tone="soft">
+              {weakQuestions.length} items
+            </span>
           </div>
 
           <div className="mt-5 grid gap-4">
@@ -646,16 +584,16 @@ export function StudentPracticeHubScreen() {
                 <article key={question.questionId} className="tc-student-card rounded-[24px] p-5">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap gap-2">
-                      <span className="tc-code-chip">{question.subject.name}</span>
+                      <span className="tc-student-chip">{question.subject.name}</span>
                       {question.topic ? (
-                        <span className="tc-code-chip">{question.topic.name}</span>
+                        <span className="tc-student-chip">{question.topic.name}</span>
                       ) : null}
-                      <span className="tc-code-chip">{question.difficulty}</span>
+                      <span className="tc-student-chip">{question.difficulty}</span>
                     </div>
-                    <span className="tc-code-chip">{question.accuracyPercent}%</span>
+                    <span className="tc-student-chip">{question.accuracyPercent}%</span>
                   </div>
                   <p className="mt-3 text-sm leading-6 text-[color:var(--brand)]">
-                    {question.code ?? "Question"} still shows {question.wrongCount} wrong
+                    {question.wrongCount} wrong
                     attempt{question.wrongCount === 1 ? "" : "s"} and{" "}
                     {question.revealCount} reveal{question.revealCount === 1 ? "" : "s"}.
                   </p>
@@ -695,18 +633,16 @@ export function StudentPracticeHubScreen() {
           </div>
         </section>
 
-        <section className="grid gap-6">
-          <section className="tc-student-panel rounded-[28px] p-6">
+        <section className="grid gap-4">
+          <section className="tc-student-panel rounded-[20px] p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-                  Trend window
-                </p>
-                <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-                  Seven-day activity
+                <p className="tc-overline">Activity</p>
+                <h2 className="mt-2 text-xl font-semibold text-[color:var(--brand)]">
+                  Seven days
                 </h2>
               </div>
-              <span className="tc-code-chip">7 days</span>
+              <span className="tc-student-chip" data-tone="soft">7 days</span>
             </div>
 
             <div className="mt-5 grid gap-3">
@@ -732,7 +668,7 @@ export function StudentPracticeHubScreen() {
                           {item.revealedCount} reveals
                         </p>
                       </div>
-                      <span className="tc-code-chip">{item.servedCount} served</span>
+                      <span className="tc-student-chip">{item.servedCount} served</span>
                     </div>
                   </div>
                 ))
@@ -746,17 +682,15 @@ export function StudentPracticeHubScreen() {
             </div>
           </section>
 
-          <section className="tc-student-panel rounded-[28px] p-6">
+          <section className="tc-student-panel rounded-[20px] p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-                  Session history
-                </p>
-                <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-                  Resume or review recent practice
+                <p className="tc-overline">Sessions</p>
+                <h2 className="mt-2 text-xl font-semibold text-[color:var(--brand)]">
+                  Recent sessions
                 </h2>
               </div>
-              <span className="tc-code-chip">
+              <span className="tc-student-chip" data-tone="soft">
                 {sessionsQuery.data?.total ?? 0} total
               </span>
             </div>
@@ -771,7 +705,9 @@ export function StudentPracticeHubScreen() {
                         {getPracticeModeLabel(activeSession.mode)}
                       </h3>
                     </div>
-                    <span className="tc-code-chip">{activeSession.answeredCount} answered</span>
+                    <span className="tc-student-chip">
+                      {activeSession.answeredCount} answered
+                    </span>
                   </div>
                   <p className="tc-muted mt-3 text-sm leading-6">
                     Started {formatTimestamp(activeSession.startedAt)}. Accuracy so far:{" "}
@@ -796,7 +732,7 @@ export function StudentPracticeHubScreen() {
                           {getPracticeModeLabel(session.mode)}
                         </h3>
                       </div>
-                      <span className="tc-code-chip">{session.accuracyPercent}%</span>
+                      <span className="tc-student-chip">{session.accuracyPercent}%</span>
                     </div>
                     <p className="tc-muted mt-3 text-sm leading-6">
                       Ended {formatTimestamp(session.endedAt)}. {session.correctCount} correct

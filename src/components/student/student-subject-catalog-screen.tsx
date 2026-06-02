@@ -10,8 +10,6 @@ import {
   countTopics,
   findSubjectBySlug,
   getStudentCatalog,
-  getOptionalText,
-  getTrackLabel,
 } from "@/lib/student";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
@@ -77,7 +75,7 @@ export function StudentSubjectCatalogScreen({
     return (
       <ErrorState
         title="This subject could not be loaded."
-        description="The student subject route couldn't finish loading the catalog data from the backend."
+        description="Please try again."
         onRetry={() => void catalogQuery.refetch()}
       />
     );
@@ -87,7 +85,7 @@ export function StudentSubjectCatalogScreen({
     return (
       <LoadingState
         title="Preparing the subject map"
-        description="Loading the selected subject and its topic tree from the authenticated catalog."
+        description="Loading topics."
       />
     );
   }
@@ -96,8 +94,8 @@ export function StudentSubjectCatalogScreen({
     return (
       <EmptyState
         eyebrow="Subject not found"
-        title="That subject isn't in the published catalog."
-        description="The route is live, but the requested slug doesn't exist in the current authenticated catalog response."
+        title="That subject is not available."
+        description="Open the catalog and choose another subject."
         ctaHref="/student/catalog"
         ctaLabel="Back to catalog"
       />
@@ -105,92 +103,38 @@ export function StudentSubjectCatalogScreen({
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
-        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+    <div className="flex flex-col gap-4">
+      <section className="tc-student-panel rounded-[20px] p-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
-              Subject route
-            </p>
-            <h1 className="tc-display mt-4 text-3xl font-semibold tracking-tight md:text-4xl">
+            <p className="tc-overline">Subject</p>
+            <h1 className="mt-2 text-2xl font-semibold text-[color:var(--brand)]">
               {subject.name}
             </h1>
-            <p className="tc-muted mt-4 max-w-3xl text-base leading-7">
-              {getOptionalText(subject.description) ??
-                "The subject drill-down is ready for notes, structured content, practice, and tests to plug into the same topic tree later."}
-            </p>
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <span className="tc-stat-chip">
-                {getTrackLabel(snapshot.selectedTrack)}
-              </span>
-              <span className="tc-stat-chip">
-                {snapshot.selectedMedium?.name ?? "All mediums"}
-              </span>
-              <span className="tc-stat-chip">{countTopics(subject.topics)} topics</span>
-            </div>
           </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="tc-student-metric rounded-[24px] p-5">
-              <p className="tc-overline">Subject code</p>
-              <p className="mt-4 text-2xl font-semibold text-white">
-                {subject.code}
-              </p>
-            </div>
-            <div className="tc-student-metric rounded-[24px] p-5">
-              <p className="tc-overline">Top-level topics</p>
-              <p className="mt-4 text-2xl font-semibold text-white">
-                {subject.topics.length}
-              </p>
-            </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="tc-student-chip" data-tone="soft">
+              {countTopics(subject.topics)} topics
+            </span>
+            <Link href="/student/catalog" className="tc-button-secondary">
+              Back
+            </Link>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="tc-student-panel rounded-[28px] p-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+      <section className="tc-student-panel rounded-[20px] p-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-                Topic map
-              </p>
-              <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-                Navigate the current topic hierarchy
+              <p className="tc-overline">Topics</p>
+              <h2 className="mt-2 text-xl font-semibold text-[color:var(--brand)]">
+                Choose a topic
               </h2>
             </div>
-            <Link href="/student/catalog" className="tc-button-secondary">
-              Back to catalog
-            </Link>
           </div>
-          <div className="mt-6">
+          <div className="mt-4">
             <StudentTopicTree topics={subject.topics} />
           </div>
-        </div>
-
-        <div className="tc-student-panel rounded-[28px] p-6">
-          <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-            Next student modules
-          </p>
-          <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-            This subject context is ready to flow into later student features.
-          </h2>
-          <div className="mt-5 flex flex-col gap-4">
-            {[
-              "Notes discovery and secure reader",
-              "Guidance and structured content modules",
-              "Practice sets and weak-area flows",
-              "Timed tests and result review",
-            ].map((label) => (
-              <div key={label} className="tc-student-card rounded-[24px] p-5">
-                <p className="font-semibold text-[color:var(--brand)]">{label}</p>
-                <p className="tc-muted mt-2 text-sm leading-6">
-                  The selected track, medium, subject, and topic map are already
-                  centralized so later routes don&apos;t need to rebuild discovery.
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
       </section>
     </div>
   );

@@ -4,13 +4,10 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { queryKeys } from "@/lib/api/query-keys";
 import { useAuthenticatedQuery } from "@/lib/auth";
-import { STUDENT_STRUCTURED_SURFACE_LINKS } from "@/lib/content";
 import {
   buildStudentCatalogSnapshot,
   buildSubjectCatalogHref,
   countTopics,
-  getMediumLabel,
-  getOptionalText,
   getStudentDashboardBootstrap,
   getTrackLabel,
 } from "@/lib/student";
@@ -32,7 +29,7 @@ function buildCatalogHref(trackCode: string | null) {
 
 function formatSubscriptionDate(value: unknown) {
   if (typeof value !== "string" || value.length === 0) {
-    return "No paid plan yet";
+    return "No plan";
   }
 
   return new Intl.DateTimeFormat("en-IN", {
@@ -40,34 +37,16 @@ function formatSubscriptionDate(value: unknown) {
   }).format(new Date(value));
 }
 
-function StudentMetricCard({
-  detail,
-  label,
-  value,
-}: Readonly<{
-  detail: string;
-  label: string;
-  value: string;
-}>) {
-  return (
-    <article className="tc-student-metric rounded-[24px] p-5">
-      <p className="tc-overline">{label}</p>
-      <p className="tc-display mt-4 text-3xl font-semibold tracking-tight text-white">
-        {value}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-white/72">{detail}</p>
-    </article>
-  );
+function getPlainText(value: unknown) {
+  return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-function SelectionRail({
+function TrackPicker({
   activeCode,
-  emptyLabel,
   items,
   onSelect,
 }: Readonly<{
   activeCode: string | null;
-  emptyLabel: string;
   items: Array<{
     code: string;
     name: string;
@@ -75,22 +54,69 @@ function SelectionRail({
   onSelect: (code: string) => void;
 }>) {
   if (items.length === 0) {
-    return <span className="tc-code-chip">{emptyLabel}</span>;
+    return <span className="tc-student-chip" data-tone="soft">No tracks</span>;
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex gap-2 overflow-x-auto pb-1">
       {items.map((item) => (
         <button
           key={item.code}
           type="button"
-          className="tc-filter-chip"
+          className="tc-filter-chip shrink-0"
           data-active={activeCode === item.code}
           onClick={() => onSelect(item.code)}
         >
           {item.name}
         </button>
       ))}
+    </div>
+  );
+}
+
+function DashboardActionCard({
+  detail,
+  href,
+  label,
+  title,
+  tone = "default",
+}: Readonly<{
+  detail: string;
+  href: string;
+  label: string;
+  title: string;
+  tone?: "default" | "primary";
+}>) {
+  return (
+    <Link
+      href={href}
+      className="tc-student-card flex min-h-[132px] flex-col justify-between rounded-[20px] p-4 transition-transform duration-200 hover:-translate-y-0.5"
+      data-tone={tone}
+    >
+      <div>
+        <p className="tc-overline">{label}</p>
+        <h2 className="mt-2 text-lg font-semibold leading-6 text-[color:var(--brand)]">
+          {title}
+        </h2>
+      </div>
+      <p className="tc-muted mt-4 text-sm leading-5">{detail}</p>
+    </Link>
+  );
+}
+
+function StatPill({
+  label,
+  value,
+}: Readonly<{
+  label: string;
+  value: string;
+}>) {
+  return (
+    <div className="rounded-[16px] bg-white px-4 py-3">
+      <p className="tc-overline">{label}</p>
+      <p className="mt-1 text-xl font-semibold text-[color:var(--brand)]">
+        {value}
+      </p>
     </div>
   );
 }
@@ -139,8 +165,8 @@ export function StudentDashboardScreen() {
   if (dashboardQuery.isError) {
     return (
       <ErrorState
-        title="The student dashboard could not load."
-        description="We couldn't load your latest study summary right now."
+        title="Dashboard could not load."
+        description="Try again in a moment."
         onRetry={() => void dashboardQuery.refetch()}
       />
     );
@@ -150,408 +176,204 @@ export function StudentDashboardScreen() {
     return (
       <LoadingState
         title="Loading dashboard"
-        description="Getting your subjects, updates, notifications, and progress."
+        description="Preparing your content overview."
       />
     );
   }
 
-  const featuredSubjects = snapshot.subjects.slice(0, 4);
+  const selectedTrackCode = snapshot.selectedTrack?.code ?? null;
+  const catalogHref = buildCatalogHref(selectedTrackCode);
+  const visibleSubjects = snapshot.subjects.slice(0, 3);
   const lastSubject =
     lastCatalogSubjectSlug
       ? dashboardData.catalog.subjects.find(
           (subject) => subject.slug === lastCatalogSubjectSlug,
         ) ?? null
       : null;
+  const latestAnnouncement = dashboardData.cms.announcements[0] ?? null;
+  const latestAnnouncementHref = getPlainText(latestAnnouncement?.linkHref);
+  const latestAnnouncementLabel = getPlainText(latestAnnouncement?.linkLabel);
 
   return (
-    <div className="flex flex-col gap-6">
-      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
-        <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+    <div className="flex flex-col gap-4">
+      <section className="tc-student-panel rounded-[24px] p-4 sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
-              Student dashboard
-            </p>
-            <h1 className="tc-display mt-4 text-3xl font-semibold tracking-tight md:text-4xl">
-              Choose your track and continue your preparation.
+            <p className="tc-overline">Dashboard</p>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[color:var(--brand)]">
+              Content overview
             </h1>
-            <p className="tc-muted mt-4 max-w-3xl text-base leading-7">
-              Select your exam track once, then move to notes, practice, tests, and updates without repeating setup on every page.
-            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <span className="tc-student-chip">
+              {getTrackLabel(snapshot.selectedTrack)}
+            </span>
+            <span className="tc-student-chip" data-tone="accent">
+              {dashboardData.analytics.activeEntitlements > 0
+                ? "Premium"
+                : "Trial"}
+            </span>
+          </div>
+        </div>
 
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <span className="tc-stat-chip">
-                Track: {getTrackLabel(snapshot.selectedTrack)}
-              </span>
-              <span className="tc-stat-chip">
-                {snapshot.subjects.length} subjects ready
-              </span>
+        <div className="mt-4">
+          <TrackPicker
+            activeCode={snapshot.selectedTrack?.code ?? null}
+            items={dashboardData.catalog.examTracks.map((examTrack) => ({
+              code: examTrack.code,
+              name: getTrackLabel(examTrack),
+            }))}
+            onSelect={setActiveExamTrackCode}
+          />
+        </div>
+      </section>
+
+      {lastSubject ? (
+        <Link
+          href={buildSubjectCatalogHref(lastSubject, {
+            examTrackCode: selectedTrackCode,
+          })}
+          className="tc-student-card flex items-center justify-between gap-4 rounded-[20px] p-4"
+        >
+          <div>
+            <p className="tc-overline">Continue</p>
+            <h2 className="mt-1 text-lg font-semibold text-[color:var(--brand)]">
+              {lastSubject.name}
+            </h2>
+          </div>
+          <span className="tc-button-secondary shrink-0">Open</span>
+        </Link>
+      ) : null}
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <DashboardActionCard
+          detail={`${dashboardData.analytics.notes.completedCount} completed`}
+          href="/student/notes"
+          label="Notes"
+          title={`${dashboardData.analytics.notes.startedCount} started`}
+          tone="primary"
+        />
+        <DashboardActionCard
+          detail={`${dashboardData.analytics.practice.completedSessions} sessions`}
+          href="/student/practice"
+          label="Practice"
+          title={`${dashboardData.analytics.practice.accuracyPercent}% accuracy`}
+        />
+        <DashboardActionCard
+          detail={`${dashboardData.analytics.tests.submittedAttempts} attempts`}
+          href="/student/tests"
+          label="Tests"
+          title={`${dashboardData.analytics.tests.bestPercentage}% best`}
+        />
+        <DashboardActionCard
+          detail="Listening and speaking drills"
+          href="/student/english-speaking"
+          label="English"
+          title="Speaking practice"
+        />
+      </section>
+
+      <section className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="tc-student-panel rounded-[24px] p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="tc-overline">Subjects</p>
+              <h2 className="mt-1 text-xl font-semibold text-[color:var(--brand)]">
+                Start studying
+              </h2>
             </div>
+            <Link href={catalogHref} className="tc-button-secondary">
+              Catalog
+            </Link>
+          </div>
 
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                href={buildCatalogHref(snapshot.selectedTrack?.code ?? null)}
-                className="tc-button-primary"
-              >
-                Explore catalog
-              </Link>
-              {lastSubject ? (
+          <div className="mt-4 grid gap-3">
+            {visibleSubjects.length > 0 ? (
+              visibleSubjects.map((subject) => (
                 <Link
-                  href={buildSubjectCatalogHref(lastSubject, {
-                    examTrackCode: snapshot.selectedTrack?.code ?? null,
-                    mediumCode: snapshot.selectedMedium?.code ?? null,
+                  key={subject.id}
+                  href={buildSubjectCatalogHref(subject, {
+                    examTrackCode: selectedTrackCode,
                   })}
-                  className="tc-button-secondary"
+                  className="tc-student-card flex items-center justify-between gap-3 rounded-[18px] px-4 py-3"
                 >
-                  Resume {lastSubject.name}
-                </Link>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-            <StudentMetricCard
-              label="Notes progress"
-              value={String(dashboardData.analytics.notes.startedCount)}
-              detail={`${dashboardData.analytics.notes.completedCount} notes completed`}
-            />
-            <StudentMetricCard
-              label="Practice accuracy"
-              value={`${dashboardData.analytics.practice.accuracyPercent}%`}
-              detail={`${dashboardData.analytics.practice.completedSessions} practice sessions finished`}
-            />
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="tc-student-panel rounded-[28px] p-6">
-          <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-            Catalog focus
-          </p>
-          <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-            Pick your exam track once for the whole app.
-          </h2>
-          <div className="mt-5 flex flex-col gap-5">
-            <div className="space-y-3">
-              <p className="tc-overline">Exam track</p>
-              <SelectionRail
-                activeCode={snapshot.selectedTrack?.code ?? null}
-                emptyLabel="No tracks published yet"
-                items={dashboardData.catalog.examTracks.map((examTrack) => ({
-                  code: examTrack.code,
-                  name: getTrackLabel(examTrack),
-                }))}
-                onSelect={setActiveExamTrackCode}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="tc-student-panel rounded-[28px] p-6">
-          <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-            Student account
-          </p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div className="tc-student-card rounded-[22px] p-4">
-              <p className="tc-overline">Unread updates</p>
-              <p className="mt-3 text-3xl font-semibold text-[color:var(--brand)]">
-                {dashboardData.analytics.unreadNotifications}
-              </p>
-              <p className="tc-muted mt-2 text-sm">
-                Academy announcements and personal messages appear here.
-              </p>
-            </div>
-            <div className="tc-student-card rounded-[22px] p-4">
-              <p className="tc-overline">Entitlements</p>
-              <p className="mt-3 text-3xl font-semibold text-[color:var(--brand)]">
-                {dashboardData.analytics.activeEntitlements}
-              </p>
-              <p className="tc-muted mt-2 text-sm">
-                Current plan ends {formatSubscriptionDate(
-                  dashboardData.analytics.currentSubscription.endsAt,
-                )}
-              </p>
-            </div>
-            <div className="tc-student-card rounded-[22px] p-4">
-              <p className="tc-overline">Best test score</p>
-              <p className="mt-3 text-3xl font-semibold text-[color:var(--brand)]">
-                {dashboardData.analytics.tests.bestPercentage}%
-              </p>
-              <p className="tc-muted mt-2 text-sm">
-                {dashboardData.analytics.tests.submittedAttempts} submitted attempts
-              </p>
-            </div>
-            <div className="tc-student-card rounded-[22px] p-4">
-              <p className="tc-overline">Quick action path</p>
-              <p className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
-                Open catalog
-              </p>
-              <p className="tc-muted mt-2 text-sm">
-                Your selected track and medium will be reused in notes, practice, tests, and plans.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-2">
-        <div className="tc-student-panel rounded-[28px] p-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-                Academy announcements
-              </p>
-              <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-                Latest updates from the academy
-              </h2>
-            </div>
-            <span className="tc-code-chip">
-              {dashboardData.cms.announcements.length} items
-            </span>
-          </div>
-
-          <div className="mt-5 flex flex-col gap-4">
-            {dashboardData.cms.announcements.length > 0 ? (
-              dashboardData.cms.announcements.slice(0, 3).map((announcement) => {
-                const linkHref = getOptionalText(announcement.linkHref);
-                const linkLabel = getOptionalText(announcement.linkLabel);
-
-                return (
-                  <article key={announcement.id} className="tc-student-card rounded-[24px] p-5">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <TextContent
-                        as="h3"
-                        className="text-lg font-semibold text-[color:var(--brand)]"
-                        value={announcement.title}
-                      />
-                      <span className="tc-nav-badge" data-status="live">
-                        {announcement.level.toLowerCase()}
-                      </span>
-                    </div>
-                    <TextContent
-                      as="p"
-                      className="tc-muted mt-3 text-sm leading-6"
-                      preserveLineBreaks
-                      value={announcement.body}
-                    />
-                    {linkHref && linkLabel ? (
-                      <Link
-                        href={linkHref}
-                        className="tc-button-secondary mt-4"
-                      >
-                        <TextContent as="span" value={linkLabel} />
-                      </Link>
-                    ) : null}
-                  </article>
-                );
-              })
-            ) : (
-              <div className="tc-student-card rounded-[24px] p-5">
-                <p className="font-semibold text-[color:var(--brand)]">
-                  No student announcements are published yet.
-                </p>
-                <p className="tc-muted mt-2 text-sm leading-6">
-                  New announcements will appear here as soon as they are published.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="tc-student-panel rounded-[28px] p-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-                Personal inbox
-              </p>
-              <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-                Notification feed
-              </h2>
-            </div>
-            <span className="tc-code-chip">
-              {dashboardData.notifications.unreadCount} unread
-            </span>
-          </div>
-
-          <div className="mt-5 flex flex-col gap-4">
-            {dashboardData.notifications.items.length > 0 ? (
-              dashboardData.notifications.items.slice(0, 4).map((message) => (
-                <article key={message.id} className="tc-student-card rounded-[24px] p-5">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <TextContent
-                      as="h3"
-                      className="text-lg font-semibold text-[color:var(--brand)]"
-                      value={message.title}
-                    />
-                    <span className="tc-code-chip">{message.channel}</span>
+                  <div>
+                    <p className="font-semibold text-[color:var(--brand)]">
+                      {subject.name}
+                    </p>
+                    <p className="tc-muted mt-1 text-xs">
+                      {countTopics(subject.topics)} topics
+                    </p>
                   </div>
-                  <TextContent
-                    as="p"
-                    className="tc-muted mt-3 text-sm leading-6"
-                    preserveLineBreaks
-                    value={message.body}
-                  />
-                </article>
+                  <span className="tc-button-secondary shrink-0">Open</span>
+                </Link>
               ))
             ) : (
-              <div className="tc-student-card rounded-[24px] p-5">
+              <div className="tc-student-card rounded-[18px] px-4 py-3">
                 <p className="font-semibold text-[color:var(--brand)]">
-                  Your notification inbox is clear for now.
-                </p>
-                <p className="tc-muted mt-2 text-sm leading-6">
-                  New broadcasts and account messages will show up here automatically.
+                  No subjects published.
                 </p>
               </div>
             )}
           </div>
         </div>
-      </section>
 
-      <section className="tc-student-panel rounded-[28px] p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-              Assessment launchpad
-            </p>
-            <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-              Move from revision to testing when you&apos;re ready.
-            </h2>
+        <div className="grid gap-3">
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            <StatPill
+              label="Access"
+              value={dashboardData.analytics.activeEntitlements > 0 ? "Active" : "Trial"}
+            />
+            <StatPill
+              label="Plan till"
+              value={formatSubscriptionDate(
+                dashboardData.analytics.currentSubscription.endsAt,
+              )}
+            />
+            <StatPill
+              label="Unread"
+              value={String(dashboardData.notifications.unreadCount)}
+            />
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/student/practice" className="tc-button-secondary">
-              Open practice
-            </Link>
-            <Link href="/student/tests" className="tc-button-primary">
-              Open timed tests
-            </Link>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <DashboardActionCard
+              detail={`${dashboardData.cms.announcements.length} academy updates`}
+              href="/student/current-affairs"
+              label="Updates"
+              title="Current affairs"
+            />
+            <DashboardActionCard
+              detail="Plans and payment access"
+              href="/student/plans"
+              label="Access"
+              title="Plans"
+            />
           </div>
-        </div>
-
-        <div className="mt-5 grid gap-4 xl:grid-cols-3">
-          <article className="tc-student-card rounded-[24px] p-5">
-            <p className="tc-overline">Practice mode</p>
-            <h3 className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
-              Practice mode
-            </h3>
-            <p className="tc-muted mt-3 text-sm leading-6">
-              Use practice when you want quick topic revision and answer-by-answer feedback.
-            </p>
-          </article>
-
-          <article className="tc-student-card rounded-[24px] p-5">
-            <p className="tc-overline">Timed mode</p>
-            <h3 className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
-              Timed tests
-            </h3>
-            <p className="tc-muted mt-3 text-sm leading-6">
-              Timed tests keep the experience closer to a real exam and show results after submission.
-            </p>
-          </article>
-
-          <article className="tc-student-card rounded-[24px] p-5">
-            <p className="tc-overline">Shared scope</p>
-            <h3 className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
-              One study setup
-            </h3>
-            <p className="tc-muted mt-3 text-sm leading-6">
-              Your selected track and medium stay in sync across the main student sections.
-            </p>
-          </article>
         </div>
       </section>
 
-      <section className="tc-student-panel rounded-[28px] p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-              Structured learning
-            </p>
-            <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-              Open extra guidance and skill-building modules.
-            </h2>
-          </div>
-          <Link href="/student/guidance" className="tc-button-secondary">
-            Open learning hub
-          </Link>
-        </div>
-
-        <div className="mt-5 grid gap-4 xl:grid-cols-4">
-          {STUDENT_STRUCTURED_SURFACE_LINKS.map((surface) => (
-            <Link
-              key={surface.href}
-              href={surface.href}
-              className="tc-student-card rounded-[24px] p-5 transition-transform duration-200 hover:-translate-y-1"
-            >
-              <p className="tc-overline">Student route</p>
-              <h3 className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
-                {surface.label}
-              </h3>
-              <p className="tc-muted mt-3 text-sm leading-6">
-                {surface.description}
-              </p>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="tc-student-panel rounded-[28px] p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-              Subject launchpad
-            </p>
-            <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-              Start with a subject.
-            </h2>
-          </div>
-          <Link
-            href={buildCatalogHref(snapshot.selectedTrack?.code ?? null)}
-            className="tc-button-secondary"
-          >
-            Open full catalog
-          </Link>
-        </div>
-
-        {featuredSubjects.length > 0 ? (
-          <div className="mt-5 grid gap-4 xl:grid-cols-2">
-            {featuredSubjects.map((subject) => (
+      {latestAnnouncement ? (
+        <section className="tc-student-card rounded-[20px] p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="tc-overline">Latest update</p>
+              <TextContent
+                as="h2"
+                className="mt-1 text-lg font-semibold text-[color:var(--brand)]"
+                value={latestAnnouncement.title}
+              />
+            </div>
+            {latestAnnouncementHref && latestAnnouncementLabel ? (
               <Link
-                key={subject.id}
-                href={buildSubjectCatalogHref(subject, {
-                  examTrackCode: snapshot.selectedTrack?.code ?? null,
-                  mediumCode: snapshot.selectedMedium?.code ?? null,
-                })}
-                className="tc-student-card rounded-[24px] p-5 transition-transform duration-200 hover:-translate-y-1"
+                href={latestAnnouncementHref}
+                className="tc-button-secondary"
               >
-                <div className="flex flex-wrap items-center gap-3">
-                  <h3 className="text-lg font-semibold text-[color:var(--brand)]">
-                    {subject.name}
-                  </h3>
-                  <span className="tc-code-chip">{subject.code}</span>
-                </div>
-                <p className="tc-muted mt-3 text-sm leading-6">
-                  {getOptionalText(subject.description) ??
-                    "Open this subject to continue with notes, practice, and tests."}
-                </p>
-                <div className="mt-4 flex flex-wrap gap-3 text-sm text-[color:var(--muted)]">
-                  <span>{countTopics(subject.topics)} topics</span>
-                  <span>Track scoped</span>
-                  <span>{getMediumLabel(snapshot.selectedMedium)}</span>
-                </div>
+                {latestAnnouncementLabel}
               </Link>
-            ))}
+            ) : null}
           </div>
-        ) : (
-          <div className="tc-student-card mt-5 rounded-[24px] p-5">
-            <p className="font-semibold text-[color:var(--brand)]">
-              No subjects are published for the current selection yet.
-            </p>
-            <p className="tc-muted mt-2 text-sm leading-6">
-              New subjects will appear here as soon as they are published for your selected track and medium.
-            </p>
-          </div>
-        )}
-      </section>
+        </section>
+      ) : null}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { buildSessionPersistOptions } from "@/stores/persist-options";
 
 interface StudentShellSlice {
   isSidebarOpen: boolean;
+  isDesktopSidebarCollapsed: boolean;
   activeExamTrackCode: string | null;
   activeMediumCode: string | null;
   lastCatalogSubjectSlug: string | null;
@@ -12,6 +13,7 @@ interface StudentShellSlice {
 
 interface StudentShellActions {
   closeSidebar: () => void;
+  toggleDesktopSidebar: () => void;
   toggleSidebar: () => void;
   setActiveExamTrackCode: (examTrackCode: string | null) => void;
   setActiveMediumCode: (mediumCode: string | null) => void;
@@ -24,6 +26,7 @@ export type StudentShellStore = StudentShellSlice & StudentShellActions;
 
 const initialStudentShellState: StudentShellSlice = {
   isSidebarOpen: false,
+  isDesktopSidebarCollapsed: false,
   activeExamTrackCode: null,
   activeMediumCode: null,
   lastCatalogSubjectSlug: null,
@@ -38,6 +41,10 @@ export const useStudentShellStore = create<StudentShellStore>()(
         set({
           isSidebarOpen: false,
         }),
+      toggleDesktopSidebar: () =>
+        set((state) => ({
+          isDesktopSidebarCollapsed: !state.isDesktopSidebarCollapsed,
+        })),
       toggleSidebar: () =>
         set((state) => ({
           isSidebarOpen: !state.isSidebarOpen,
@@ -64,6 +71,7 @@ export const useStudentShellStore = create<StudentShellStore>()(
       "student-shell",
       (state) => ({
         isSidebarOpen: state.isSidebarOpen,
+        isDesktopSidebarCollapsed: state.isDesktopSidebarCollapsed,
         activeExamTrackCode: state.activeExamTrackCode,
         activeMediumCode: state.activeMediumCode,
         lastCatalogSubjectSlug: state.lastCatalogSubjectSlug,

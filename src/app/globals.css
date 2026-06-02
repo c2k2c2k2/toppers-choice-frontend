@@ -479,24 +479,21 @@ button {
 }
 
 .tc-student-shell {
-  background:
-    linear-gradient(180deg, #f7f9fb 0%, #f3f6f9 100%);
-  border: 1px solid rgba(0, 30, 64, 0.08);
-  box-shadow: 0 14px 36px rgba(0, 30, 64, 0.06);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
 .tc-student-shell-rail {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(246, 249, 252, 0.98) 100%);
+  background: rgba(255, 255, 255, 0.94);
   border: 1px solid rgba(0, 30, 64, 0.08);
-  box-shadow: 0 12px 30px rgba(0, 30, 64, 0.06);
+  box-shadow: 0 8px 22px rgba(0, 30, 64, 0.04);
 }
 
 .tc-student-topbar {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(249, 251, 253, 0.96) 100%);
+  background: rgba(255, 255, 255, 0.94);
   border: 1px solid rgba(0, 30, 64, 0.08);
-  box-shadow: 0 10px 26px rgba(0, 30, 64, 0.05);
+  box-shadow: 0 6px 16px rgba(0, 30, 64, 0.035);
   backdrop-filter: blur(14px);
 }
 
@@ -611,12 +608,12 @@ button {
 
 .tc-student-nav-link {
   display: flex;
-  min-height: 2.55rem;
+  min-height: 2.25rem;
   align-items: center;
   gap: 0.65rem;
-  border-radius: 0.9rem;
+  border-radius: 0.75rem;
   border: 1px solid transparent;
-  padding: 0.62rem 0.72rem;
+  padding: 0.5rem 0.6rem;
   color: var(--muted);
   transition:
     transform 0.2s ease,
@@ -664,7 +661,7 @@ button {
 .tc-student-shell .tc-student-card,
 .tc-student-shell .tc-student-card-muted,
 .tc-student-shell .tc-student-metric {
-  border-radius: 0.9rem;
+  border-radius: 0.85rem;
   padding: 0.85rem;
 }
 

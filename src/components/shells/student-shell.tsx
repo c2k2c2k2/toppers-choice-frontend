@@ -8,6 +8,11 @@ import { queryKeys } from "@/lib/api/query-keys";
 import { useAuthenticatedQuery, useAuthSession } from "@/lib/auth";
 import { getCurrentEntitlements, isActiveEntitlement } from "@/lib/payments";
 import {
+  buildStudentCatalogSnapshot,
+  getStudentCatalog,
+  getTrackLabel,
+} from "@/lib/student";
+import {
   heartbeatTrial,
   startTrial,
   stopTrial,
@@ -50,8 +55,13 @@ export function StudentShell({
   const router = useRouter();
   const {
     activeExamTrackCode,
+    activeMediumCode,
     closeSidebar,
+    isDesktopSidebarCollapsed,
     isSidebarOpen,
+    setActiveExamTrackCode,
+    setActiveMediumCode,
+    toggleDesktopSidebar,
     toggleSidebar,
   } = useStudentShellStore();
   const entitlementsQuery = useAuthenticatedQuery({
@@ -63,8 +73,22 @@ export function StudentShell({
     queryKey: queryKeys.student.entitlements(),
     staleTime: 15_000,
   });
+  const catalogQuery = useAuthenticatedQuery({
+    enabled:
+      authSession.isReady &&
+      authSession.isAuthenticated &&
+      authSession.user?.userType === "STUDENT",
+    queryFn: getStudentCatalog,
+    queryKey: queryKeys.student.catalog(),
+    staleTime: 60_000,
+  });
+  const catalogSnapshot = catalogQuery.data
+    ? buildStudentCatalogSnapshot(catalogQuery.data, {
+        examTrackCode: activeExamTrackCode,
+        mediumCode: activeMediumCode,
+      })
+    : null;
 
-  const currentTrackLabel = activeExamTrackCode ?? "Track not set";
   const hasActiveEntitlement =
     entitlementsQuery.data?.items.some((entitlement) =>
       isActiveEntitlement(entitlement),
@@ -201,6 +225,34 @@ export function StudentShell({
     trialAccess?.id,
   ]);
 
+  useEffect(() => {
+    if (!catalogSnapshot?.selectedTrack?.code) {
+      return;
+    }
+
+    if (!activeExamTrackCode || activeExamTrackCode !== catalogSnapshot.selectedTrack.code) {
+      setActiveExamTrackCode(catalogSnapshot.selectedTrack.code);
+    }
+  }, [
+    activeExamTrackCode,
+    catalogSnapshot?.selectedTrack?.code,
+    setActiveExamTrackCode,
+  ]);
+
+  useEffect(() => {
+    if (!catalogSnapshot?.selectedMedium?.code) {
+      return;
+    }
+
+    if (!activeMediumCode || activeMediumCode !== catalogSnapshot.selectedMedium.code) {
+      setActiveMediumCode(catalogSnapshot.selectedMedium.code);
+    }
+  }, [
+    activeMediumCode,
+    catalogSnapshot?.selectedMedium?.code,
+    setActiveMediumCode,
+  ]);
+
   async function handleLogout() {
     const accessToken = await authSession.ensureAccessToken();
     if (accessToken) {
@@ -224,47 +276,65 @@ export function StudentShell({
     : entitlementsReady
       ? trialChipLabel
       : "Checking access";
+  const welcomeName =
+    authSession.user?.fullName?.trim() ||
+    authSession.user?.email?.split("@")[0] ||
+    "Student";
 
-  let shellTitle = authSession.user?.fullName ?? "Student workspace";
-  let shellDescription = "Notes, practice, tests, and updates.";
+  let shellTitle = "Dashboard";
 
   if (pathname.startsWith("/student/catalog")) {
     shellTitle = "Catalog";
-    shellDescription = "Browse tracks, subjects, and topics.";
   } else if (pathname.startsWith("/student/english-speaking")) {
     shellTitle = "English speaking";
-    shellDescription = "Listen and repeat topic-wise sentences.";
   } else if (pathname.startsWith("/student/practice")) {
     shellTitle = "Practice";
-    shellDescription = "Solve questions and review mistakes.";
   } else if (pathname.startsWith("/student/tests")) {
     shellTitle = "Tests";
-    shellDescription = "Take tests and review scores.";
   } else if (pathname.startsWith("/student/plans")) {
-    shellTitle = "Plans and access";
-    shellDescription = "Check plan and payment access.";
+    shellTitle = "Plans";
   } else if (
     pathname.startsWith("/student/guidance") ||
     pathname.startsWith("/student/current-affairs") ||
     pathname.startsWith("/student/monthly-updates")
   ) {
-    shellTitle = "Guidance and learning";
-    shellDescription = "Guidance, current affairs, and updates.";
+    shellTitle = "Guidance";
   } else if (pathname.startsWith("/student/notes")) {
     shellTitle = "Notes";
-    shellDescription = "Read notes and continue studying.";
   }
+
+  const shellGridClass = isDesktopSidebarCollapsed
+    ? "tc-student-shell grid min-h-[calc(100dvh-1rem)] gap-3 rounded-[20px] p-2 xl:grid-cols-[4.5rem_minmax(0,1fr)]"
+    : "tc-student-shell grid min-h-[calc(100dvh-1rem)] gap-3 rounded-[20px] p-2 xl:grid-cols-[12.5rem_minmax(0,1fr)] 2xl:grid-cols-[13.5rem_minmax(0,1fr)]";
+  const menuButton = (
+    <button
+      type="button"
+      onClick={toggleDesktopSidebar}
+      className="tc-student-menu-button hidden xl:inline-flex"
+      aria-label={isDesktopSidebarCollapsed ? "Expand menu" : "Collapse menu"}
+      title={isDesktopSidebarCollapsed ? "Expand menu" : "Collapse menu"}
+    >
+      <HamburgerIcon />
+    </button>
+  );
 
   return (
     <div className="min-h-dvh bg-[color:var(--surface-student)]">
       <div className="mx-auto min-h-dvh w-full px-2 py-2 md:px-3 xl:px-4">
-        <div className="tc-student-shell grid min-h-[calc(100dvh-1rem)] gap-3 rounded-[24px] p-2 xl:grid-cols-[14.5rem_minmax(0,1fr)] 2xl:grid-cols-[15.5rem_minmax(0,1fr)]">
-          <aside className="tc-student-shell-rail hidden rounded-[20px] p-3 xl:sticky xl:top-2 xl:block xl:h-[calc(100dvh-2rem)] xl:overflow-y-auto">
-            <div className="flex items-center gap-3">
+        <div className={shellGridClass}>
+          <aside
+            className="tc-student-shell-rail hidden rounded-[18px] p-3 xl:sticky xl:top-2 xl:block xl:h-[calc(100dvh-2rem)] xl:overflow-y-auto"
+            data-collapsed={isDesktopSidebarCollapsed}
+          >
+            <div
+              className={`flex items-center gap-3 ${
+                isDesktopSidebarCollapsed ? "justify-center" : ""
+              }`}
+            >
               <div className="inline-flex rounded-[16px] border border-white/70 bg-white/82 p-2 shadow-[0_12px_24px_rgba(0,30,64,0.1)]">
                 <BrandMark alt="" priority sizes="42px" className="w-10" />
               </div>
-              <div className="min-w-0">
+              <div className={isDesktopSidebarCollapsed ? "sr-only" : "min-w-0"}>
                 <p className="text-sm font-extrabold text-[color:var(--brand)]">
                   Toppers&apos; Choice
                 </p>
@@ -273,15 +343,16 @@ export function StudentShell({
             </div>
 
             <nav className="mt-4">
-              <StudentShellNavigation />
+              <StudentShellNavigation iconOnly={isDesktopSidebarCollapsed} />
             </nav>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              <span className="tc-student-chip" data-tone="soft">
-                {currentTrackLabel}
-              </span>
+            <div
+              className={`mt-4 flex flex-wrap gap-2 ${
+                isDesktopSidebarCollapsed ? "justify-center" : ""
+              }`}
+            >
               <span className="tc-student-chip" data-tone="accent">
-                {accessChipLabel}
+                {isDesktopSidebarCollapsed ? "P" : accessChipLabel}
               </span>
             </div>
           </aside>
@@ -306,11 +377,6 @@ export function StudentShell({
                     Close
                   </button>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <span className="tc-student-chip" data-tone="soft">
-                    {currentTrackLabel}
-                  </span>
-                </div>
                 <nav className="mt-4">
                   <StudentShellNavigation compact onNavigate={closeSidebar} />
                 </nav>
@@ -319,35 +385,52 @@ export function StudentShell({
           ) : null}
 
           <div className="flex min-w-0 flex-1 flex-col gap-3">
-            <header className="tc-student-topbar rounded-[20px] p-3 md:p-4">
-              <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                <div className="max-w-4xl">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={toggleSidebar}
-                      className="tc-button-secondary xl:hidden"
-                    >
-                      Menu
-                    </button>
-                  </div>
-                  <h1 className="tc-display mt-2 text-2xl font-semibold tracking-tight md:text-3xl xl:mt-0">
-                    {shellTitle}
-                  </h1>
-                  <p className="tc-muted mt-1 max-w-2xl text-sm leading-6">
-                    {shellDescription}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <span className="tc-student-chip">
-                      {currentTrackLabel}
-                    </span>
-                    <span className="tc-student-chip" data-tone="accent">
-                      {accessChipLabel}
-                    </span>
+            <header className="tc-student-topbar rounded-[18px] px-3 py-2 md:px-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={toggleSidebar}
+                    className="tc-student-menu-button xl:hidden"
+                    aria-label="Open menu"
+                  >
+                    <HamburgerIcon />
+                  </button>
+                  {menuButton}
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-[color:var(--muted)]">
+                      Welcome, {welcomeName}
+                    </p>
+                    <h1 className="truncate text-lg font-semibold text-[color:var(--brand)] md:text-xl">
+                      {shellTitle}
+                    </h1>
                   </div>
                 </div>
 
-                <div className="tc-admin-toolbar">
+                <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                  <label className="tc-student-track-select">
+                    <span className="sr-only">Exam track</span>
+                    <select
+                      value={catalogSnapshot?.selectedTrack?.code ?? ""}
+                      onChange={(event) => {
+                        setActiveExamTrackCode(event.target.value);
+                      }}
+                      disabled={!catalogQuery.data?.examTracks.length}
+                    >
+                      {catalogQuery.data?.examTracks.length ? (
+                        catalogQuery.data.examTracks.map((examTrack) => (
+                          <option key={examTrack.id} value={examTrack.code}>
+                            {getTrackLabel(examTrack)}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="">Track</option>
+                      )}
+                    </select>
+                  </label>
+                  <span className="tc-student-chip hidden sm:inline-flex" data-tone="accent">
+                    {accessChipLabel}
+                  </span>
                   <Link href="/" className="tc-button-secondary">
                     Website
                   </Link>
@@ -369,6 +452,24 @@ export function StudentShell({
 
       <StudentBottomNavigation />
     </div>
+  );
+}
+
+function HamburgerIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+    >
+      <path d="M4 7h16" />
+      <path d="M4 12h16" />
+      <path d="M4 17h16" />
+    </svg>
   );
 }
 
