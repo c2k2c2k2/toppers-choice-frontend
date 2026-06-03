@@ -899,8 +899,8 @@ button {
 
 .tc-bottom-nav-shell {
   display: grid;
-  width: min(100%, 25rem);
-  gap: 0.35rem;
+  width: min(100%, 30rem);
+  gap: 0.2rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.92);
   padding: 0.38rem;
@@ -915,12 +915,18 @@ button {
   justify-content: center;
   border-radius: 999px;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   text-align: center;
   transition:
     background-color 0.2s ease,
     color 0.2s ease,
     transform 0.2s ease;
+}
+
+@media (min-width: 768px) {
+  .tc-bottom-nav {
+    display: none !important;
+  }
 }
 
 .tc-bottom-nav-link[data-active="true"] {

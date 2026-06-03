@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 import { useStudentShellStore } from "@/stores";
 
 type StudentNavIcon =
@@ -81,6 +81,32 @@ const STUDENT_NAV_ITEMS: StudentNavItem[] = [
     status: "live",
   },
 ];
+
+function subscribeToMobileViewport(callback: () => void) {
+  const mediaQuery = window.matchMedia("(max-width: 767px)");
+
+  mediaQuery.addEventListener("change", callback);
+
+  return () => {
+    mediaQuery.removeEventListener("change", callback);
+  };
+}
+
+function getMobileViewportSnapshot() {
+  return window.matchMedia("(max-width: 767px)").matches;
+}
+
+function getServerMobileViewportSnapshot() {
+  return false;
+}
+
+function useIsMobileViewport() {
+  return useSyncExternalStore(
+    subscribeToMobileViewport,
+    getMobileViewportSnapshot,
+    getServerMobileViewportSnapshot,
+  );
+}
 
 function isActivePath(pathname: string, href?: string) {
   if (!href) {
@@ -253,13 +279,14 @@ export function StudentShellNavigation({
 export function StudentBottomNavigation() {
   const pathname = usePathname();
   const isVisible = useStudentShellStore((state) => state.bottomNavVisible);
+  const isMobileViewport = useIsMobileViewport();
   const isImmersiveAssessmentRoute =
     pathname.startsWith("/student/practice/session/") ||
     pathname.startsWith("/student/tests/attempts/");
   const hideBottomNavOnRoute =
     isImmersiveAssessmentRoute || pathname.startsWith("/student/plans");
 
-  if (!isVisible || hideBottomNavOnRoute) {
+  if (!isVisible || !isMobileViewport || hideBottomNavOnRoute) {
     return null;
   }
 
@@ -267,6 +294,7 @@ export function StudentBottomNavigation() {
     [
       "/student",
       "/student/catalog",
+      "/student/guidance",
       "/student/english-speaking",
       "/student/notes",
     ].includes(item.href ?? ""),
