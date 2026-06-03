@@ -754,17 +754,17 @@ export function SecureNoteReader({
         className={`flex flex-col gap-6 ${focusMode && readerState === "ready" ? "h-full min-h-0 gap-0 sm:gap-3" : ""}`}
       >
         {focusMode && readerState === "ready" ? (
-          <div className="absolute left-2 right-2 top-2 z-30 flex items-center justify-between gap-2 rounded-[18px] bg-[rgba(7,17,31,0.5)] px-3 py-2 text-white backdrop-blur-md sm:left-4 sm:right-4 sm:top-4">
+          <div className="z-30 mx-2 mt-2 flex min-h-[3.25rem] shrink-0 items-center justify-between gap-2 rounded-[18px] bg-[rgba(7,17,31,0.42)] px-3 py-2 text-white backdrop-blur-md sm:mx-0 sm:mt-0">
             <div className="min-w-0">
-              <p className="text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-white/55">
+              <p className="text-[0.58rem] font-semibold uppercase tracking-[0.16em] text-white/55">
                 Zen reader
               </p>
               <p className="truncate text-xs font-semibold sm:text-sm">
                 {nearestIndexEntry?.title || note.title}
               </p>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <span className="rounded-full bg-white/10 px-3 py-2 text-xs font-bold text-white/88">
+            <div className="flex shrink-0 items-center gap-1.5">
+              <span className="rounded-full bg-white/10 px-3 py-2 text-xs font-bold leading-none text-white/88">
                 Page {currentPage}
               </span>
               <ReaderActionButton
@@ -937,11 +937,11 @@ export function SecureNoteReader({
                 </div>
               ) : null}
 
-              <div className="min-h-0 flex-1">
+              <div className="min-h-0 flex-1 px-0 pt-2 sm:pt-0">
                 <div className="relative h-full">
                   <PdfCanvasViewer
                     key={`${session.noteViewSessionId}:${sessionStartPage}`}
-                    fitMode={isMobileViewport ? "height" : "width"}
+                    fitMode="width"
                     gestureDirection={isMobileViewport ? "vertical" : "horizontal"}
                     initialPage={sessionStartPage}
                     initialZoom={preferredZoom}
@@ -951,7 +951,7 @@ export function SecureNoteReader({
                     onPageChange={(page) => setCurrentPage(page)}
                     onZoomChange={setPreferredZoom}
                     requestedPage={currentPage}
-                    shellClassName="h-full min-h-0 rounded-none border-0 bg-[linear-gradient(180deg,#08111f_0%,#040914_100%)] p-0 sm:rounded-[28px]"
+                    shellClassName="h-full min-h-0 rounded-none border-0 bg-[linear-gradient(180deg,#08111f_0%,#040914_100%)] !p-0 sm:rounded-[28px]"
                     showToolbar={false}
                     watermarkPayload={watermarkPayload}
                   />
@@ -974,11 +974,13 @@ export function SecureNoteReader({
                   </div>
                   <div
                     aria-hidden="true"
-                    className="tc-reader-scroll-indicator pointer-events-none absolute bottom-3 left-1/2 z-20 -translate-x-1/2"
+                    className="tc-reader-scroll-indicator pointer-events-none absolute bottom-2 left-1/2 z-20 -translate-x-1/2"
                   >
-                    <span />
-                    <span />
-                    <span />
+                    <span className="tc-reader-scroll-arrow tc-reader-scroll-arrow-up" />
+                    <span className="tc-reader-scroll-track">
+                      <span />
+                    </span>
+                    <span className="tc-reader-scroll-arrow tc-reader-scroll-arrow-down" />
                   </div>
                 </div>
               </div>

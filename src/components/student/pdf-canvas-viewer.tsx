@@ -659,7 +659,12 @@ export function PdfCanvasViewer({
         onTouchMove={handleTouchMove}
         onTouchStart={handleTouchStart}
       >
-        <div className="flex min-h-full min-w-0 items-center justify-center">
+        <div
+          className={[
+            "flex min-h-full min-w-0 justify-center",
+            fitMode === "width" ? "items-start py-1" : "items-center",
+          ].join(" ")}
+        >
           {isLoadingDocument ? (
             <div className="space-y-3 text-center text-white/80">
               <p className="tc-overline text-white/70">Secure reader</p>

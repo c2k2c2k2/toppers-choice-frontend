@@ -419,23 +419,23 @@ button {
   animation-delay: 0.18s;
 }
 
-@keyframes tc-reader-scroll-dot {
+@keyframes tc-reader-scroll-thumb {
   0%,
   100% {
-    opacity: 0.28;
-    transform: translateY(-5px);
+    opacity: 0.45;
+    transform: translate(-50%, calc(-50% - 0.35rem));
   }
 
   50% {
     opacity: 1;
-    transform: translateY(5px);
+    transform: translate(-50%, calc(-50% + 0.35rem));
   }
 }
 
 .tc-reader-scroll-indicator {
   display: flex;
-  width: 1.9rem;
-  height: 3.1rem;
+  width: 2.15rem;
+  height: 3.35rem;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -447,20 +447,39 @@ button {
   backdrop-filter: blur(12px);
 }
 
-.tc-reader-scroll-indicator span {
-  width: 0.34rem;
-  height: 0.34rem;
+.tc-reader-scroll-arrow {
+  width: 0.44rem;
+  height: 0.44rem;
+  border-right: 2px solid rgba(255, 255, 255, 0.84);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.84);
+}
+
+.tc-reader-scroll-arrow-up {
+  transform: rotate(225deg);
+}
+
+.tc-reader-scroll-arrow-down {
+  transform: rotate(45deg);
+}
+
+.tc-reader-scroll-track {
+  position: relative;
+  width: 0.18rem;
+  height: 1rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.tc-reader-scroll-track span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0.4rem;
+  height: 0.4rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.86);
-  animation: tc-reader-scroll-dot 1.2s ease-in-out infinite;
-}
-
-.tc-reader-scroll-indicator span:nth-child(2) {
-  animation-delay: 0.12s;
-}
-
-.tc-reader-scroll-indicator span:nth-child(3) {
-  animation-delay: 0.24s;
+  animation: tc-reader-scroll-thumb 1.2s ease-in-out infinite;
+  transform: translate(-50%, -50%);
 }
 
 .tc-motion-float {
