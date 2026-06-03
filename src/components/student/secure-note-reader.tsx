@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { queryKeys } from "@/lib/api/query-keys";
 import { useAuthenticatedMutation, useAuthenticatedQuery } from "@/lib/auth";
 import {
@@ -124,9 +125,13 @@ type ReaderActionIcon =
   | "bookmark"
   | "bookmarks"
   | "close"
+  | "down"
   | "expand"
   | "index"
-  | "refresh";
+  | "refresh"
+  | "up"
+  | "zoomIn"
+  | "zoomOut";
 
 function ReaderActionGlyph({
   icon,
@@ -221,6 +226,43 @@ function ReaderActionGlyph({
     );
   }
 
+  if (icon === "up" || icon === "down") {
+    return (
+      <svg
+        aria-hidden="true"
+        className="h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+        viewBox="0 0 24 24"
+      >
+        <path d={icon === "up" ? "M18 15L12 9L6 15" : "M6 9L12 15L18 9"} />
+      </svg>
+    );
+  }
+
+  if (icon === "zoomIn" || icon === "zoomOut") {
+    return (
+      <svg
+        aria-hidden="true"
+        className="h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+        viewBox="0 0 24 24"
+      >
+        <circle cx="10.75" cy="10.75" r="5.75" />
+        <path d="m15 15 4.5 4.5" />
+        <path d="M8.5 10.75H13" />
+        {icon === "zoomIn" ? <path d="M10.75 8.5V13" /> : null}
+      </svg>
+    );
+  }
+
   return (
     <svg
       aria-hidden="true"
@@ -285,11 +327,14 @@ function ReaderActionButton({
 }
 
 export function SecureNoteReader({
+  autoStart = false,
   note,
 }: Readonly<{
+  autoStart?: boolean;
   note: NoteDetailResponse;
 }>) {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const initialStartPage = getReaderStartPage(note);
   const accessDescriptor = getNoteAccessDescriptor(note.access);
   const focusMode = useNoteReaderStore((state) => state.focusMode);
@@ -305,7 +350,7 @@ export function SecureNoteReader({
     (state) => state.setBottomNavVisible,
   );
   const [activePanel, setActivePanel] = useState<"bookmarks" | "index" | null>(
-    "index",
+    autoStart ? null : "index",
   );
   const [currentPage, setCurrentPage] = useState(initialStartPage);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
@@ -484,6 +529,18 @@ export function SecureNoteReader({
     }
   }
 
+  const startSessionEvent = useEffectEvent((startPage: number) => {
+    void startSession(startPage);
+  });
+
+  useEffect(() => {
+    if (!autoStart || isLocked || readerState !== "idle") {
+      return;
+    }
+
+    startSessionEvent(initialStartPage);
+  }, [autoStart, initialStartPage, isLocked, readerState]);
+
   function handleViewerError(message: string) {
     setReaderError(message);
     setReaderState(isNoteSessionErrorMessage(message) ? "expired" : "error");
@@ -530,6 +587,22 @@ export function SecureNoteReader({
 
   function handleTogglePanel(panel: "bookmarks" | "index") {
     setActivePanel((current) => (current === panel ? null : panel));
+  }
+
+  function handleMovePage(delta: number) {
+    setActivePanel(null);
+    setCurrentPage((page) =>
+      Math.min(Math.max(page + delta, 1), Math.max(note.pageCount, 1)),
+    );
+  }
+
+  function handleCloseReader() {
+    if (autoStart) {
+      router.replace("/student/notes");
+      return;
+    }
+
+    setFocusMode(false);
   }
 
   function handleSaveBookmark() {
@@ -673,14 +746,43 @@ export function SecureNoteReader({
     <section
       className={
         focusMode && readerState === "ready"
-          ? "fixed inset-0 z-50 bg-[rgba(7,17,31,0.98)] p-3 sm:p-4"
+          ? "fixed inset-0 z-50 bg-[rgba(7,17,31,0.98)] p-0 sm:p-4"
           : "tc-student-panel rounded-[32px] p-4 sm:p-5 lg:p-6"
       }
     >
       <div
-        className={`flex flex-col gap-6 ${focusMode && readerState === "ready" ? "h-full" : ""}`}
+        className={`flex flex-col gap-6 ${focusMode && readerState === "ready" ? "h-full min-h-0 gap-0 sm:gap-3" : ""}`}
       >
-        {!(focusMode && readerState === "ready") ? (
+        {focusMode && readerState === "ready" ? (
+          <div className="absolute left-2 right-2 top-2 z-30 flex items-center justify-between gap-2 rounded-[18px] bg-[rgba(7,17,31,0.5)] px-3 py-2 text-white backdrop-blur-md sm:left-4 sm:right-4 sm:top-4">
+            <div className="min-w-0">
+              <p className="text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-white/55">
+                Zen reader
+              </p>
+              <p className="truncate text-xs font-semibold sm:text-sm">
+                {nearestIndexEntry?.title || note.title}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="rounded-full bg-white/10 px-3 py-2 text-xs font-bold text-white/88">
+                Page {currentPage}
+              </span>
+              <ReaderActionButton
+                active={activePanel === "index"}
+                icon="index"
+                inverted
+                label="Toggle note index"
+                onClick={() => handleTogglePanel("index")}
+              />
+              <ReaderActionButton
+                icon="close"
+                inverted
+                label="Exit zen mode"
+                onClick={handleCloseReader}
+              />
+            </div>
+          </div>
+        ) : !autoStart ? (
           <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div>
               <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
@@ -718,50 +820,7 @@ export function SecureNoteReader({
               ) : null}
             </div>
           </div>
-        ) : (
-          <div className="flex items-center justify-between gap-3 rounded-[24px] bg-white/8 px-4 py-3 text-white">
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60">
-                Zen reader
-              </p>
-              <p className="truncate text-sm font-semibold">
-                {nearestIndexEntry?.title || note.title}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold">
-                Page {currentPage}
-              </span>
-              <ReaderActionButton
-                active={activePanel === "index"}
-                icon="index"
-                inverted
-                label="Toggle note index"
-                onClick={() => handleTogglePanel("index")}
-              />
-              <ReaderActionButton
-                active={activePanel === "bookmarks"}
-                icon="bookmarks"
-                inverted
-                label="Toggle bookmarks"
-                onClick={() => handleTogglePanel("bookmarks")}
-              />
-              <ReaderActionButton
-                disabled={createBookmarkMutation.isPending}
-                icon="bookmark"
-                inverted
-                label="Save this page"
-                onClick={handleSaveBookmark}
-              />
-              <ReaderActionButton
-                icon="close"
-                inverted
-                label="Exit zen mode"
-                onClick={() => setFocusMode(false)}
-              />
-            </div>
-          </div>
-        )}
+        ) : null}
 
         {isLocked ? (
           <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
@@ -879,30 +938,49 @@ export function SecureNoteReader({
               ) : null}
 
               <div className="min-h-0 flex-1">
-                <PdfCanvasViewer
-                  key={`${session.noteViewSessionId}:${sessionStartPage}`}
-                  gestureDirection={isMobileViewport ? "vertical" : "horizontal"}
-                  initialPage={sessionStartPage}
-                  initialZoom={preferredZoom}
-                  noteViewSessionId={session.noteViewSessionId}
-                  noteViewToken={session.noteViewToken}
-                  onError={handleViewerError}
-                  onPageChange={(page) => setCurrentPage(page)}
-                  onZoomChange={setPreferredZoom}
-                  requestedPage={currentPage}
-                  shellClassName="h-full min-h-[calc(100vh-10rem)] border-0 bg-[linear-gradient(180deg,#08111f_0%,#040914_100%)] p-0"
-                  showToolbar={false}
-                  watermarkPayload={watermarkPayload}
-                />
-              </div>
+                <div className="relative h-full">
+                  <PdfCanvasViewer
+                    key={`${session.noteViewSessionId}:${sessionStartPage}`}
+                    fitMode={isMobileViewport ? "height" : "width"}
+                    gestureDirection={isMobileViewport ? "vertical" : "horizontal"}
+                    initialPage={sessionStartPage}
+                    initialZoom={preferredZoom}
+                    noteViewSessionId={session.noteViewSessionId}
+                    noteViewToken={session.noteViewToken}
+                    onError={handleViewerError}
+                    onPageChange={(page) => setCurrentPage(page)}
+                    onZoomChange={setPreferredZoom}
+                    requestedPage={currentPage}
+                    shellClassName="h-full min-h-0 rounded-none border-0 bg-[linear-gradient(180deg,#08111f_0%,#040914_100%)] p-0 sm:rounded-[28px]"
+                    showToolbar={false}
+                    watermarkPayload={watermarkPayload}
+                  />
 
-              <div className="mt-3 flex items-center justify-between gap-3 text-xs text-white/70">
-                <p>
-                  {isMobileViewport
-                    ? "Scroll to read the full page. Swipe at the top or bottom edge to move between pages."
-                    : "Use the index or keyboard arrows to move through pages."}
-                </p>
-                <p>{progressMutation.isPending ? "Saving progress..." : "Saved"}</p>
+                  <div className="absolute right-2 top-1/2 z-30 flex -translate-y-1/2 flex-col gap-16 sm:right-4">
+                    <ReaderActionButton
+                      disabled={currentPage <= 1}
+                      icon="up"
+                      inverted
+                      label="Previous page"
+                      onClick={() => handleMovePage(-1)}
+                    />
+                    <ReaderActionButton
+                      disabled={currentPage >= note.pageCount}
+                      icon="down"
+                      inverted
+                      label="Next page"
+                      onClick={() => handleMovePage(1)}
+                    />
+                  </div>
+                  <div
+                    aria-hidden="true"
+                    className="tc-reader-scroll-indicator pointer-events-none absolute bottom-3 left-1/2 z-20 -translate-x-1/2"
+                  >
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                </div>
               </div>
             </div>
           ) : (

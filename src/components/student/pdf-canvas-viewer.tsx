@@ -42,6 +42,19 @@ function canScrollVertically(element: HTMLElement) {
   return element.scrollHeight > element.clientHeight + 4;
 }
 
+function getTouchDistance(touches: TouchEvent<HTMLDivElement>["touches"]) {
+  if (touches.length < 2) {
+    return null;
+  }
+
+  const firstTouch = touches[0];
+  const secondTouch = touches[1];
+  const deltaX = secondTouch.clientX - firstTouch.clientX;
+  const deltaY = secondTouch.clientY - firstTouch.clientY;
+
+  return Math.hypot(deltaX, deltaY);
+}
+
 function isEditableTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) {
     return false;
@@ -166,6 +179,7 @@ function ViewerControlButton({
 }
 
 export function PdfCanvasViewer({
+  fitMode = "width",
   gestureDirection = "horizontal",
   initialPage = 1,
   initialZoom = 1,
@@ -180,6 +194,7 @@ export function PdfCanvasViewer({
   showToolbar = true,
   watermarkPayload,
 }: Readonly<{
+  fitMode?: "contain" | "height" | "width";
   gestureDirection?: "horizontal" | "vertical";
   initialPage?: number;
   initialZoom?: number;
@@ -198,8 +213,17 @@ export function PdfCanvasViewer({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const documentRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
   const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null);
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
+  const touchStartRef = useRef<{
+    initialPinchDistance?: number;
+    initialZoom?: number;
+    isPinching?: boolean;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [containerSize, setContainerSize] = useState({
+    height: 0,
+    width: 0,
+  });
   const [documentProxy, setDocumentProxy] =
     useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [isLoadingDocument, setIsLoadingDocument] = useState(false);
@@ -227,13 +251,16 @@ export function PdfCanvasViewer({
       return;
     }
 
-    const updateWidth = () => {
-      setContainerWidth(element.clientWidth);
+    const updateSize = () => {
+      setContainerSize({
+        height: element.clientHeight,
+        width: element.clientWidth,
+      });
     };
 
-    updateWidth();
+    updateSize();
 
-    const observer = new ResizeObserver(updateWidth);
+    const observer = new ResizeObserver(updateSize);
     observer.observe(element);
 
     return () => observer.disconnect();
@@ -335,7 +362,7 @@ export function PdfCanvasViewer({
   }, [pageNumber]);
 
   useEffect(() => {
-    if (!documentProxy || !canvasRef.current || !containerWidth) {
+    if (!documentProxy || !canvasRef.current || !containerSize.width) {
       return;
     }
 
@@ -352,10 +379,22 @@ export function PdfCanvasViewer({
 
         const viewport = page.getViewport({ scale: 1 });
         const availableWidth = Math.max(
-          Math.min(containerWidth - 32, MAX_BASE_PAGE_WIDTH),
+          Math.min(containerSize.width - (fitMode === "width" ? 4 : 32), MAX_BASE_PAGE_WIDTH),
           220,
         );
-        const scale = (availableWidth / viewport.width) * clampZoom(zoom);
+        const widthScale = availableWidth / viewport.width;
+        const availableHeight = Math.max(
+          containerSize.height - (fitMode === "height" ? 8 : 32),
+          260,
+        );
+        const heightScale = availableHeight / viewport.height;
+        const baseScale =
+          fitMode === "height"
+            ? heightScale
+            : fitMode === "contain"
+              ? Math.min(widthScale, heightScale)
+              : widthScale;
+        const scale = baseScale * clampZoom(zoom);
         const scaledViewport = page.getViewport({ scale });
         const canvas = canvasRef.current;
 
@@ -412,7 +451,7 @@ export function PdfCanvasViewer({
       cancelled = true;
       renderTaskRef.current?.cancel();
     };
-  }, [containerWidth, documentProxy, pageNumber, zoom]);
+  }, [containerSize.height, containerSize.width, documentProxy, fitMode, pageNumber, zoom]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -445,10 +484,28 @@ export function PdfCanvasViewer({
 
   function handleTouchStart(event: TouchEvent<HTMLDivElement>) {
     const touch = event.touches[0];
+    const pinchDistance = getTouchDistance(event.touches);
+
     touchStartRef.current = {
+      initialPinchDistance: pinchDistance ?? undefined,
+      initialZoom: pinchDistance ? zoom : undefined,
+      isPinching: Boolean(pinchDistance),
       x: touch.clientX,
       y: touch.clientY,
     };
+  }
+
+  function handleTouchMove(event: TouchEvent<HTMLDivElement>) {
+    const touchStart = touchStartRef.current;
+    const nextDistance = getTouchDistance(event.touches);
+
+    if (!touchStart?.initialPinchDistance || !touchStart.initialZoom || !nextDistance) {
+      return;
+    }
+
+    event.preventDefault();
+    touchStart.isPinching = true;
+    setZoom(clampZoom(touchStart.initialZoom * (nextDistance / touchStart.initialPinchDistance)));
   }
 
   function handleTouchEnd(event: TouchEvent<HTMLDivElement>) {
@@ -456,6 +513,10 @@ export function PdfCanvasViewer({
     touchStartRef.current = null;
 
     if (!touchStart) {
+      return;
+    }
+
+    if (touchStart.isPinching) {
       return;
     }
 
@@ -511,7 +572,7 @@ export function PdfCanvasViewer({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex h-full min-h-0 flex-col gap-4">
       {showToolbar ? (
         <div className="tc-student-panel rounded-[24px] p-4">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
@@ -591,13 +652,14 @@ export function PdfCanvasViewer({
       <div
         ref={containerRef}
         className={[
-          "tc-student-panel overflow-auto overscroll-contain rounded-[28px] bg-[linear-gradient(180deg,#11233d_0%,#0b182a_100%)] p-3 sm:p-5",
+          "tc-student-panel overflow-auto rounded-[28px] bg-[linear-gradient(180deg,#11233d_0%,#0b182a_100%)] p-3 sm:p-5",
           shellClassName ?? "",
         ].join(" ")}
         onTouchEnd={handleTouchEnd}
+        onTouchMove={handleTouchMove}
         onTouchStart={handleTouchStart}
       >
-        <div className="mx-auto flex min-h-[18rem] items-center justify-center">
+        <div className="flex min-h-full min-w-0 items-center justify-center">
           {isLoadingDocument ? (
             <div className="space-y-3 text-center text-white/80">
               <p className="tc-overline text-white/70">Secure reader</p>
@@ -605,7 +667,7 @@ export function PdfCanvasViewer({
             </div>
           ) : (
             <div className="relative overflow-hidden rounded-[22px] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.28)]">
-              <canvas ref={canvasRef} className="block max-w-full" />
+              <canvas ref={canvasRef} className="block" />
               <NoteWatermarkOverlay payload={watermarkPayload} />
             </div>
           )}

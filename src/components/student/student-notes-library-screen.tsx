@@ -5,6 +5,7 @@ import {
   startTransition,
   useDeferredValue,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -79,6 +80,7 @@ export function StudentNotesLibraryScreen() {
   } = useStudentShellStore();
   const [accessFilter, setAccessFilter] = useState<AccessFilter>("all");
   const [searchValue, setSearchValue] = useState("");
+  const notesListRef = useRef<HTMLDivElement | null>(null);
   const deferredSearchValue = useDeferredValue(searchValue.trim());
   const requestedSubjectId = searchParams.get("subject");
   const requestedTopicId = searchParams.get("topic");
@@ -112,7 +114,12 @@ export function StudentNotesLibraryScreen() {
     ? findTreeTopicById(selectedSubject.topics, requestedTopicId)
     : null;
 
-  function updateSelection(nextValues: Record<string, string | null>) {
+  function updateSelection(
+    nextValues: Record<string, string | null>,
+    options: {
+      scrollToNotes?: boolean;
+    } = {},
+  ) {
     const href = replaceSearchParams(
       pathname,
       new URLSearchParams(searchParams.toString()),
@@ -122,6 +129,15 @@ export function StudentNotesLibraryScreen() {
     startTransition(() => {
       router.replace(href, { scroll: false });
     });
+
+    if (options.scrollToNotes) {
+      window.setTimeout(() => {
+        notesListRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 120);
+    }
   }
 
   const notesQuery = useAuthenticatedQuery({
@@ -270,7 +286,7 @@ export function StudentNotesLibraryScreen() {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="tc-overline">Notes</p>
-            <h1 className="mt-2 text-2xl font-semibold text-[color:var(--brand)]">
+            <h1 className="mt-2 text-xl font-semibold text-[color:var(--brand)] md:text-2xl">
               {selectedTopic?.name ?? selectedSubject?.name ?? "All notes"}
             </h1>
           </div>
@@ -284,7 +300,7 @@ export function StudentNotesLibraryScreen() {
           </div>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-[1.3fr_1fr]">
+        <div className="grid gap-3 xl:grid-cols-[1.3fr_1fr]">
           <label className="tc-form-field">
             <span className="tc-form-label">Search notes</span>
             <input
@@ -295,8 +311,8 @@ export function StudentNotesLibraryScreen() {
             />
           </label>
 
-          <div className="space-y-3">
-            <p className="tc-form-label">Access filter</p>
+          <div className="space-y-2">
+            <p className="tc-form-label">Show</p>
             <div className="flex flex-wrap gap-2">
               {(
                 [
@@ -322,12 +338,12 @@ export function StudentNotesLibraryScreen() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.85fr_1.15fr]">
-        <aside className="tc-student-panel rounded-[20px] p-4">
+        <aside className="tc-student-panel order-2 rounded-[20px] p-4 xl:order-1">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="tc-overline">Browse</p>
-              <h2 className="mt-2 text-xl font-semibold text-[color:var(--brand)]">
-                Subjects
+              <p className="tc-overline">Filter</p>
+              <h2 className="mt-2 text-lg font-semibold text-[color:var(--brand)]">
+                Subjects and topics
               </h2>
             </div>
             <Link href="/student/catalog" className="tc-button-secondary">
@@ -344,18 +360,24 @@ export function StudentNotesLibraryScreen() {
                 updateSelection({
                   subject: null,
                   topic: null,
+                }, {
+                  scrollToNotes: true,
                 })
               }
               onSelectSubject={(subjectId) =>
                 updateSelection({
                   subject: subjectId,
                   topic: null,
+                }, {
+                  scrollToNotes: true,
                 })
               }
               onSelectTopic={(subjectId, topicId) =>
                 updateSelection({
                   subject: subjectId,
                   topic: topicId,
+                }, {
+                  scrollToNotes: true,
                 })
               }
               subjects={visibleSubjects}
@@ -363,12 +385,15 @@ export function StudentNotesLibraryScreen() {
           </div>
         </aside>
 
-        <div className="flex flex-col gap-4">
+        <div
+          ref={notesListRef}
+          className="order-1 flex scroll-mt-4 flex-col gap-3 xl:order-2"
+        >
           {filteredNotes.length > 0 ? (
             filteredNotes.map((note) => (
               <StudentNoteCard
                 key={note.id}
-                href={`/student/notes/${note.id}`}
+                href={`/student/notes/${note.id}/read`}
                 note={note}
               />
             ))

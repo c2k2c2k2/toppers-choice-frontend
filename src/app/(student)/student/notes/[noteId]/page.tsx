@@ -1,4 +1,4 @@
-import { StudentNoteDetailScreen } from "@/components/student/student-note-detail-screen";
+import { redirect } from "next/navigation";
 
 export default async function StudentNoteDetailPage({
   params,
@@ -9,5 +9,5 @@ export default async function StudentNoteDetailPage({
 }>) {
   const { noteId } = await params;
 
-  return <StudentNoteDetailScreen noteId={noteId} />;
+  redirect(`/student/notes/${encodeURIComponent(noteId)}/read`);
 }
