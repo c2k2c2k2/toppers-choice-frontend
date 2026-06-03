@@ -231,6 +231,7 @@ export function PdfCanvasViewer({
   const [pageInput, setPageInput] = useState(String(initialPage));
   const [pageNumber, setPageNumber] = useState(initialPage);
   const [zoom, setZoom] = useState(clampZoom(initialZoom));
+  const lastEmittedZoomRef = useRef(clampZoom(initialZoom));
   const emitError = useEffectEvent((message: string) => {
     onError?.(message);
   });
@@ -252,9 +253,20 @@ export function PdfCanvasViewer({
     }
 
     const updateSize = () => {
-      setContainerSize({
-        height: element.clientHeight,
-        width: element.clientWidth,
+      setContainerSize((currentSize) => {
+        const nextSize = {
+          height: element.clientHeight,
+          width: element.clientWidth,
+        };
+
+        if (
+          currentSize.height === nextSize.height &&
+          currentSize.width === nextSize.width
+        ) {
+          return currentSize;
+        }
+
+        return nextSize;
       });
     };
 
@@ -267,7 +279,10 @@ export function PdfCanvasViewer({
   }, []);
 
   useEffect(() => {
-    setZoom(clampZoom(initialZoom));
+    setZoom((currentZoom) => {
+      const nextZoom = clampZoom(initialZoom);
+      return Math.abs(currentZoom - nextZoom) < 0.001 ? currentZoom : nextZoom;
+    });
   }, [initialZoom]);
 
   useEffect(() => {
@@ -345,6 +360,11 @@ export function PdfCanvasViewer({
   }, [pageCount, requestedPage]);
 
   useEffect(() => {
+    if (Math.abs(lastEmittedZoomRef.current - zoom) < 0.001) {
+      return;
+    }
+
+    lastEmittedZoomRef.current = zoom;
     emitZoomChange(zoom);
   }, [zoom]);
 
@@ -505,7 +525,16 @@ export function PdfCanvasViewer({
 
     event.preventDefault();
     touchStart.isPinching = true;
-    setZoom(clampZoom(touchStart.initialZoom * (nextDistance / touchStart.initialPinchDistance)));
+    const initialPinchDistance = touchStart.initialPinchDistance;
+    const initialZoom = touchStart.initialZoom;
+
+    setZoom((currentZoom) => {
+      const nextZoom = clampZoom(
+        initialZoom * (nextDistance / initialPinchDistance),
+      );
+
+      return Math.abs(currentZoom - nextZoom) < 0.001 ? currentZoom : nextZoom;
+    });
   }
 
   function handleTouchEnd(event: TouchEvent<HTMLDivElement>) {

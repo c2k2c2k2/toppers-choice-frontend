@@ -48,8 +48,16 @@ export const useNoteReaderStore = create<NoteReaderStore>()(
           lastOpenedNoteId: noteId,
         }),
       setPreferredZoom: (zoom) =>
-        set({
-          preferredZoom: clampZoom(zoom),
+        set((state) => {
+          const nextZoom = clampZoom(zoom);
+
+          if (Math.abs(state.preferredZoom - nextZoom) < 0.001) {
+            return state;
+          }
+
+          return {
+            preferredZoom: nextZoom,
+          };
         }),
       resetReaderUi: () => set(initialNoteReaderState),
       toggleFocusMode: () =>
