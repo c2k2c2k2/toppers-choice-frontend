@@ -36,6 +36,20 @@ function findSection(content: PublicHomeContent, code: string) {
   return content.sections.find((section) => section.code === code) ?? null;
 }
 
+function formatTrialDurationLabel(totalMinutes: number) {
+  if (totalMinutes >= 24 * 60 && totalMinutes % (24 * 60) === 0) {
+    const days = totalMinutes / (24 * 60);
+    return `${days} day${days === 1 ? "" : "s"}`;
+  }
+
+  if (totalMinutes >= 60 && totalMinutes % 60 === 0) {
+    const hours = totalMinutes / 60;
+    return `${hours} hour${hours === 1 ? "" : "s"}`;
+  }
+
+  return `${totalMinutes} minutes`;
+}
+
 function LandingIcon({
   name,
   tone = "default",
@@ -207,6 +221,9 @@ export async function generateMetadata() {
 
 export default async function PublicHomePage() {
   const content = await getPublicHomeContent();
+  const trialDurationLabel = formatTrialDurationLabel(
+    content.trialPolicy.totalMinutes,
+  );
   const supportHref = `https://wa.me/91${content.branding.supportWhatsapp.replace(/\D/g, "")}`;
   const heroStats = readRecordArray(content.banner?.metaJson?.stats)
     .map((stat) => ({
@@ -216,7 +233,7 @@ export default async function PublicHomePage() {
     .slice(0, 3);
   const heroActions = [
     {
-      label: `Start ${content.trialPolicy.totalMinutes}-min free trial`,
+      label: `Start ${trialDurationLabel} free trial`,
       href: "/student/login?mode=signup",
       tone: "primary" as const,
     },
@@ -385,7 +402,7 @@ export default async function PublicHomePage() {
             {content.trialPolicy.enabled ? (
               <div className="mt-5 flex w-fit flex-wrap items-center gap-2 rounded-[1rem] bg-white/10 px-4 py-3 text-sm font-semibold text-white/86 ring-1 ring-white/12">
                 <span className="inline-flex h-2 w-2 rounded-full bg-[color:var(--accent-glow)]" />
-                Free {content.trialPolicy.totalMinutes}-minute trial. Use it in parts.
+                Free {trialDurationLabel} trial with full student access.
               </div>
             ) : null}
 
@@ -569,9 +586,8 @@ export default async function PublicHomePage() {
             Try the platform before choosing a plan.
           </h2>
           <p className="tc-muted max-w-2xl text-base leading-8">
-            New students get {content.trialPolicy.totalMinutes} minutes of platform
-            access. The time is metered only while the student app is active, so
-            they can split it across multiple visits.
+            New students get {trialDurationLabel} of full student access. After
+            the trial ends, they can continue by choosing a plan.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link href="/student/login?mode=signup" className="tc-button-primary">

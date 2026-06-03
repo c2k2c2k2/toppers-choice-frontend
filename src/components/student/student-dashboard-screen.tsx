@@ -7,9 +7,10 @@ import { useAuthenticatedQuery } from "@/lib/auth";
 import {
   buildStudentCatalogSnapshot,
   buildSubjectCatalogHref,
-  countTopics,
+  flattenTopicTree,
   getStudentDashboardBootstrap,
   getTrackLabel,
+  type StudentSubject,
 } from "@/lib/student";
 import { ErrorState } from "@/components/primitives/error-state";
 import { LoadingState } from "@/components/primitives/loading-state";
@@ -117,6 +118,35 @@ function StatPill({
       <p className="mt-1 text-xl font-semibold text-[color:var(--brand)]">
         {value}
       </p>
+    </div>
+  );
+}
+
+function SubjectTopicCapsules({
+  subject,
+}: Readonly<{
+  subject: StudentSubject;
+}>) {
+  const topics = flattenTopicTree(subject.topics);
+  const visibleTopics = topics.slice(0, 3);
+  const remainingCount = Math.max(0, topics.length - visibleTopics.length);
+
+  if (topics.length === 0) {
+    return <p className="tc-muted mt-1 text-xs">0 topics</p>;
+  }
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2">
+      {visibleTopics.map((topic) => (
+        <span key={topic.id} className="tc-student-chip" data-tone="soft">
+          {topic.name}
+        </span>
+      ))}
+      {remainingCount > 0 ? (
+        <span className="tc-muted text-xs font-semibold">
+          ... and {remainingCount} more
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -301,9 +331,7 @@ export function StudentDashboardScreen() {
                     <p className="font-semibold text-[color:var(--brand)]">
                       {subject.name}
                     </p>
-                    <p className="tc-muted mt-1 text-xs">
-                      {countTopics(subject.topics)} topics
-                    </p>
+                    <SubjectTopicCapsules subject={subject} />
                   </div>
                   <span className="tc-button-secondary shrink-0">Open</span>
                 </Link>

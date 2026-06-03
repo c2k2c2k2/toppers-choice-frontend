@@ -12,12 +12,7 @@ import {
   getStudentCatalog,
   getTrackLabel,
 } from "@/lib/student";
-import {
-  heartbeatTrial,
-  startTrial,
-  stopTrial,
-  type TrialAccess,
-} from "@/lib/trial";
+import { startTrial, type TrialAccess } from "@/lib/trial";
 import {
   StudentBottomNavigation,
   StudentShellNavigation,
@@ -47,9 +42,6 @@ export function StudentShell({
 }>) {
   const authSession = useAuthSession();
   const [trialAccess, setTrialAccess] = useState<TrialAccess | null>(null);
-  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
-    null,
-  );
   const ensureAccessTokenRef = useRef(authSession.ensureAccessToken);
   const pathname = usePathname();
   const router = useRouter();
@@ -106,34 +98,8 @@ export function StudentShell({
 
   useEffect(() => {
     let cancelled = false;
-    let shouldStopTrialOnCleanup = false;
 
-    function clearHeartbeat() {
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-        heartbeatIntervalRef.current = null;
-      }
-    }
-
-    async function callTrialEndpoint(
-      endpoint: (accessToken: string) => Promise<TrialAccess>,
-    ) {
-      const accessToken = await ensureAccessTokenRef.current();
-
-      if (!accessToken || cancelled) {
-        return null;
-      }
-
-      const nextTrial = await endpoint(accessToken);
-
-      if (!cancelled) {
-        setTrialAccess(nextTrial);
-      }
-
-      return nextTrial;
-    }
-
-    async function startHeartbeatLoop() {
+    async function startTrialWindow() {
       if (
         !authSession.isReady ||
         !authSession.isAuthenticated ||
@@ -144,54 +110,22 @@ export function StudentShell({
         return;
       }
 
-      try {
-        const startedTrial = await callTrialEndpoint(startTrialOnce);
-        shouldStopTrialOnCleanup = Boolean(startedTrial?.id);
+      const accessToken = await ensureAccessTokenRef.current();
 
-        clearHeartbeat();
-
-        if (!startedTrial?.enabled || !startedTrial.hasAccess) {
-          return;
-        }
-
-        heartbeatIntervalRef.current = setInterval(() => {
-          if (document.visibilityState !== "visible") {
-            return;
-          }
-
-          void callTrialEndpoint(heartbeatTrial).catch(() => undefined);
-        }, Math.max(10, startedTrial.policy.heartbeatSeconds) * 1000);
-      } catch {
-        clearHeartbeat();
-      }
-    }
-
-    function handleVisibilityChange() {
-      if (document.visibilityState === "hidden") {
-        clearHeartbeat();
-        void callTrialEndpoint(stopTrial).catch(() => undefined);
+      if (!accessToken || cancelled) {
         return;
       }
 
-      void startHeartbeatLoop();
+      const nextTrial = await startTrialOnce(accessToken);
+      if (!cancelled) {
+        setTrialAccess(nextTrial);
+      }
     }
 
-    void startHeartbeatLoop();
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    void startTrialWindow().catch(() => undefined);
 
     return () => {
       cancelled = true;
-      clearHeartbeat();
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      if (
-        authSession.isAuthenticated &&
-        authSession.user?.userType === "STUDENT" &&
-        shouldStopTrialOnCleanup
-      ) {
-        void ensureAccessTokenRef.current().then((accessToken) =>
-          accessToken ? stopTrial(accessToken).catch(() => undefined) : null,
-        );
-      }
     };
   }, [
     authSession.isAuthenticated,
@@ -200,6 +134,28 @@ export function StudentShell({
     entitlementsReady,
     hasActiveEntitlement,
   ]);
+
+  useEffect(() => {
+    if (hasActiveEntitlement || !trialAccess?.hasAccess) {
+      return;
+    }
+
+    const timeoutId = setTimeout(
+      () => {
+        setTrialAccess({
+          ...trialAccess,
+          hasAccess: false,
+          remainingSeconds: 0,
+          status: "EXHAUSTED",
+        });
+      },
+      Math.max(0, trialAccess.remainingSeconds * 1000),
+    );
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [hasActiveEntitlement, trialAccess]);
 
   useEffect(() => {
     if (
@@ -215,14 +171,35 @@ export function StudentShell({
     }
 
     setTrialAccess(null);
-    void ensureAccessTokenRef.current().then((accessToken) =>
-      accessToken ? stopTrial(accessToken).catch(() => undefined) : null,
-    );
   }, [
     authSession.isAuthenticated,
     authSession.user?.userType,
     hasActiveEntitlement,
     trialAccess?.id,
+  ]);
+
+  useEffect(() => {
+    if (
+      hasActiveEntitlement ||
+      !entitlementsReady ||
+      !trialAccess ||
+      trialAccess.hasAccess ||
+      pathname.startsWith("/student/plans")
+    ) {
+      return;
+    }
+
+    router.replace(
+      `/student/plans?intent=all&source=trial-expired&returnTo=${encodeURIComponent(
+        pathname || "/student",
+      )}`,
+    );
+  }, [
+    entitlementsReady,
+    hasActiveEntitlement,
+    pathname,
+    router,
+    trialAccess,
   ]);
 
   useEffect(() => {
@@ -254,17 +231,13 @@ export function StudentShell({
   ]);
 
   async function handleLogout() {
-    const accessToken = await authSession.ensureAccessToken();
-    if (accessToken) {
-      await stopTrial(accessToken).catch(() => undefined);
-    }
     await authSession.logout();
     router.replace("/student/login");
   }
 
   const trialRemainingLabel = trialAccess
     ? formatTrialDuration(trialAccess.remainingSeconds)
-    : "20 min";
+    : "1 day";
   const trialChipLabel =
     trialAccess && !trialAccess.enabled
       ? "Trial paused"
@@ -310,7 +283,7 @@ export function StudentShell({
     <button
       type="button"
       onClick={toggleDesktopSidebar}
-      className="tc-student-menu-button hidden xl:inline-flex"
+      className="tc-student-menu-button tc-student-menu-button-desktop"
       aria-label={isDesktopSidebarCollapsed ? "Expand menu" : "Collapse menu"}
       title={isDesktopSidebarCollapsed ? "Expand menu" : "Collapse menu"}
     >
@@ -391,7 +364,7 @@ export function StudentShell({
                   <button
                     type="button"
                     onClick={toggleSidebar}
-                    className="tc-student-menu-button xl:hidden"
+                    className="tc-student-menu-button tc-student-menu-button-mobile"
                     aria-label="Open menu"
                   >
                     <HamburgerIcon />
@@ -475,12 +448,28 @@ function HamburgerIcon() {
 
 function formatTrialDuration(totalSeconds: number) {
   const seconds = Math.max(0, totalSeconds);
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
+  const days = Math.floor(seconds / 86_400);
+  const remainingAfterDays = seconds % 86_400;
+  const hours = Math.floor(remainingAfterDays / 3600);
+  const remainingAfterHours = remainingAfterDays % 3600;
+  const minutes = Math.floor(remainingAfterHours / 60);
+  const remainingSeconds = remainingAfterHours % 60;
 
-  if (minutes <= 0) {
+  if (days > 0) {
+    return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+  }
+
+  if (hours > 0) {
+    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+  }
+
+  const totalMinutes = Math.floor(seconds / 60);
+
+  if (totalMinutes <= 0) {
     return `${remainingSeconds}s`;
   }
 
-  return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+  return remainingSeconds > 0
+    ? `${totalMinutes}m ${remainingSeconds}s`
+    : `${totalMinutes}m`;
 }

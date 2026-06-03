@@ -497,6 +497,49 @@ button {
   backdrop-filter: blur(14px);
 }
 
+.tc-student-menu-button {
+  display: inline-flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 30, 64, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--brand);
+  box-shadow: 0 6px 16px rgba(0, 30, 64, 0.035);
+}
+
+.tc-student-menu-button-desktop {
+  display: none;
+}
+
+@media (min-width: 1280px) {
+  .tc-student-menu-button-desktop {
+    display: inline-flex;
+  }
+
+  .tc-student-menu-button-mobile {
+    display: none;
+  }
+}
+
+.tc-student-track-select select {
+  min-height: 2.45rem;
+  max-width: min(15rem, 100%);
+  border-radius: 999px;
+  border: 1px solid rgba(0, 30, 64, 0.12);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--brand);
+  padding: 0 2rem 0 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.tc-student-shell-rail[data-collapsed="true"] {
+  padding-inline: 0.7rem;
+}
+
 .tc-student-hero {
   position: relative;
   overflow: hidden;

@@ -20,6 +20,7 @@ export interface TrialAccess {
   totalSeconds: number;
   hasAccess: boolean;
   startedAt: string | null;
+  expiresAt: string | null;
   lastHeartbeatAt: string | null;
   lastStoppedAt: string | null;
   exhaustedAt: string | null;

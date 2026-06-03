@@ -142,8 +142,8 @@ const getPublicPlansSnapshot = cache(async () => {
 
 const FALLBACK_TRIAL_POLICY: TrialPolicy = {
   enabled: true,
-  totalSeconds: 20 * 60,
-  totalMinutes: 20,
+  totalSeconds: 24 * 60 * 60,
+  totalMinutes: 24 * 60,
   heartbeatSeconds: 30,
   maxHeartbeatGapSeconds: 90,
 };
