@@ -230,6 +230,9 @@ export function PdfCanvasViewer({
   const [pageCount, setPageCount] = useState(0);
   const [pageInput, setPageInput] = useState(String(initialPage));
   const [pageNumber, setPageNumber] = useState(initialPage);
+  const [pageTurnDirection, setPageTurnDirection] = useState<"next" | "previous">(
+    "next",
+  );
   const [zoom, setZoom] = useState(clampZoom(initialZoom));
   const lastEmittedZoomRef = useRef(clampZoom(initialZoom));
   const emitError = useEffectEvent((message: string) => {
@@ -355,6 +358,9 @@ export function PdfCanvasViewer({
 
     setPageNumber((currentPage) => {
       const nextPage = clampPage(requestedPage ?? currentPage, pageCount);
+      if (nextPage !== currentPage) {
+        setPageTurnDirection(nextPage > currentPage ? "next" : "previous");
+      }
       return nextPage === currentPage ? currentPage : nextPage;
     });
   }, [pageCount, requestedPage]);
@@ -481,9 +487,11 @@ export function PdfCanvasViewer({
 
       if (event.key === "ArrowRight") {
         event.preventDefault();
+        setPageTurnDirection("next");
         setPageNumber((currentPage) => clampPage(currentPage + 1, pageCount));
       } else if (event.key === "ArrowLeft") {
         event.preventDefault();
+        setPageTurnDirection("previous");
         setPageNumber((currentPage) => clampPage(currentPage - 1, pageCount));
       }
     };
@@ -499,7 +507,11 @@ export function PdfCanvasViewer({
       return;
     }
 
-    setPageNumber(clampPage(nextPage, pageCount));
+    const safeNextPage = clampPage(nextPage, pageCount);
+    if (safeNextPage !== pageNumber) {
+      setPageTurnDirection(safeNextPage > pageNumber ? "next" : "previous");
+    }
+    setPageNumber(safeNextPage);
   }
 
   function handleTouchStart(event: TouchEvent<HTMLDivElement>) {
@@ -700,7 +712,11 @@ export function PdfCanvasViewer({
               <p className="text-sm">Loading the protected PDF stream...</p>
             </div>
           ) : (
-            <div className="relative overflow-hidden rounded-[22px] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.28)]">
+            <div
+              key={pageNumber}
+              className="tc-reader-page-turn relative overflow-hidden rounded-[22px] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.28)]"
+              data-direction={pageTurnDirection}
+            >
               <canvas ref={canvasRef} className="block" />
               <NoteWatermarkOverlay payload={watermarkPayload} />
             </div>

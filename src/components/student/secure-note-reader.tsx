@@ -128,7 +128,9 @@ type ReaderActionIcon =
   | "down"
   | "expand"
   | "index"
+  | "left"
   | "refresh"
+  | "right"
   | "up"
   | "zoomIn"
   | "zoomOut";
@@ -226,7 +228,14 @@ function ReaderActionGlyph({
     );
   }
 
-  if (icon === "up" || icon === "down") {
+  if (icon === "up" || icon === "down" || icon === "left" || icon === "right") {
+    const pathByIcon: Record<"down" | "left" | "right" | "up", string> = {
+      down: "M6 9L12 15L18 9",
+      left: "M15 6L9 12L15 18",
+      right: "M9 6L15 12L9 18",
+      up: "M18 15L12 9L6 15",
+    };
+
     return (
       <svg
         aria-hidden="true"
@@ -238,7 +247,7 @@ function ReaderActionGlyph({
         strokeWidth="1.8"
         viewBox="0 0 24 24"
       >
-        <path d={icon === "up" ? "M18 15L12 9L6 15" : "M6 9L12 15L18 9"} />
+        <path d={pathByIcon[icon]} />
       </svg>
     );
   }
@@ -942,7 +951,7 @@ export function SecureNoteReader({
                   <PdfCanvasViewer
                     key={`${session.noteViewSessionId}:${sessionStartPage}`}
                     fitMode="width"
-                    gestureDirection={isMobileViewport ? "vertical" : "horizontal"}
+                    gestureDirection="horizontal"
                     initialPage={sessionStartPage}
                     initialZoom={preferredZoom}
                     noteViewSessionId={session.noteViewSessionId}
@@ -956,31 +965,35 @@ export function SecureNoteReader({
                     watermarkPayload={watermarkPayload}
                   />
 
-                  <div className="absolute right-2 top-1/2 z-30 flex -translate-y-1/2 flex-col gap-16 sm:right-4">
-                    <ReaderActionButton
-                      disabled={currentPage <= 1}
-                      icon="up"
-                      inverted
-                      label="Previous page"
-                      onClick={() => handleMovePage(-1)}
-                    />
-                    <ReaderActionButton
-                      disabled={currentPage >= note.pageCount}
-                      icon="down"
-                      inverted
-                      label="Next page"
-                      onClick={() => handleMovePage(1)}
-                    />
+                  <div className="pointer-events-none absolute inset-x-0 bottom-3 z-30 flex justify-center px-3 sm:bottom-4">
+                    <div className="pointer-events-auto grid w-full max-w-md grid-cols-2 gap-2 rounded-[22px] border border-white/12 bg-[rgba(7,17,31,0.58)] p-2 text-white shadow-[0_18px_44px_rgba(0,0,0,0.24)] backdrop-blur-md">
+                      <button
+                        type="button"
+                        className="flex min-h-12 items-center justify-center gap-2 rounded-[16px] bg-white/10 px-3 text-sm font-bold text-white/90 transition hover:bg-white/16 disabled:cursor-not-allowed disabled:text-white/42"
+                        disabled={currentPage <= 1}
+                        onClick={() => handleMovePage(-1)}
+                      >
+                        <ReaderActionGlyph icon="left" />
+                        Previous
+                      </button>
+                      <button
+                        type="button"
+                        className="flex min-h-12 items-center justify-center gap-2 rounded-[16px] bg-white text-sm font-bold text-[color:var(--brand)] shadow-[0_10px_24px_rgba(0,0,0,0.18)] transition hover:-translate-y-0.5 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-white/16 disabled:text-white/42 disabled:shadow-none"
+                        disabled={currentPage >= note.pageCount}
+                        onClick={() => handleMovePage(1)}
+                      >
+                        Next
+                        <ReaderActionGlyph icon="right" />
+                      </button>
+                    </div>
                   </div>
                   <div
                     aria-hidden="true"
-                    className="tc-reader-scroll-indicator pointer-events-none absolute bottom-2 left-1/2 z-20 -translate-x-1/2"
+                    className="tc-reader-swipe-hint pointer-events-none absolute bottom-[5.35rem] left-1/2 z-20 -translate-x-1/2 sm:bottom-[5.85rem]"
                   >
-                    <span className="tc-reader-scroll-arrow tc-reader-scroll-arrow-up" />
-                    <span className="tc-reader-scroll-track">
-                      <span />
-                    </span>
-                    <span className="tc-reader-scroll-arrow tc-reader-scroll-arrow-down" />
+                    <ReaderActionGlyph icon="left" />
+                    <span>Swipe to turn</span>
+                    <ReaderActionGlyph icon="right" />
                   </div>
                 </div>
               </div>
