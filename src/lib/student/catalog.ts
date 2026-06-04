@@ -134,3 +134,30 @@ export function buildSubjectCatalogHref(
 
   return queryString ? `${pathname}?${queryString}` : pathname;
 }
+
+export function buildSubjectNotesHref(
+  subject: StudentSubject,
+  options: {
+    examTrackCode?: string | null;
+    mediumCode?: string | null;
+    topicId?: string | null;
+  } = {},
+) {
+  const searchParams = new URLSearchParams();
+
+  searchParams.set("subject", subject.id);
+
+  if (options.topicId) {
+    searchParams.set("topic", options.topicId);
+  }
+
+  if (options.examTrackCode) {
+    searchParams.set("track", options.examTrackCode);
+  }
+
+  if (options.mediumCode) {
+    searchParams.set("medium", options.mediumCode);
+  }
+
+  return `/student/notes?${searchParams.toString()}`;
+}

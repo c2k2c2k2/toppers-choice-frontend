@@ -1,9 +1,12 @@
+import Link from "next/link";
 import { countTopics, type StudentTopicTreeNode } from "@/lib/student";
 
 function TopicBranch({
+  buildTopicHref,
   depth = 0,
   topics,
 }: Readonly<{
+  buildTopicHref?: (topic: StudentTopicTreeNode) => string;
   depth?: number;
   topics: StudentTopicTreeNode[];
 }>) {
@@ -17,7 +20,10 @@ function TopicBranch({
             className="tc-topic-branch"
             style={{ marginLeft: `${depth * 1.05}rem` }}
           >
-            <div className="tc-student-card rounded-[24px] p-4">
+            <Link
+              href={buildTopicHref?.(topic) ?? "#"}
+              className="tc-student-card block rounded-[24px] p-4 transition-transform duration-200 hover:-translate-y-0.5"
+            >
               <div className="flex flex-wrap items-center gap-3">
                 <h3 className="text-base font-semibold text-[color:var(--brand)]">
                   {topic.name}
@@ -28,10 +34,14 @@ function TopicBranch({
                   </span>
                 ) : null}
               </div>
-            </div>
+            </Link>
             {topic.children.length > 0 ? (
               <div className="mt-3">
-                <TopicBranch depth={depth + 1} topics={topic.children} />
+                <TopicBranch
+                  buildTopicHref={buildTopicHref}
+                  depth={depth + 1}
+                  topics={topic.children}
+                />
               </div>
             ) : null}
           </li>
@@ -42,8 +52,10 @@ function TopicBranch({
 }
 
 export function StudentTopicTree({
+  buildTopicHref,
   topics,
 }: Readonly<{
+  buildTopicHref?: (topic: StudentTopicTreeNode) => string;
   topics: StudentTopicTreeNode[];
 }>) {
   if (topics.length === 0) {
@@ -56,5 +68,5 @@ export function StudentTopicTree({
     );
   }
 
-  return <TopicBranch topics={topics} />;
+  return <TopicBranch buildTopicHref={buildTopicHref} topics={topics} />;
 }

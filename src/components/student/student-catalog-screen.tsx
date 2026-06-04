@@ -12,7 +12,7 @@ import { queryKeys } from "@/lib/api/query-keys";
 import { useAuthenticatedQuery } from "@/lib/auth";
 import {
   buildStudentCatalogSnapshot,
-  buildSubjectCatalogHref,
+  buildSubjectNotesHref,
   countTopics,
   flattenTopicTree,
   getStudentCatalog,
@@ -60,6 +60,35 @@ function replaceSearchParams(
 
   const queryString = searchParams.toString();
   return queryString ? `${pathname}?${queryString}` : pathname;
+}
+
+function SubjectTopicCapsules({
+  subject,
+}: Readonly<{
+  subject: StudentSubject;
+}>) {
+  const topics = flattenTopicTree(subject.topics);
+  const visibleTopics = topics.slice(0, 3);
+  const remainingCount = Math.max(0, topics.length - visibleTopics.length);
+
+  if (topics.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2">
+      {visibleTopics.map((topic) => (
+        <span key={topic.id} className="tc-student-chip">
+          {topic.name}
+        </span>
+      ))}
+      {remainingCount > 0 ? (
+        <span className="tc-muted text-xs font-semibold">
+          ... and {remainingCount} more
+        </span>
+      ) : null}
+    </div>
+  );
 }
 
 export function StudentCatalogScreen() {
@@ -198,7 +227,7 @@ export function StudentCatalogScreen() {
           {filteredSubjects.map((subject) => (
             <Link
               key={subject.id}
-              href={buildSubjectCatalogHref(subject, {
+              href={buildSubjectNotesHref(subject, {
                 examTrackCode: snapshot.selectedTrack?.code ?? null,
                 mediumCode: snapshot.selectedMedium?.code ?? null,
               })}
@@ -213,13 +242,7 @@ export function StudentCatalogScreen() {
                   {countTopics(subject.topics)} topics
                 </span>
               </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {subject.topics.slice(0, 3).map((topic) => (
-                  <span key={topic.id} className="tc-student-chip">
-                    {topic.name}
-                  </span>
-                ))}
-              </div>
+              <SubjectTopicCapsules subject={subject} />
             </Link>
           ))}
         </section>

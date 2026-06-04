@@ -6,7 +6,7 @@ import { queryKeys } from "@/lib/api/query-keys";
 import { useAuthenticatedQuery } from "@/lib/auth";
 import {
   buildStudentCatalogSnapshot,
-  buildSubjectCatalogHref,
+  buildSubjectNotesHref,
   flattenTopicTree,
   getStudentDashboardBootstrap,
   getTrackLabel,
@@ -80,19 +80,16 @@ function DashboardActionCard({
   href,
   label,
   title,
-  tone = "default",
 }: Readonly<{
   detail: string;
   href: string;
   label: string;
   title: string;
-  tone?: "default" | "primary";
 }>) {
   return (
     <Link
       href={href}
       className="tc-student-card flex min-h-[132px] flex-col justify-between rounded-[20px] p-4 transition-transform duration-200 hover:-translate-y-0.5"
-      data-tone={tone}
     >
       <div>
         <p className="tc-overline">{label}</p>
@@ -213,7 +210,7 @@ export function StudentDashboardScreen() {
 
   const selectedTrackCode = snapshot.selectedTrack?.code ?? null;
   const catalogHref = buildCatalogHref(selectedTrackCode);
-  const visibleSubjects = snapshot.subjects.slice(0, 3);
+  const visibleSubjects = snapshot.subjects;
   const lastSubject =
     lastCatalogSubjectSlug
       ? dashboardData.catalog.subjects.find(
@@ -260,8 +257,9 @@ export function StudentDashboardScreen() {
 
       {lastSubject ? (
         <Link
-          href={buildSubjectCatalogHref(lastSubject, {
+          href={buildSubjectNotesHref(lastSubject, {
             examTrackCode: selectedTrackCode,
+            mediumCode: snapshot.selectedMedium?.code ?? null,
           })}
           className="tc-student-card flex items-center justify-between gap-4 rounded-[20px] p-4"
         >
@@ -275,35 +273,28 @@ export function StudentDashboardScreen() {
         </Link>
       ) : null}
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <DashboardActionCard
-          detail={`${dashboardData.analytics.notes.completedCount} completed`}
-          href="/student/notes"
-          label="Notes"
-          title={`${dashboardData.analytics.notes.startedCount} started`}
-          tone="primary"
-        />
-        <DashboardActionCard
-          detail={`${dashboardData.analytics.practice.completedSessions} sessions`}
-          href="/student/practice"
-          label="Practice"
-          title={`${dashboardData.analytics.practice.accuracyPercent}% accuracy`}
-        />
-        <DashboardActionCard
-          detail={`${dashboardData.analytics.tests.submittedAttempts} attempts`}
-          href="/student/tests"
-          label="Tests"
-          title={`${dashboardData.analytics.tests.bestPercentage}% best`}
-        />
+      <section className="grid gap-3 sm:grid-cols-3">
         <DashboardActionCard
           detail="Listening and speaking drills"
           href="/student/english-speaking"
           label="English"
           title="Speaking practice"
         />
+        <DashboardActionCard
+          detail="Latest study material by subject and topic"
+          href="/student/notes"
+          label="Notes"
+          title="Notes library"
+        />
+        <DashboardActionCard
+          detail="Plans and payment access"
+          href="/student/plans"
+          label="Access"
+          title="Plans"
+        />
       </section>
 
-      <section className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
+      <section className="grid gap-3 xl:grid-cols-[1.35fr_0.65fr]">
         <div className="tc-student-panel rounded-[24px] p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -322,8 +313,9 @@ export function StudentDashboardScreen() {
               visibleSubjects.map((subject) => (
                 <Link
                   key={subject.id}
-                  href={buildSubjectCatalogHref(subject, {
+                  href={buildSubjectNotesHref(subject, {
                     examTrackCode: selectedTrackCode,
+                    mediumCode: snapshot.selectedMedium?.code ?? null,
                   })}
                   className="tc-student-card flex items-center justify-between gap-3 rounded-[18px] px-4 py-3"
                 >
@@ -347,7 +339,7 @@ export function StudentDashboardScreen() {
         </div>
 
         <div className="grid gap-3">
-          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
             <StatPill
               label="Access"
               value={dashboardData.analytics.activeEntitlements > 0 ? "Active" : "Trial"}
@@ -363,18 +355,12 @@ export function StudentDashboardScreen() {
               value={String(dashboardData.notifications.unreadCount)}
             />
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+          <div className="grid gap-3">
             <DashboardActionCard
               detail={`${dashboardData.cms.announcements.length} academy updates`}
               href="/student/current-affairs"
               label="Updates"
               title="Current affairs"
-            />
-            <DashboardActionCard
-              detail="Plans and payment access"
-              href="/student/plans"
-              label="Access"
-              title="Plans"
             />
           </div>
         </div>

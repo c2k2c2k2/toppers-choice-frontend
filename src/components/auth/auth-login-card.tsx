@@ -58,6 +58,48 @@ function getSurfaceType(surface: AuthSurface): UserType {
   return surface === "admin" ? "ADMIN" : "STUDENT";
 }
 
+function PasswordVisibilityIcon({
+  isVisible,
+}: Readonly<{
+  isVisible: boolean;
+}>) {
+  if (isVisible) {
+    return (
+      <svg
+        aria-hidden="true"
+        className="h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+        viewBox="0 0 24 24"
+      >
+        <path d="m3 3 18 18" />
+        <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+        <path d="M9.9 4.3A10.5 10.5 0 0 1 12 4c5 0 8.6 4.2 10 8a12.3 12.3 0 0 1-3 4.7" />
+        <path d="M6.5 6.5A12.4 12.4 0 0 0 2 12c1.4 3.8 5 8 10 8a10.5 10.5 0 0 0 4.1-.8" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.8"
+      viewBox="0 0 24 24"
+    >
+      <path d="M2 12s3.6-8 10-8 10 8 10 8-3.6 8-10 8S2 12 2 12Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
 export function AuthLoginCard({
   initialMode = "login",
   redirectTo,
@@ -76,8 +118,13 @@ export function AuthLoginCard({
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const hasConfirmPasswordValue = confirmPassword.length > 0;
+  const doPasswordsMatch = password === confirmPassword;
 
   useEffect(() => {
     setMode(config.allowSignup && initialMode === "signup" ? "signup" : "login");
@@ -113,6 +160,10 @@ export function AuthLoginCard({
     setErrorMessage(null);
 
     try {
+      if (mode === "signup" && password !== confirmPassword) {
+        throw new Error("Passwords do not match.");
+      }
+
       const response =
         mode === "signup"
           ? await signupRequest({
@@ -264,18 +315,75 @@ export function AuthLoginCard({
 
             <label className="tc-form-field">
               <span className="tc-form-label">Password</span>
-              <input
-                required
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="tc-input"
-                name="password"
-                placeholder="Enter your password"
-                autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                minLength={8}
-              />
+              <div className="relative">
+                <input
+                  required
+                  type={isPasswordVisible ? "text" : "password"}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  className="tc-input pr-12"
+                  name="password"
+                  placeholder="Enter your password"
+                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                  minLength={8}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[rgba(0,30,64,0.08)] bg-white/86 text-[color:var(--muted)] transition-colors duration-200 hover:text-[color:var(--brand)]"
+                  aria-label={isPasswordVisible ? "Hide password" : "Show password"}
+                  aria-pressed={isPasswordVisible}
+                  onClick={() => setIsPasswordVisible((value) => !value)}
+                >
+                  <PasswordVisibilityIcon isVisible={isPasswordVisible} />
+                </button>
+              </div>
             </label>
+
+            {mode === "signup" ? (
+              <label className="tc-form-field">
+                <span className="tc-form-label">Retype password</span>
+                <div className="relative">
+                  <input
+                    required
+                    type={isConfirmPasswordVisible ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    className="tc-input pr-12"
+                    name="confirmPassword"
+                    placeholder="Retype your password"
+                    autoComplete="new-password"
+                    minLength={8}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[rgba(0,30,64,0.08)] bg-white/86 text-[color:var(--muted)] transition-colors duration-200 hover:text-[color:var(--brand)]"
+                    aria-label={
+                      isConfirmPasswordVisible
+                        ? "Hide retyped password"
+                        : "Show retyped password"
+                    }
+                    aria-pressed={isConfirmPasswordVisible}
+                    onClick={() => setIsConfirmPasswordVisible((value) => !value)}
+                  >
+                    <PasswordVisibilityIcon isVisible={isConfirmPasswordVisible} />
+                  </button>
+                </div>
+                {hasConfirmPasswordValue ? (
+                  <p
+                    className="mt-2 text-xs font-semibold"
+                    style={{
+                      color: doPasswordsMatch
+                        ? "var(--accent-student)"
+                        : "#9a3412",
+                    }}
+                  >
+                    {doPasswordsMatch
+                      ? "Passwords match."
+                      : "Passwords do not match."}
+                  </p>
+                ) : null}
+              </label>
+            ) : null}
 
             {errorMessage ? (
               <div

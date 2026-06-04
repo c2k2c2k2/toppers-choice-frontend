@@ -82,6 +82,8 @@ export function StudentNotesLibraryScreen() {
   const [searchValue, setSearchValue] = useState("");
   const notesListRef = useRef<HTMLDivElement | null>(null);
   const deferredSearchValue = useDeferredValue(searchValue.trim());
+  const requestedTrack = searchParams.get("track");
+  const requestedMedium = searchParams.get("medium");
   const requestedSubjectId = searchParams.get("subject");
   const requestedTopicId = searchParams.get("topic");
 
@@ -100,9 +102,9 @@ export function StudentNotesLibraryScreen() {
   const catalog = catalogQuery.data;
   const catalogSnapshot = catalog
     ? buildStudentCatalogSnapshot(catalog, {
-      examTrackCode: activeExamTrackCode,
-      mediumCode: activeMediumCode,
-    })
+        examTrackCode: requestedTrack ?? activeExamTrackCode,
+        mediumCode: requestedMedium ?? activeMediumCode,
+      })
     : null;
   const selectedTrackId = catalogSnapshot?.selectedTrack?.id ?? null;
   const selectedMediumId = catalogSnapshot?.selectedMedium?.id ?? null;
@@ -144,6 +146,7 @@ export function StudentNotesLibraryScreen() {
     enabled: Boolean(catalogSnapshot),
     queryFn: (accessToken) =>
       getPublishedNotes(accessToken, {
+        mediumId: selectedMediumId,
         search: deferredSearchValue || null,
         subjectId: requestedSubjectId,
         topicId: requestedTopicId,
@@ -338,8 +341,8 @@ export function StudentNotesLibraryScreen() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.85fr_1.15fr]">
-        <aside className="tc-student-panel order-2 rounded-[20px] p-4 xl:order-1">
-          <div className="flex items-start justify-between gap-4">
+        <aside className="tc-student-panel order-2 rounded-[20px] p-3 sm:p-4 xl:order-1">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="tc-overline">Filter</p>
               <h2 className="mt-2 text-lg font-semibold text-[color:var(--brand)]">
@@ -368,16 +371,12 @@ export function StudentNotesLibraryScreen() {
                 updateSelection({
                   subject: subjectId,
                   topic: null,
-                }, {
-                  scrollToNotes: true,
                 })
               }
               onSelectTopic={(subjectId, topicId) =>
                 updateSelection({
                   subject: subjectId,
                   topic: topicId,
-                }, {
-                  scrollToNotes: true,
                 })
               }
               subjects={visibleSubjects}

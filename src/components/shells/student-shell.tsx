@@ -11,6 +11,7 @@ import {
   buildStudentCatalogSnapshot,
   getStudentCatalog,
   getTrackLabel,
+  type StudentExamTrack,
 } from "@/lib/student";
 import { startTrial, type TrialAccess } from "@/lib/trial";
 import {
@@ -33,6 +34,95 @@ function startTrialOnce(accessToken: string) {
 
   trialStartRequests.set(accessToken, request);
   return request;
+}
+
+function StudentTrackMenu({
+  disabled,
+  examTracks,
+  selectedCode,
+  selectedLabel,
+  onNavigate,
+  onSelectTrack,
+}: Readonly<{
+  disabled: boolean;
+  examTracks: StudentExamTrack[];
+  selectedCode: string | null;
+  selectedLabel: string;
+  onNavigate: (href: string) => void;
+  onSelectTrack: (code: string) => void;
+}>) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  function close() {
+    setIsOpen(false);
+  }
+
+  return (
+    <div className="tc-student-track-menu">
+      <button
+        type="button"
+        className="tc-student-track-menu-trigger"
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+        disabled={disabled}
+        onClick={() => setIsOpen((value) => !value)}
+      >
+        <span>{selectedLabel}</span>
+        <span aria-hidden="true" className="tc-student-track-menu-caret">
+          v
+        </span>
+      </button>
+
+      {isOpen ? (
+        <div className="tc-student-track-menu-list" role="menu">
+          {examTracks.length > 0 ? (
+            examTracks.map((examTrack) => (
+              <button
+                key={examTrack.id}
+                type="button"
+                className="tc-student-track-menu-item"
+                data-active={selectedCode === examTrack.code}
+                role="menuitem"
+                onClick={() => {
+                  onSelectTrack(examTrack.code);
+                  close();
+                }}
+              >
+                {getTrackLabel(examTrack)}
+              </button>
+            ))
+          ) : (
+            <span className="tc-student-track-menu-empty">Track</span>
+          )}
+
+          <div className="tc-student-track-menu-divider" />
+
+          <button
+            type="button"
+            className="tc-student-track-menu-item"
+            role="menuitem"
+            onClick={() => {
+              onNavigate("/student/english-speaking");
+              close();
+            }}
+          >
+            English Speaking
+          </button>
+          <button
+            type="button"
+            className="tc-student-track-menu-item"
+            role="menuitem"
+            onClick={() => {
+              onNavigate("/student/guidance");
+              close();
+            }}
+          >
+            Career Guidance
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 export function StudentShell({
@@ -87,6 +177,7 @@ export function StudentShell({
     ) ?? false;
   const entitlementsReady =
     entitlementsQuery.isFetched || entitlementsQuery.isError;
+  const effectiveTrialAccess = hasActiveEntitlement ? null : trialAccess;
 
   useEffect(() => {
     closeSidebar();
@@ -159,31 +250,10 @@ export function StudentShell({
 
   useEffect(() => {
     if (
-      !hasActiveEntitlement ||
-      !authSession.isAuthenticated ||
-      authSession.user?.userType !== "STUDENT"
-    ) {
-      return;
-    }
-
-    if (!trialAccess?.id) {
-      return;
-    }
-
-    setTrialAccess(null);
-  }, [
-    authSession.isAuthenticated,
-    authSession.user?.userType,
-    hasActiveEntitlement,
-    trialAccess?.id,
-  ]);
-
-  useEffect(() => {
-    if (
       hasActiveEntitlement ||
       !entitlementsReady ||
-      !trialAccess ||
-      trialAccess.hasAccess ||
+      !effectiveTrialAccess ||
+      effectiveTrialAccess.hasAccess ||
       pathname.startsWith("/student/plans")
     ) {
       return;
@@ -196,10 +266,10 @@ export function StudentShell({
     );
   }, [
     entitlementsReady,
+    effectiveTrialAccess,
     hasActiveEntitlement,
     pathname,
     router,
-    trialAccess,
   ]);
 
   useEffect(() => {
@@ -235,13 +305,13 @@ export function StudentShell({
     router.replace("/student/login");
   }
 
-  const trialRemainingLabel = trialAccess
-    ? formatTrialDuration(trialAccess.remainingSeconds)
+  const trialRemainingLabel = effectiveTrialAccess
+    ? formatTrialDuration(effectiveTrialAccess.remainingSeconds)
     : "1 day";
   const trialChipLabel =
-    trialAccess && !trialAccess.enabled
+    effectiveTrialAccess && !effectiveTrialAccess.enabled
       ? "Trial paused"
-      : trialAccess?.hasAccess === false
+      : effectiveTrialAccess?.hasAccess === false
         ? "Trial ended"
         : `${trialRemainingLabel} trial left`;
   const accessChipLabel = hasActiveEntitlement
@@ -321,7 +391,7 @@ export function StudentShell({
 
             <div
               className={`mt-4 flex flex-wrap gap-2 ${
-                isDesktopSidebarCollapsed ? "justify-center" : ""
+                isDesktopSidebarCollapsed ? "items-center text-center" : ""
               }`}
             >
               <span className="tc-student-chip" data-tone="accent">
@@ -381,26 +451,14 @@ export function StudentShell({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                  <label className="tc-student-track-select">
-                    <span className="sr-only">Exam track</span>
-                    <select
-                      value={catalogSnapshot?.selectedTrack?.code ?? ""}
-                      onChange={(event) => {
-                        setActiveExamTrackCode(event.target.value);
-                      }}
-                      disabled={!catalogQuery.data?.examTracks.length}
-                    >
-                      {catalogQuery.data?.examTracks.length ? (
-                        catalogQuery.data.examTracks.map((examTrack) => (
-                          <option key={examTrack.id} value={examTrack.code}>
-                            {getTrackLabel(examTrack)}
-                          </option>
-                        ))
-                      ) : (
-                        <option value="">Track</option>
-                      )}
-                    </select>
-                  </label>
+                  <StudentTrackMenu
+                    disabled={!catalogQuery.data?.examTracks.length}
+                    examTracks={catalogQuery.data?.examTracks ?? []}
+                    selectedCode={catalogSnapshot?.selectedTrack?.code ?? null}
+                    selectedLabel={getTrackLabel(catalogSnapshot?.selectedTrack ?? null)}
+                    onNavigate={(href) => router.push(href)}
+                    onSelectTrack={setActiveExamTrackCode}
+                  />
                   <span className="tc-student-chip hidden sm:inline-flex" data-tone="accent">
                     {accessChipLabel}
                   </span>

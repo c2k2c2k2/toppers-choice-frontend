@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { queryKeys } from "@/lib/api/query-keys";
 import { useAuthenticatedQuery } from "@/lib/auth";
 import {
+  buildSubjectNotesHref,
   buildStudentCatalogSnapshot,
   countTopics,
   findSubjectBySlug,
@@ -116,6 +117,15 @@ export function StudentSubjectCatalogScreen({
             <span className="tc-student-chip" data-tone="soft">
               {countTopics(subject.topics)} topics
             </span>
+            <Link
+              href={buildSubjectNotesHref(subject, {
+                examTrackCode: snapshot.selectedTrack?.code ?? null,
+                mediumCode: snapshot.selectedMedium?.code ?? null,
+              })}
+              className="tc-button-primary"
+            >
+              Open notes
+            </Link>
             <Link href="/student/catalog" className="tc-button-secondary">
               Back
             </Link>
@@ -133,7 +143,16 @@ export function StudentSubjectCatalogScreen({
             </div>
           </div>
           <div className="mt-4">
-            <StudentTopicTree topics={subject.topics} />
+            <StudentTopicTree
+              buildTopicHref={(topic) =>
+                buildSubjectNotesHref(subject, {
+                  examTrackCode: snapshot.selectedTrack?.code ?? null,
+                  mediumCode: snapshot.selectedMedium?.code ?? null,
+                  topicId: topic.id,
+                })
+              }
+              topics={subject.topics}
+            />
           </div>
       </section>
     </div>

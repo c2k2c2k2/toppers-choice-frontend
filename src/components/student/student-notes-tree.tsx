@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   countSubjectTreeNotes,
   countTopicTreeNotes,
@@ -85,9 +86,38 @@ export function StudentNotesTree({
   onSelectTopic: (subjectId: string, topicId: string) => void;
   subjects: NoteTreeSubjectNode[];
 }>) {
+  const [expandedSubjectIds, setExpandedSubjectIds] = useState<Set<string>>(
+    () => new Set(activeSubjectId ? [activeSubjectId] : []),
+  );
   const totalNotes = subjects.reduce((total, subject) => {
     return total + countSubjectTreeNotes(subject, mediumId);
   }, 0);
+
+  function toggleSubject(subjectId: string) {
+    setExpandedSubjectIds((current) => {
+      const next = new Set(current);
+
+      if (next.has(subjectId)) {
+        next.delete(subjectId);
+      } else {
+        next.add(subjectId);
+      }
+
+      return next;
+    });
+  }
+
+  function expandSubject(subjectId: string) {
+    setExpandedSubjectIds((current) => {
+      if (current.has(subjectId)) {
+        return current;
+      }
+
+      const next = new Set(current);
+      next.add(subjectId);
+      return next;
+    });
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -110,37 +140,71 @@ export function StudentNotesTree({
         const subjectCount = countSubjectTreeNotes(subject, mediumId);
         const isSubjectActive =
           activeSubjectId === subject.id && activeTopicId === null;
+        const isExpanded = expandedSubjectIds.has(subject.id);
+        const topicCount = subject.topics.length;
 
         return (
-          <section key={subject.id} className="tc-student-card-muted rounded-[24px] p-3">
-            <button
-              type="button"
-              onClick={() => onSelectSubject(subject.id)}
-              className="tc-student-nav-link w-full"
-              data-active={isSubjectActive}
-            >
-              <span className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="font-semibold text-[color:var(--brand)]">
-                  {subject.name}
+          <section
+            key={subject.id}
+            className="tc-notes-subject-card"
+            data-expanded={isExpanded}
+          >
+            <div className="tc-notes-subject-header">
+              <button
+                type="button"
+                onClick={() => {
+                  expandSubject(subject.id);
+                  onSelectSubject(subject.id);
+                }}
+                className="tc-notes-subject-select"
+                data-active={isSubjectActive}
+              >
+                <span className="min-w-0">
+                  <span className="block truncate font-semibold text-[color:var(--brand)]">
+                    {subject.name}
+                  </span>
+                  <span className="tc-muted mt-1 block text-xs leading-5">
+                    {topicCount > 0
+                      ? `${topicCount} topic${topicCount === 1 ? "" : "s"}`
+                      : "Subject-level notes"}
+                  </span>
                 </span>
-                <span className="tc-muted text-xs leading-5">
-                  Subject-level discovery and untagged notes.
-                </span>
-              </span>
-              <span className="tc-code-chip">{subjectCount}</span>
-            </button>
+                <span className="tc-code-chip">{subjectCount}</span>
+              </button>
 
-            {subject.topics.length > 0 ? (
-              <div className="mt-3 flex flex-col gap-1">
-                {subject.topics.map((topic) => (
-                  <TopicBranch
-                    key={topic.id}
-                    activeTopicId={activeTopicId}
-                    mediumId={mediumId}
-                    onSelectTopic={(topicId) => onSelectTopic(subject.id, topicId)}
-                    topic={topic}
-                  />
-                ))}
+              <button
+                type="button"
+                className="tc-notes-subject-toggle"
+                aria-expanded={isExpanded}
+                aria-label={`${isExpanded ? "Collapse" : "Expand"} ${subject.name}`}
+                disabled={topicCount === 0}
+                onClick={() => toggleSubject(subject.id)}
+              >
+                <span className="tc-notes-subject-chevron" aria-hidden="true">
+                 ⌄
+                </span>
+              </button>
+            </div>
+
+            {isExpanded ? (
+              <div className="tc-notes-subject-body">
+                {subject.topics.length > 0 ? (
+                  <div className="flex flex-col gap-1">
+                    {subject.topics.map((topic) => (
+                      <TopicBranch
+                        key={topic.id}
+                        activeTopicId={activeTopicId}
+                        mediumId={mediumId}
+                        onSelectTopic={(topicId) => onSelectTopic(subject.id, topicId)}
+                        topic={topic}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="tc-muted px-3 py-2 text-xs leading-5">
+                    No topic filters are available for this subject yet.
+                  </p>
+                )}
               </div>
             ) : null}
           </section>
