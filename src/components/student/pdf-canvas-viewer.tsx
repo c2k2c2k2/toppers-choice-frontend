@@ -178,6 +178,35 @@ function ViewerControlButton({
   );
 }
 
+function PdfBookLoadingState({
+  label = "Loading ...",
+}: Readonly<{
+  label?: string;
+}>) {
+  return (
+    <div
+      aria-busy="true"
+      aria-live="polite"
+      className="tc-pdf-book-loading-inline"
+      role="status"
+    >
+      <div className="tc-book-loader" aria-hidden="true">
+        <div className="tc-book-loader-cover" />
+        <div className="tc-book-loader-pages">
+          <span />
+          <span />
+          <span />
+        </div>
+      </div>
+      <div className="space-y-1 text-center">
+        <p className="text-sm font-semibold text-[color:var(--brand)]">
+          {label}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function PdfCanvasViewer({
   fitMode = "width",
   gestureDirection = "horizontal",
@@ -227,6 +256,7 @@ export function PdfCanvasViewer({
   const [documentProxy, setDocumentProxy] =
     useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [isLoadingDocument, setIsLoadingDocument] = useState(false);
+  const [isRenderingPage, setIsRenderingPage] = useState(false);
   const [pageCount, setPageCount] = useState(0);
   const [pageInput, setPageInput] = useState(String(initialPage));
   const [pageNumber, setPageNumber] = useState(initialPage);
@@ -397,6 +427,7 @@ export function PdfCanvasViewer({
     const renderPage = async () => {
       try {
         renderTaskRef.current?.cancel();
+        setIsRenderingPage(true);
 
         const page = await documentProxy.getPage(pageNumber);
         if (cancelled) {
@@ -451,6 +482,7 @@ export function PdfCanvasViewer({
 
         if (!cancelled) {
           emitPageChange(pageNumber, documentProxy.numPages);
+          setIsRenderingPage(false);
         }
       } catch (error) {
         if (cancelled) {
@@ -465,6 +497,7 @@ export function PdfCanvasViewer({
           return;
         }
 
+        setIsRenderingPage(false);
         emitError(
           error instanceof Error ? error.message : "Failed to render the note page.",
         );
@@ -476,6 +509,7 @@ export function PdfCanvasViewer({
     return () => {
       cancelled = true;
       renderTaskRef.current?.cancel();
+      setIsRenderingPage(false);
     };
   }, [containerSize.height, containerSize.width, documentProxy, fitMode, pageNumber, zoom]);
 
@@ -707,10 +741,7 @@ export function PdfCanvasViewer({
           ].join(" ")}
         >
           {isLoadingDocument ? (
-            <div className="space-y-3 text-center text-white/80">
-              <p className="tc-overline text-white/70">Secure reader</p>
-              <p className="text-sm">Loading the protected PDF stream...</p>
-            </div>
+            <PdfBookLoadingState />
           ) : (
             <div
               key={pageNumber}
@@ -719,6 +750,11 @@ export function PdfCanvasViewer({
             >
               <canvas ref={canvasRef} className="block" />
               <NoteWatermarkOverlay payload={watermarkPayload} />
+              {isRenderingPage ? (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <PdfBookLoadingState label="Preparing page" />
+                </div>
+              ) : null}
             </div>
           )}
         </div>

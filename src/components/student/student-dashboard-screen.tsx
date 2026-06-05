@@ -273,27 +273,6 @@ export function StudentDashboardScreen() {
         </Link>
       ) : null}
 
-      <section className="grid gap-3 sm:grid-cols-3">
-        <DashboardActionCard
-          detail="Listening and speaking drills"
-          href="/student/english-speaking"
-          label="English"
-          title="Speaking practice"
-        />
-        <DashboardActionCard
-          detail="Latest study material by subject and topic"
-          href="/student/notes"
-          label="Notes"
-          title="Notes library"
-        />
-        <DashboardActionCard
-          detail="Plans and payment access"
-          href="/student/plans"
-          label="Access"
-          title="Plans"
-        />
-      </section>
-
       <section className="grid gap-3 xl:grid-cols-[1.35fr_0.65fr]">
         <div className="tc-student-panel rounded-[24px] p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
@@ -364,6 +343,27 @@ export function StudentDashboardScreen() {
             />
           </div>
         </div>
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-3">
+        <DashboardActionCard
+          detail="Listening and speaking drills"
+          href="/student/english-speaking"
+          label="English"
+          title="Speaking practice"
+        />
+        <DashboardActionCard
+          detail="Latest study material by subject and topic"
+          href="/student/notes"
+          label="Notes"
+          title="Notes library"
+        />
+        <DashboardActionCard
+          detail="Plans and payment access"
+          href="/student/plans"
+          label="Access"
+          title="Plans"
+        />
       </section>
 
       {latestAnnouncement ? (

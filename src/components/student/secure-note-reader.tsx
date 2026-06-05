@@ -28,7 +28,6 @@ import {
   type NoteWatermarkResponse,
 } from "@/lib/notes";
 import { ErrorState } from "@/components/primitives/error-state";
-import { LoadingState } from "@/components/primitives/loading-state";
 import { PremiumAccessCard } from "@/components/payments/premium-access-card";
 import { buildStudentPlansHref } from "@/lib/payments";
 import { PdfCanvasViewer } from "@/components/student/pdf-canvas-viewer";
@@ -332,6 +331,37 @@ function ReaderActionButton({
       <ReaderActionGlyph icon={icon} />
       <span className="sr-only">{label}</span>
     </button>
+  );
+}
+
+function NoteReaderLoadingState() {
+  return (
+    <section
+      aria-busy="true"
+      aria-live="polite"
+      className="tc-note-reader-loading rounded-[28px] px-5 py-7"
+      role="status"
+    >
+      <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
+        <div className="tc-book-loader" aria-hidden="true">
+          <div className="tc-book-loader-cover" />
+          <div className="tc-book-loader-pages">
+            <span />
+            <span />
+            <span />
+          </div>
+        </div>
+        <div>
+          <p className="tc-overline">Opening note</p>
+          <h2 className="mt-2 text-xl font-semibold text-[color:var(--brand)]">
+            Preparing your reader
+          </h2>
+          <p className="mt-2 max-w-md text-sm leading-6 text-[color:var(--muted)]">
+            Creating the secure session and loading the PDF pages.
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -905,10 +935,7 @@ export function SecureNoteReader({
         ) : null}
 
         {!isLocked && readerState === "starting" ? (
-          <LoadingState
-            title="Opening the note"
-            description="Creating the reader session and preparing the PDF."
-          />
+          <NoteReaderLoadingState />
         ) : null}
 
         {!isLocked && (readerState === "error" || readerState === "expired") ? (

@@ -293,14 +293,9 @@ export function StudentNotesLibraryScreen() {
               {selectedTopic?.name ?? selectedSubject?.name ?? "All notes"}
             </h1>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <span className="tc-student-chip" data-tone="soft">
-              {filteredNotes.length} notes
-            </span>
-            <span className="tc-student-chip" data-tone="accent">
-              {availableCount} ready
-            </span>
-          </div>
+          <span className="tc-student-chip" data-tone="soft">
+            {filteredNotes.length} notes
+          </span>
         </div>
 
         <div className="grid gap-3 xl:grid-cols-[1.3fr_1fr]">
