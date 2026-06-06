@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { adminQueryKeys } from "@/lib/api/query-keys";
 import { useAuthenticatedMutation, useAuthenticatedQuery, useAuthSession } from "@/lib/auth";
+import { AuthenticatedFilePreview } from "@/components/primitives/file-preview";
 import {
   getApiErrorMessage,
   listAdminAssets,
@@ -151,27 +152,36 @@ export function AdminAssetUploader({
               Linked asset
             </p>
             {effectiveAsset ? (
-              <div className="mt-3 space-y-2 text-sm">
-                <p className="font-semibold text-[color:var(--brand)]">
-                  {effectiveAsset.originalFileName}
-                </p>
-                <p className="text-[color:var(--muted)]">
-                  Asset ID: <span className="tc-code-chip">{effectiveAsset.id}</span>
-                </p>
-                <p className="text-[color:var(--muted)]">
-                  {effectiveAsset.contentType ?? "image/*"} · {effectiveAsset.status ?? "READY"}
-                </p>
-                <div className="flex flex-wrap items-center gap-3 pt-2">
-                  <button
-                    type="button"
-                    className="tc-button-secondary"
-                    onClick={() => onAssetChange(null)}
-                  >
-                    Remove asset
-                  </button>
-                  {assetId ? (
-                    <span className="tc-code-chip">{assetId}</span>
-                  ) : null}
+              <div className="mt-3 flex items-start gap-3 text-sm">
+                <AuthenticatedFilePreview
+                  assetId={effectiveAsset.id}
+                  contentType={effectiveAsset.contentType}
+                  fileName={effectiveAsset.originalFileName}
+                  label="Preview linked asset"
+                  thumbClassName="h-20 w-20"
+                />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <p className="truncate font-semibold text-[color:var(--brand)]">
+                    {effectiveAsset.originalFileName}
+                  </p>
+                  <p className="text-[color:var(--muted)]">
+                    Asset ID: <span className="tc-code-chip">{effectiveAsset.id}</span>
+                  </p>
+                  <p className="text-[color:var(--muted)]">
+                    {effectiveAsset.contentType ?? "image/*"} · {effectiveAsset.status ?? "READY"}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      className="tc-button-secondary"
+                      onClick={() => onAssetChange(null)}
+                    >
+                      Remove asset
+                    </button>
+                    {assetId ? (
+                      <span className="tc-code-chip">{assetId}</span>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             ) : (
@@ -187,22 +197,33 @@ export function AdminAssetUploader({
             </p>
             <div className="mt-3 flex flex-col gap-2">
               {recentAssetsQuery.data?.items.slice(0, 5).map((asset) => (
-                <button
+                <div
                   key={asset.id}
-                  type="button"
-                  className="rounded-[18px] border border-[rgba(0,30,64,0.08)] bg-white px-3 py-3 text-left transition hover:border-[rgba(0,51,102,0.2)] hover:bg-[rgba(0,51,102,0.03)]"
-                  onClick={() => {
-                    setMessage(null);
-                    onAssetChange(asset);
-                  }}
+                  className="flex items-center gap-3 rounded-[18px] border border-[rgba(0,30,64,0.08)] bg-white px-3 py-3"
                 >
-                  <p className="font-semibold text-[color:var(--brand)]">
-                    {asset.originalFileName}
-                  </p>
-                  <p className="mt-1 text-xs text-[color:var(--muted)]">
-                    {asset.id} · {asset.status}
-                  </p>
-                </button>
+                  <AuthenticatedFilePreview
+                    assetId={asset.id}
+                    contentType={asset.contentType}
+                    fileName={asset.originalFileName}
+                    label="Preview recent asset"
+                    thumbClassName="h-14 w-14"
+                  />
+                  <button
+                    type="button"
+                    className="min-w-0 flex-1 text-left"
+                    onClick={() => {
+                      setMessage(null);
+                      onAssetChange(asset);
+                    }}
+                  >
+                    <p className="truncate font-semibold text-[color:var(--brand)]">
+                      {asset.originalFileName}
+                    </p>
+                    <p className="mt-1 truncate text-xs text-[color:var(--muted)]">
+                      {asset.id} · {asset.status}
+                    </p>
+                  </button>
+                </div>
               ))}
               {recentAssetsQuery.error ? (
                 <p className="text-sm leading-6 text-[color:var(--muted)]">

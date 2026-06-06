@@ -13,6 +13,7 @@ type StudentNavIcon =
   | "home"
   | "layers"
   | "mic"
+  | "user"
   | "wallet";
 
 interface StudentNavItem {
@@ -78,6 +79,13 @@ const STUDENT_NAV_ITEMS: StudentNavItem[] = [
     icon: "wallet",
     label: "Plans",
     shortLabel: "Plans",
+    status: "live",
+  },
+  {
+    href: "/student/profile",
+    icon: "user",
+    label: "Profile",
+    shortLabel: "Profile",
     status: "live",
   },
 ];
@@ -177,6 +185,12 @@ function StudentNavIconGlyph({
         <path d="M12 4.5a3 3 0 0 0-3 3v4a3 3 0 0 0 6 0v-4a3 3 0 0 0-3-3Z" />
         <path d="M6.5 11.5a5.5 5.5 0 0 0 11 0" />
         <path d="M12 17v3" />
+      </>
+    ),
+    user: (
+      <>
+        <path d="M12 12.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+        <path d="M4.5 20c1.2-3.2 3.7-5 7.5-5s6.3 1.8 7.5 5" />
       </>
     ),
     wallet: (

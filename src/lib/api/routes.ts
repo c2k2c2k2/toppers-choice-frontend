@@ -8,6 +8,20 @@ export const apiRoutes = {
     sessions: "/auth/sessions",
     forgotPassword: "/auth/password/forgot",
     resetPassword: "/auth/password/reset",
+    requestEmailOtp: "/auth/email/otp",
+    verifyEmail: "/auth/email/verify",
+  },
+  profile: {
+    me: "/profile/me",
+  },
+  files: {
+    initUpload: "/files/init-upload",
+    confirmUpload: (assetId: string) =>
+      `/files/${encodeURIComponent(assetId)}/confirm-upload`,
+  },
+  feedback: {
+    listMine: "/feedback/me",
+    create: "/feedback",
   },
   public: {
     bootstrap: "/public/bootstrap",
@@ -302,6 +316,11 @@ export const apiRoutes = {
       cancel: (broadcastId: string) =>
         `/admin/notifications/broadcasts/${encodeURIComponent(broadcastId)}/cancel`,
       messages: "/admin/notifications/messages",
+    },
+    feedback: {
+      list: "/admin/feedback",
+      detail: (feedbackId: string) =>
+        `/admin/feedback/${encodeURIComponent(feedbackId)}`,
     },
   },
   analytics: {

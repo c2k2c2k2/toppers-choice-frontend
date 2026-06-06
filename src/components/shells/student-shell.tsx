@@ -18,6 +18,7 @@ import {
   StudentBottomNavigation,
   StudentShellNavigation,
 } from "@/components/student/student-shell-navigation";
+import { FeedbackWidget } from "@/components/student/feedback-widget";
 import { useStudentShellStore } from "@/stores";
 
 const trialStartRequests = new Map<string, Promise<TrialAccess>>();
@@ -336,6 +337,8 @@ export function StudentShell({
     shellTitle = "Tests";
   } else if (pathname.startsWith("/student/plans")) {
     shellTitle = "Plans";
+  } else if (pathname.startsWith("/student/profile")) {
+    shellTitle = "Profile";
   } else if (
     pathname.startsWith("/student/guidance") ||
     pathname.startsWith("/student/current-affairs") ||
@@ -481,6 +484,7 @@ export function StudentShell({
         </div>
       </div>
 
+      <FeedbackWidget />
       <StudentBottomNavigation />
     </div>
   );

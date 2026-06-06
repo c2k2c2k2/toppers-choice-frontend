@@ -150,6 +150,12 @@ const ADMIN_NAV_GROUPS: Array<{
         description: "Templates, broadcasts, and delivery status.",
         permissions: ["notifications.read", "notifications.manage", "notifications.send"],
       },
+      {
+        href: "/admin/feedback",
+        label: "Feedback",
+        description: "Complaints, suggestions, bugs, and student pain points.",
+        permissions: ["feedback.read", "feedback.manage"],
+      },
     ],
   },
   {

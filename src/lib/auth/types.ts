@@ -31,12 +31,14 @@ export interface UserIdentity {
   id: string;
   siteId: string;
   email: string;
+  phone?: string | null;
   fullName: string;
   userType: UserType;
   status: string;
   lastLoginAt?: string | null;
   emailVerifiedAt?: string | null;
   phoneVerifiedAt?: string | null;
+  profileImageFileAssetId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -54,6 +56,13 @@ export interface AuthResponse {
   user: UserIdentity;
   access: UserAccess;
   tokens: AuthTokenBundle;
+}
+
+export interface SignupResponse {
+  user: UserIdentity;
+  message: string;
+  email: string;
+  resendAfterSeconds: number;
 }
 
 export interface AuthMeResponse {

@@ -5,6 +5,7 @@ import type {
   AuthMeResponse,
   AuthResponse,
   AuthSessionsResponse,
+  SignupResponse,
 } from "@/lib/auth/types";
 
 export interface LoginPayload {
@@ -15,6 +16,7 @@ export interface LoginPayload {
 export interface SignupPayload {
   fullName: string;
   email: string;
+  phone: string;
   password: string;
 }
 
@@ -33,7 +35,24 @@ export interface ResetPasswordPayload {
 }
 
 export function signup(payload: SignupPayload) {
-  return apiRequest<AuthResponse>(apiRoutes.auth.signup, {
+  return apiRequest<SignupResponse>(apiRoutes.auth.signup, {
+    method: "POST",
+    body: payload,
+  });
+}
+
+export function requestEmailOtp(payload: { email: string }) {
+  return apiRequest<ActionMessageResponse & { resendAfterSeconds?: number }>(
+    apiRoutes.auth.requestEmailOtp,
+    {
+      method: "POST",
+      body: payload,
+    },
+  );
+}
+
+export function verifyEmail(payload: { email: string; code: string }) {
+  return apiRequest<AuthResponse>(apiRoutes.auth.verifyEmail, {
     method: "POST",
     body: payload,
   });

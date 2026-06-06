@@ -10,6 +10,7 @@ import {
 } from "@/lib/admin";
 import { AdminFormField } from "@/components/admin/admin-form-field";
 import { AdminInlineNotice } from "@/components/admin/admin-inline-notice";
+import { AuthenticatedFilePreview } from "@/components/primitives/file-preview";
 import { AssetImage } from "@/components/primitives/asset-image";
 
 export function AdminQuestionMediaField({
@@ -116,6 +117,13 @@ export function AdminQuestionMediaField({
                 className="max-h-48 w-full rounded-[20px] border border-[rgba(0,30,64,0.08)] bg-white object-contain"
               />
               <div className="flex flex-wrap items-center gap-3 text-sm">
+                <AuthenticatedFilePreview
+                  assetId={assetQuery.data.id}
+                  contentType={assetQuery.data.contentType}
+                  fileName={assetQuery.data.originalFileName}
+                  label="Open image preview"
+                  thumbClassName="h-14 w-14"
+                />
                 <span className="font-semibold text-[color:var(--brand)]">
                   {assetQuery.data.originalFileName}
                 </span>

@@ -1,5 +1,6 @@
 "use client"
 
+import { AuthenticatedFilePreview } from "@/components/primitives/file-preview"
 import { AdminInput } from "@/components/admin/admin-form-field"
 
 export interface AdminAttachmentRow {
@@ -155,7 +156,25 @@ export function AdminAttachmentsEditor({
               }
             />
 
-            <div className="flex justify-end">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              {row.fileAssetId.trim() ? (
+                <div className="flex items-center gap-3">
+                  <AuthenticatedFilePreview
+                    assetId={row.fileAssetId.trim()}
+                    fileName={row.label || "Attachment"}
+                    label="Preview attachment"
+                    thumbClassName="h-14 w-14"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--muted)]">
+                      Preview
+                    </p>
+                    <p className="mt-1 max-w-64 truncate text-xs text-[color:var(--muted)]">
+                      {row.fileAssetId.trim()}
+                    </p>
+                  </div>
+                </div>
+              ) : null}
               <button
                 type="button"
                 className="tc-button-secondary"

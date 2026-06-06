@@ -2,9 +2,16 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { OtpCodeInput } from "@/components/auth/otp-code-input";
 import { BrandLockup } from "@/components/primitives/brand-logo";
-import { signup as signupRequest } from "@/lib/auth/auth-api";
+import {
+  requestEmailOtp,
+  requestPasswordReset,
+  resetPassword,
+  signup as signupRequest,
+  verifyEmail,
+} from "@/lib/auth/auth-api";
 import { useAuthSession, type UserType } from "@/lib/auth";
 import {
   getApiErrorMessage,
@@ -13,7 +20,9 @@ import {
 } from "@/lib/auth/session-utils";
 
 type AuthSurface = "student" | "admin";
-type AuthMode = "login" | "signup";
+type AuthMode = "login" | "signup" | "verify" | "forgot" | "reset";
+
+const MOBILE_PATTERN = /^(?:\+91)?[6-9]\d{9}$/;
 
 const SURFACE_CONFIG: Record<
   AuthSurface,
@@ -56,6 +65,22 @@ const SURFACE_CONFIG: Record<
 
 function getSurfaceType(surface: AuthSurface): UserType {
   return surface === "admin" ? "ADMIN" : "STUDENT";
+}
+
+function getPrimaryActionLabel(mode: AuthMode, isSubmitting: boolean) {
+  if (isSubmitting) {
+    if (mode === "signup") return "Creating account...";
+    if (mode === "verify") return "Verifying...";
+    if (mode === "forgot") return "Sending code...";
+    if (mode === "reset") return "Resetting password...";
+    return "Signing in...";
+  }
+
+  if (mode === "signup") return "Create account";
+  if (mode === "verify") return "Verify email";
+  if (mode === "forgot") return "Send reset code";
+  if (mode === "reset") return "Reset password";
+  return "Sign in";
 }
 
 function PasswordVisibilityIcon({
@@ -117,19 +142,54 @@ export function AuthLoginCard({
   );
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const verificationPanelRef = useRef<HTMLDivElement | null>(null);
   const hasConfirmPasswordValue = confirmPassword.length > 0;
   const doPasswordsMatch = password === confirmPassword;
+  const hasConfirmNewPasswordValue = confirmNewPassword.length > 0;
+  const doNewPasswordsMatch = newPassword === confirmNewPassword;
 
   useEffect(() => {
     setMode(config.allowSignup && initialMode === "signup" ? "signup" : "login");
     setErrorMessage(null);
   }, [config.allowSignup, initialMode]);
+
+  useEffect(() => {
+    if (cooldownSeconds <= 0) {
+      return;
+    }
+
+    const timerId = window.setTimeout(() => {
+      setCooldownSeconds((value) => Math.max(0, value - 1));
+    }, 1000);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [cooldownSeconds]);
+
+  useEffect(() => {
+    if (mode === "verify") {
+      window.setTimeout(() => {
+        verificationPanelRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }, 80);
+    }
+  }, [mode]);
 
   useEffect(() => {
     if (!authSession.isReady || !authSession.isAuthenticated || !authSession.user) {
@@ -158,32 +218,90 @@ export function AuthLoginCard({
     event.preventDefault();
     setIsSubmitting(true);
     setErrorMessage(null);
+    setSuccessMessage(null);
 
     try {
-      if (mode === "signup" && password !== confirmPassword) {
-        throw new Error("Passwords do not match.");
+      if (mode === "signup") {
+        const normalizedPhone = phone.trim().replace(/[\s()-]/g, "");
+        if (!MOBILE_PATTERN.test(normalizedPhone)) {
+          throw new Error("Enter a valid Indian mobile number.");
+        }
+        if (password !== confirmPassword) {
+          throw new Error("Passwords do not match.");
+        }
+
+        const response = await signupRequest({
+          fullName,
+          email,
+          phone: normalizedPhone,
+          password,
+        });
+        setPendingEmail(response.email);
+        setOtpCode("");
+        setCooldownSeconds(response.resendAfterSeconds || 60);
+        setSuccessMessage(response.message);
+        setMode("verify");
+        return;
       }
 
-      const response =
-        mode === "signup"
-          ? await signupRequest({
-              fullName,
-              email,
-              password,
-            })
-          : await authSession.login({
-              email,
-              password,
-            });
+      if (mode === "verify") {
+        const response = await verifyEmail({
+          email: pendingEmail || email,
+          code: otpCode,
+        });
 
-      if (mode === "signup") {
         authSession.setSession({
           user: response.user,
           access: response.access,
           tokens: response.tokens,
           sessionId: response.tokens.sessionId,
         });
+
+        const preferredHomeHref = getDefaultHomeHrefForUserType(
+          response.user.userType,
+        );
+        const nextHref =
+          response.user.userType === getSurfaceType(surface)
+            ? sanitizeRedirectTarget(redirectTo, preferredHomeHref)
+            : preferredHomeHref;
+
+        router.replace(nextHref);
+        return;
       }
+
+      if (mode === "forgot") {
+        const response = await requestPasswordReset({ email });
+        setPendingEmail(email);
+        setOtpCode("");
+        setSuccessMessage(response.message);
+        setCooldownSeconds(60);
+        setMode("reset");
+        return;
+      }
+
+      if (mode === "reset") {
+        if (newPassword !== confirmNewPassword) {
+          throw new Error("New passwords do not match.");
+        }
+
+        const response = await resetPassword({
+          email: pendingEmail || email,
+          code: otpCode,
+          newPassword,
+        });
+        setSuccessMessage(response.message);
+        setPassword("");
+        setNewPassword("");
+        setConfirmNewPassword("");
+        setOtpCode("");
+        setMode("login");
+        return;
+      }
+
+      const response = await authSession.login({
+        email,
+        password,
+      });
 
       const preferredHomeHref = getDefaultHomeHrefForUserType(
         response.user.userType,
@@ -198,8 +316,37 @@ export function AuthLoginCard({
       setErrorMessage(
         getApiErrorMessage(
           error,
-          "We couldn't sign you in right now.",
+          "We couldn't complete this step right now.",
         ),
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleResendOtp() {
+    const targetEmail = pendingEmail || email;
+    if (!targetEmail || cooldownSeconds > 0) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      if (mode === "reset") {
+        const response = await requestPasswordReset({ email: targetEmail });
+        setSuccessMessage(response.message);
+        setCooldownSeconds(60);
+      } else {
+        const response = await requestEmailOtp({ email: targetEmail });
+        setSuccessMessage(response.message);
+        setCooldownSeconds(response.resendAfterSeconds || 60);
+      }
+    } catch (error) {
+      setErrorMessage(
+        getApiErrorMessage(error, "We couldn't resend the code right now."),
       );
     } finally {
       setIsSubmitting(false);
@@ -284,6 +431,39 @@ export function AuthLoginCard({
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {mode === "verify" || mode === "reset" ? (
+              <div ref={verificationPanelRef} className="tc-panel rounded-[20px] p-4">
+                <p className="tc-overline" style={{ color: config.accentColor }}>
+                  {mode === "verify" ? "Email verification" : "Password reset"}
+                </p>
+                <p className="tc-muted mt-2 text-sm leading-6">
+                  Enter the code sent to {pendingEmail || email}.
+                </p>
+                <OtpCodeInput autoFocus value={otpCode} onChange={setOtpCode} />
+                <div className="mt-4 grid gap-3 sm:flex sm:flex-wrap">
+                  {mode === "verify" ? (
+                    <button
+                      type="submit"
+                      className="tc-button-primary w-full sm:w-auto"
+                      disabled={isSubmitting || otpCode.length !== 6}
+                    >
+                      {isSubmitting ? "Verifying..." : "Verify email"}
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="tc-button-secondary w-full sm:w-auto"
+                    disabled={isSubmitting || cooldownSeconds > 0}
+                    onClick={handleResendOtp}
+                  >
+                    {cooldownSeconds > 0
+                      ? `Resend in ${cooldownSeconds}s`
+                      : "Resend code"}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
             {mode === "signup" ? (
               <label className="tc-form-field">
                 <span className="tc-form-label">Full name</span>
@@ -299,20 +479,39 @@ export function AuthLoginCard({
               </label>
             ) : null}
 
-            <label className="tc-form-field">
-              <span className="tc-form-label">Email</span>
-              <input
-                required
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="tc-input"
-                name="email"
-                placeholder={surface === "admin" ? "admin@topperschoice.in" : "student@example.com"}
-                autoComplete="email"
-              />
-            </label>
+            {mode !== "verify" && mode !== "reset" ? (
+              <label className="tc-form-field">
+                <span className="tc-form-label">Email</span>
+                <input
+                  required
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className="tc-input"
+                  name="email"
+                  placeholder={surface === "admin" ? "admin@topperschoice.in" : "student@example.com"}
+                  autoComplete="email"
+                />
+              </label>
+            ) : null}
 
+            {mode === "signup" ? (
+              <label className="tc-form-field">
+                <span className="tc-form-label">Mobile number</span>
+                <input
+                  required
+                  inputMode="tel"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  className="tc-input"
+                  name="phone"
+                  placeholder="+91 98765 43210"
+                  autoComplete="tel"
+                />
+              </label>
+            ) : null}
+
+            {mode === "login" || mode === "signup" ? (
             <label className="tc-form-field">
               <span className="tc-form-label">Password</span>
               <div className="relative">
@@ -338,6 +537,7 @@ export function AuthLoginCard({
                 </button>
               </div>
             </label>
+            ) : null}
 
             {mode === "signup" ? (
               <label className="tc-form-field">
@@ -385,6 +585,65 @@ export function AuthLoginCard({
               </label>
             ) : null}
 
+            {mode === "reset" ? (
+              <>
+                <label className="tc-form-field">
+                  <span className="tc-form-label">New password</span>
+                  <input
+                    required
+                    type="password"
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    className="tc-input"
+                    name="newPassword"
+                    placeholder="Enter a new password"
+                    autoComplete="new-password"
+                    minLength={8}
+                  />
+                </label>
+                <label className="tc-form-field">
+                  <span className="tc-form-label">Retype new password</span>
+                  <input
+                    required
+                    type="password"
+                    value={confirmNewPassword}
+                    onChange={(event) => setConfirmNewPassword(event.target.value)}
+                    className="tc-input"
+                    name="confirmNewPassword"
+                    placeholder="Retype your new password"
+                    autoComplete="new-password"
+                    minLength={8}
+                  />
+                  {hasConfirmNewPasswordValue ? (
+                    <p
+                      className="mt-2 text-xs font-semibold"
+                      style={{
+                        color: doNewPasswordsMatch
+                          ? "var(--accent-student)"
+                          : "#9a3412",
+                      }}
+                    >
+                      {doNewPasswordsMatch
+                        ? "Passwords match."
+                        : "Passwords do not match."}
+                    </p>
+                  ) : null}
+                </label>
+              </>
+            ) : null}
+
+            {successMessage ? (
+              <div
+                className="rounded-[22px] px-4 py-3 text-sm"
+                style={{
+                  background: "rgba(243, 244, 245, 0.96)",
+                  color: "var(--brand)",
+                }}
+              >
+                {successMessage}
+              </div>
+            ) : null}
+
             {errorMessage ? (
               <div
                 className="rounded-[22px] px-4 py-3 text-sm"
@@ -402,16 +661,23 @@ export function AuthLoginCard({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="tc-button-primary"
+                className={`tc-button-primary ${mode === "verify" ? "hidden" : ""}`}
               >
-                {isSubmitting
-                  ? mode === "signup"
-                    ? "Creating account..."
-                    : "Signing in..."
-                  : mode === "signup"
-                    ? "Create account"
-                    : "Sign in"}
+                {getPrimaryActionLabel(mode, isSubmitting)}
               </button>
+              {mode === "login" ? (
+                <button
+                  type="button"
+                  className="tc-button-secondary"
+                  onClick={() => {
+                    setMode("forgot");
+                    setErrorMessage(null);
+                    setSuccessMessage(null);
+                  }}
+                >
+                  Forgot password
+                </button>
+              ) : null}
               <Link href="/" className="tc-button-secondary">
                 Back to public home
               </Link>
