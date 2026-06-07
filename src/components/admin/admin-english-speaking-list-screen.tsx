@@ -5,13 +5,16 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { adminQueryKeys } from "@/lib/api/query-keys";
-import { useAuthenticatedMutation, useAuthenticatedQuery } from "@/lib/auth";
+import { useAuthenticatedMutation, useAuthenticatedQuery, useAuthSession } from "@/lib/auth";
 import {
   createAdminEnglishSpeakingTopic,
   deleteAdminEnglishSpeakingTopic,
   formatAdminDateTime,
+  getAdminEnglishSpeakingMaterial,
   getApiErrorMessage,
   listAdminEnglishSpeakingTopics,
+  updateAdminEnglishSpeakingMaterial,
+  uploadAdminFile,
 } from "@/lib/admin";
 import { parseImportedEnglishSpeakingTopicDraft } from "@/lib/admin/english-speaking-helpers";
 import type {
@@ -28,6 +31,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminToneBadge, AdminVisibilityBadge } from "@/components/admin/admin-status-badge";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
+import { AuthenticatedFilePreview } from "@/components/primitives/file-preview";
 import { LoadingState } from "@/components/primitives/loading-state";
 
 type ReadinessFilter = "ALL" | "NEEDS_AUDIO" | "READY";
@@ -92,6 +96,7 @@ function WorkspaceStatCard({
 export function AdminEnglishSpeakingListScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const authSession = useAuthSession();
   const [statusFilter, setStatusFilter] = useState<EnglishSpeakingTopicStatus | "ALL">(
     "ALL",
   );
@@ -106,6 +111,9 @@ export function AdminEnglishSpeakingListScreen() {
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [importValue, setImportValue] = useState("");
   const [importTitleOverride, setImportTitleOverride] = useState("");
+  const [selectedPdfFile, setSelectedPdfFile] = useState<File | null>(null);
+  const canManageFiles = authSession.hasPermission("content.files.manage");
+  const canManageContent = authSession.hasPermission("content.structured.manage");
 
   const listQuery = useAuthenticatedQuery({
     queryFn: (accessToken) =>
@@ -120,6 +128,12 @@ export function AdminEnglishSpeakingListScreen() {
       status: statusFilter === "ALL" ? null : statusFilter,
       visibility: visibilityFilter === "ALL" ? null : visibilityFilter,
     }),
+    refetchOnWindowFocus: false,
+    staleTime: 15_000,
+  });
+  const materialQuery = useAuthenticatedQuery({
+    queryFn: getAdminEnglishSpeakingMaterial,
+    queryKey: adminQueryKeys.englishSpeakingMaterial(),
     refetchOnWindowFocus: false,
     staleTime: 15_000,
   });
@@ -175,6 +189,69 @@ export function AdminEnglishSpeakingListScreen() {
     onSuccess: async (response) => {
       setPageMessage(response.message);
       await queryClient.invalidateQueries({ queryKey: ["admin", "english-speaking"] });
+    },
+  });
+
+  const materialUploadMutation = useAuthenticatedMutation({
+    mutationFn: async (file: File, accessToken) => {
+      const asset = await uploadAdminFile(
+        {
+          accessLevel: "AUTHENTICATED",
+          file,
+          purpose: "GENERIC_PDF",
+        },
+        accessToken,
+      );
+
+      return updateAdminEnglishSpeakingMaterial(
+        {
+          notesFileAssetId: asset.id,
+        },
+        accessToken,
+      );
+    },
+    onError: (error) => {
+      setPageMessage(
+        getApiErrorMessage(error, "The English speaking PDF could not be uploaded."),
+      );
+    },
+    onSuccess: async () => {
+      setSelectedPdfFile(null);
+      setPageMessage("English speaking PDF notes were updated.");
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: adminQueryKeys.englishSpeakingMaterial(),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["student", "english-speaking"],
+        }),
+      ]);
+    },
+  });
+
+  const materialRemoveMutation = useAuthenticatedMutation({
+    mutationFn: (_: void, accessToken) =>
+      updateAdminEnglishSpeakingMaterial(
+        {
+          notesFileAssetId: null,
+        },
+        accessToken,
+      ),
+    onError: (error) => {
+      setPageMessage(
+        getApiErrorMessage(error, "The English speaking PDF link could not be removed."),
+      );
+    },
+    onSuccess: async () => {
+      setPageMessage("English speaking PDF notes were removed.");
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: adminQueryKeys.englishSpeakingMaterial(),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["student", "english-speaking"],
+        }),
+      ]);
     },
   });
 
@@ -264,6 +341,100 @@ export function AdminEnglishSpeakingListScreen() {
           </>
         }
       />
+
+      <section className="tc-admin-frame-subtle rounded-[24px] p-5">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,0.45fr)]">
+          <div>
+            <p className="tc-kicker" style={{ color: "var(--accent-admin)" }}>
+              PDF notes
+            </p>
+            <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
+              Consolidated English speaking book
+            </h2>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-[color:var(--muted)]">
+              Upload the student-facing PDF for learners who prefer reading the sentences as notes.
+            </p>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+              <input
+                type="file"
+                accept="application/pdf"
+                className="tc-input py-3"
+                disabled={!canManageFiles || !canManageContent}
+                onChange={(event) =>
+                  setSelectedPdfFile(event.target.files?.[0] ?? null)
+                }
+              />
+              <button
+                type="button"
+                className="tc-button-primary"
+                disabled={
+                  !canManageFiles ||
+                  !canManageContent ||
+                  !selectedPdfFile ||
+                  materialUploadMutation.isPending
+                }
+                onClick={() => {
+                  if (selectedPdfFile) {
+                    materialUploadMutation.mutate(selectedPdfFile);
+                  }
+                }}
+              >
+                {materialUploadMutation.isPending ? "Uploading..." : "Upload PDF"}
+              </button>
+            </div>
+
+            {!canManageFiles || !canManageContent ? (
+              <AdminInlineNotice tone="warning">
+                This session needs file and structured-content management permissions to replace the PDF.
+              </AdminInlineNotice>
+            ) : null}
+          </div>
+
+          <div className="rounded-[20px] border border-[rgba(0,30,64,0.08)] bg-white/78 p-4">
+            <p className="tc-overline">Current PDF</p>
+            {materialQuery.data?.notesPdf ? (
+              <div className="mt-4 flex items-start gap-3">
+                <AuthenticatedFilePreview
+                  assetId={materialQuery.data.notesPdf.id}
+                  contentType={materialQuery.data.notesPdf.contentType}
+                  fileName={materialQuery.data.notesPdf.originalFileName}
+                  label="Preview English speaking PDF"
+                  thumbClassName="h-16 w-16"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-[color:var(--brand)]">
+                    {materialQuery.data.notesPdf.originalFileName}
+                  </p>
+                  <p className="mt-2 text-xs text-[color:var(--muted)]">
+                    {materialQuery.data.notesPdf.id}
+                  </p>
+                  <button
+                    type="button"
+                    className="tc-button-secondary mt-4"
+                    disabled={!canManageContent || materialRemoveMutation.isPending}
+                    onClick={() => materialRemoveMutation.mutate()}
+                  >
+                    {materialRemoveMutation.isPending ? "Removing..." : "Remove PDF"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="mt-4 text-sm leading-6 text-[color:var(--muted)]">
+                No PDF is linked yet. Students will only see the audio topic list until one is uploaded.
+              </p>
+            )}
+            {materialQuery.error ? (
+              <p className="mt-3 text-sm leading-6 text-[#8b2026]">
+                {getApiErrorMessage(
+                  materialQuery.error,
+                  "The current PDF could not be loaded.",
+                )}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </section>
 
       <section className="grid gap-4 md:grid-cols-3">
         <WorkspaceStatCard

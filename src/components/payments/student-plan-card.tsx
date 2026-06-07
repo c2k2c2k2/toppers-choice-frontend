@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   formatPlanDuration,
   formatPlanPrice,
+  getEntitlementKindLabel,
   getPlanFeatureLabels,
   getPremiumIntentLabel,
   type PremiumIntent,
@@ -35,10 +36,13 @@ export function StudentPlanCard({
 }: Readonly<StudentPlanCardProps>) {
   const featureLabels = getPlanFeatureLabels(plan).slice(0, 5);
   const isSubmitting = submittingPlanId === plan.id;
+  const entitlementLabels = plan.entitlements
+    .map((entitlement) => getEntitlementKindLabel(entitlement.entitlementKind))
+    .slice(0, 3);
 
   return (
     <article
-      className="tc-student-card rounded-[30px] p-6"
+      className="tc-student-card flex h-full flex-col rounded-[22px] p-4 sm:p-5"
       style={
         isSelected
           ? {
@@ -49,70 +53,74 @@ export function StudentPlanCard({
       }
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="tc-overline">
             {isRecommended
-              ? `Recommended for ${getPremiumIntentLabel(intent)}`
-              : "Backend-managed plan"}
+              ? `Best for ${getPremiumIntentLabel(intent)}`
+              : "Plan"}
           </p>
-          <h2 className="tc-display mt-3 text-3xl font-semibold tracking-tight text-[color:var(--brand)]">
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[color:var(--brand)]">
             {plan.name}
           </h2>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {isCovered ? <span className="tc-code-chip">Already included</span> : null}
-          {isPendingOrder ? <span className="tc-code-chip">Pending order</span> : null}
-          {isSelected ? <span className="tc-code-chip">Selected</span> : null}
+          {isCovered ? <span className="tc-student-chip" data-tone="accent">Active</span> : null}
+          {isPendingOrder ? <span className="tc-student-chip" data-tone="soft">Pending</span> : null}
+          {isSelected ? <span className="tc-student-chip" data-tone="soft">Selected</span> : null}
         </div>
       </div>
 
-      <p className="mt-4 text-3xl font-semibold tracking-tight text-[color:var(--brand)]">
-        {formatPlanPrice(plan)}
-      </p>
-      <p className="tc-muted mt-2 text-sm">{formatPlanDuration(plan.durationDays)} access</p>
-      <p className="tc-muted mt-4 text-sm leading-6">
-        {plan.shortDescription ??
-          plan.description ??
-          "Live pricing, duration, and entitlements are coming from the backend plan contract."}
-      </p>
+      <div className="mt-4 flex items-end justify-between gap-3">
+        <p className="text-3xl font-semibold tracking-tight text-[color:var(--brand)]">
+          {formatPlanPrice(plan)}
+        </p>
+        <span className="tc-student-chip" data-tone="soft">
+          {formatPlanDuration(plan.durationDays)}
+        </span>
+      </div>
+      {(plan.shortDescription ?? plan.description) ? (
+        <p className="tc-muted mt-3 line-clamp-2 text-sm leading-6">
+          {plan.shortDescription ?? plan.description}
+        </p>
+      ) : null}
 
-      <div className="mt-5 flex flex-wrap gap-2">
-        {plan.entitlements.map((entitlement) => (
-          <span key={entitlement.id} className="tc-stat-chip">
-            {entitlement.entitlementKind}
+      <div className="mt-4 flex flex-wrap gap-2">
+        {entitlementLabels.map((label) => (
+          <span key={label} className="tc-student-chip" data-tone="soft">
+            {label}
           </span>
         ))}
       </div>
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-4 grid gap-2">
         {featureLabels.map((feature) => (
           <div
             key={feature}
-            className="tc-student-card-muted rounded-[22px] px-4 py-3 text-sm leading-6 text-[color:var(--brand)]"
+            className="rounded-[16px] border border-[rgba(0,30,64,0.08)] bg-white/70 px-3 py-2 text-sm leading-5 text-[color:var(--brand)]"
           >
             {feature}
           </div>
         ))}
       </div>
 
-      <div className="mt-6 flex flex-wrap gap-3">
+      <div className="mt-auto pt-5">
         {isCovered ? (
-          <button type="button" className="tc-button-secondary" disabled>
-            Included in current access
+          <button type="button" className="tc-button-secondary w-full justify-center" disabled>
+            Active plan
           </button>
         ) : isPendingOrder && paymentStatusHref ? (
-          <Link href={paymentStatusHref} className="tc-button-primary">
-            Resume payment status
+          <Link href={paymentStatusHref} className="tc-button-primary w-full justify-center">
+            Resume payment
           </Link>
         ) : (
           <button
             type="button"
-            className="tc-button-primary"
+            className="tc-button-primary w-full justify-center"
             onClick={() => onCheckout(plan)}
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Starting checkout..." : "Continue to checkout"}
+            {isSubmitting ? "Starting..." : "Buy now"}
           </button>
         )}
       </div>

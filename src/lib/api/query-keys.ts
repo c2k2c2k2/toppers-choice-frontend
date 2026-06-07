@@ -111,6 +111,8 @@ export const adminQueryKeys = {
     ] as const,
   englishSpeakingDetail: (topicId: string | null) =>
     ["admin", "english-speaking", "detail", topicId ?? "new"] as const,
+  englishSpeakingMaterial: () =>
+    ["admin", "english-speaking", "material"] as const,
   notes: (filters: {
     accessType?: string | null;
     search?: string | null;

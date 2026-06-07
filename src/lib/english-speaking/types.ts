@@ -64,6 +64,30 @@ export interface AdminEnglishSpeakingTopicListResponse {
   total: number;
 }
 
+export interface EnglishSpeakingPdfAsset {
+  contentType: string;
+  id: string;
+  originalFileName: string;
+  protectedDeliveryPath: string;
+  sizeBytes: number | null;
+}
+
+export interface AdminEnglishSpeakingMaterial {
+  createdAt: string;
+  id: string;
+  notesFileAssetId: string | null;
+  notesPdf: EnglishSpeakingPdfAsset | null;
+  updatedAt: string;
+}
+
+export interface StudentEnglishSpeakingMaterial {
+  notesPdf: EnglishSpeakingPdfAsset | null;
+}
+
+export interface UpdateEnglishSpeakingMaterialInput {
+  notesFileAssetId?: string | null;
+}
+
 export interface UpsertEnglishSpeakingSentenceInput {
   englishText: string;
   hindiText: string;
@@ -126,6 +150,7 @@ export interface StudentEnglishSpeakingTopicDetail
 
 export interface StudentEnglishSpeakingTopicListResponse {
   items: StudentEnglishSpeakingTopicSummary[];
+  material: StudentEnglishSpeakingMaterial;
   total: number;
 }
 

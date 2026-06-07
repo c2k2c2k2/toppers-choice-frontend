@@ -1,5 +1,5 @@
-import { StudentStructuredContentHubScreen } from "@/components/student/student-structured-content-hub-screen";
+import { StudentGuidanceEntriesScreen } from "@/components/student/student-guidance-entries-screen";
 
 export default function StudentGuidanceHubPage() {
-  return <StudentStructuredContentHubScreen />;
+  return <StudentGuidanceEntriesScreen />;
 }

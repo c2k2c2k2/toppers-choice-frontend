@@ -40,6 +40,197 @@ function formatAudioTime(seconds: number) {
   return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
 }
 
+type EnglishPlayerIcon =
+  | "back"
+  | "collapse"
+  | "expand"
+  | "headphones"
+  | "locate"
+  | "next"
+  | "pause"
+  | "play"
+  | "previous"
+  | "replay";
+
+function EnglishPlayerGlyph({
+  icon,
+}: Readonly<{
+  icon: EnglishPlayerIcon;
+}>) {
+  if (icon === "back") {
+    return (
+      <svg
+        aria-hidden="true"
+        className="h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.9"
+        viewBox="0 0 24 24"
+      >
+        <path d="M19 12H5" />
+        <path d="M12 5l-7 7 7 7" />
+      </svg>
+    );
+  }
+
+  if (icon === "headphones") {
+    return (
+      <svg
+        aria-hidden="true"
+        className="h-5 w-5"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+        viewBox="0 0 24 24"
+      >
+        <path d="M4 14a8 8 0 0 1 16 0" />
+        <path d="M4 14v4a2 2 0 0 0 2 2h1v-6H6a2 2 0 0 0-2 2" />
+        <path d="M20 14v4a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2" />
+      </svg>
+    );
+  }
+
+  if (icon === "collapse" || icon === "expand") {
+    return (
+      <svg
+        aria-hidden="true"
+        className="h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.9"
+        viewBox="0 0 24 24"
+      >
+        <path d={icon === "collapse" ? "M6 9l6 6 6-6" : "M18 15l-6-6-6 6"} />
+      </svg>
+    );
+  }
+
+  if (icon === "locate") {
+    return (
+      <svg
+        aria-hidden="true"
+        className="h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.9"
+        viewBox="0 0 24 24"
+      >
+        <path d="M12 3v3" />
+        <path d="M12 18v3" />
+        <path d="M3 12h3" />
+        <path d="M18 12h3" />
+        <circle cx="12" cy="12" r="5" />
+        <circle cx="12" cy="12" r="1.5" />
+      </svg>
+    );
+  }
+
+  if (icon === "pause") {
+    return (
+      <svg
+        aria-hidden="true"
+        className="h-5 w-5"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path d="M7 5h4v14H7z" />
+        <path d="M13 5h4v14h-4z" />
+      </svg>
+    );
+  }
+
+  if (icon === "play") {
+    return (
+      <svg
+        aria-hidden="true"
+        className="h-5 w-5 translate-x-0.5"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path d="M8 5.5v13l11-6.5z" />
+      </svg>
+    );
+  }
+
+  if (icon === "replay") {
+    return (
+      <svg
+        aria-hidden="true"
+        className="h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.9"
+        viewBox="0 0 24 24"
+      >
+        <path d="M4 12a8 8 0 1 0 2.34-5.66" />
+        <path d="M4 4v6h6" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        d={
+          icon === "next"
+            ? "M6 5.5 14.5 12 6 18.5v-13ZM16 5h2v14h-2V5Z"
+            : "M18 5.5 9.5 12 18 18.5v-13ZM6 5h2v14H6V5Z"
+        }
+      />
+    </svg>
+  );
+}
+
+function IconButton({
+  disabled = false,
+  icon,
+  label,
+  onClick,
+  tone = "secondary",
+}: Readonly<{
+  disabled?: boolean;
+  icon: EnglishPlayerIcon;
+  label: string;
+  onClick: () => void;
+  tone?: "primary" | "secondary";
+}>) {
+  const isPrimary = tone === "primary";
+
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      className={[
+        "inline-flex shrink-0 items-center justify-center rounded-full border transition disabled:cursor-not-allowed disabled:opacity-45",
+        isPrimary
+          ? "h-14 w-14 border-[rgba(103,56,0,0.18)] bg-[color:var(--cta-surface)] text-white shadow-[0_16px_32px_rgba(103,56,0,0.24)] hover:-translate-y-0.5"
+          : "h-11 w-11 border-[rgba(0,30,64,0.1)] bg-white/82 text-[color:var(--brand)] hover:border-[rgba(0,51,102,0.18)] hover:bg-white",
+      ].join(" ")}
+      disabled={disabled}
+      onClick={onClick}
+      title={label}
+    >
+      <EnglishPlayerGlyph icon={icon} />
+      <span className="sr-only">{label}</span>
+    </button>
+  );
+}
+
 function getSentenceTextForLanguage(
   sentence: StudentEnglishSpeakingSentence,
   language: EnglishSpeakingLanguage,
@@ -112,6 +303,7 @@ function StudentEnglishSpeakingPlayer({
   const [queue, setQueue] = useState<QueueTrack[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [isLoadingTrack, setIsLoadingTrack] = useState(false);
+  const [isPlayerMinimized, setIsPlayerMinimized] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -238,6 +430,21 @@ function StudentEnglishSpeakingPlayer({
       isCancelled = true;
     };
   }, [authSession.sessionId, currentTrack]);
+
+  useEffect(() => {
+    if (!currentSentenceId || !currentTrack) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      sentenceElementRefs.current[currentSentenceId]?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 160);
+
+    return () => window.clearTimeout(timeout);
+  }, [currentSentenceId, currentTrack]);
 
   function queueEntireTopic() {
     const nextQueue = sentences.flatMap((sentence) =>
@@ -373,86 +580,70 @@ function StudentEnglishSpeakingPlayer({
   }
 
   return (
-    <div className="flex flex-col gap-6 pb-[15rem] lg:pb-44">
-      <section className="tc-student-panel rounded-[28px] p-6">
-        <div className="tc-student-section-header">
-          <div className="tc-student-section-header-copy">
-            <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-              Practice setup
-            </p>
-            <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-              One calm column, one pinned player.
-            </h2>
-            <p className="tc-muted mt-3 text-sm leading-7">
-              Pick the language mix once, then move through the sentence deck while the player stays visible and the active track stays highlighted.
-            </p>
+    <div
+      className={[
+        "flex flex-col gap-4",
+        isPlayerMinimized ? "pb-[6.75rem] lg:pb-24" : "pb-[11.5rem] lg:pb-32",
+      ].join(" ")}
+    >
+      <section className="tc-student-panel rounded-[22px] p-3 sm:p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            {ENGLISH_SPEAKING_LANGUAGE_ORDER.map((language) => {
+              const isActive = selectedLanguages.includes(language);
+
+              return (
+                <button
+                  key={language}
+                  type="button"
+                  aria-label={`Toggle ${getEnglishSpeakingLanguageLabel(language)}`}
+                  className={[
+                    "inline-flex h-11 min-w-11 items-center justify-center rounded-full border px-3 text-sm font-bold transition",
+                    isActive
+                      ? "border-[rgba(0,51,102,0.18)] bg-[rgba(0,51,102,0.1)] text-[color:var(--brand)]"
+                      : "border-[rgba(0,30,64,0.08)] bg-white/76 text-[color:var(--muted)]",
+                  ].join(" ")}
+                  onClick={() => toggleLanguage(language)}
+                  title={getEnglishSpeakingLanguageLabel(language)}
+                >
+                  {getEnglishSpeakingLanguageLabel(language)}
+                </button>
+              );
+            })}
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <span className="tc-student-chip">
-              {availableSentenceCount} sentence{availableSentenceCount === 1 ? "" : "s"} ready
-            </span>
-            <span className="tc-student-chip" data-tone="soft">
-              {selectedLanguages.map((language) => getEnglishSpeakingLanguageLabel(language)).join(" · ")}
-            </span>
-            {currentTrack ? (
-              <span className="tc-student-chip" data-tone="accent">
-                Track {currentIndex + 1}/{queue.length}
-              </span>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          {ENGLISH_SPEAKING_LANGUAGE_ORDER.map((language) => (
-            <button
-              key={language}
-              type="button"
-              className="tc-filter-chip"
-              data-active={selectedLanguages.includes(language)}
-              onClick={() => toggleLanguage(language)}
-            >
-              {getEnglishSpeakingLanguageLabel(language)}
-            </button>
-          ))}
-        </div>
-
-        <p className="tc-muted mt-4 text-sm leading-6">
-          The selected language mix is used the next time you start a topic or sentence queue from the player or from a sentence card.
-        </p>
-      </section>
-
-      <section className="flex flex-col gap-4">
-        <div className="tc-student-section-header">
-          <div className="tc-student-section-header-copy">
-            <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-              Sentence playlist
-            </p>
-            <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-              Follow the active sentence while you listen.
-            </h2>
-            <p className="tc-muted mt-3 text-sm leading-7">
-              Every card stays in one stream, and the current sentence plus the current language tile are highlighted in real time.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
             <button
               type="button"
-              className="tc-button-primary"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[rgba(103,56,0,0.18)] bg-[color:var(--cta-surface)] px-4 text-sm font-bold text-white shadow-[0_14px_26px_rgba(103,56,0,0.2)] transition hover:-translate-y-0.5"
               onClick={queueEntireTopic}
             >
-              {queue.length > 0 ? "Restart topic queue" : "Start topic queue"}
+              <EnglishPlayerGlyph icon={queue.length > 0 ? "replay" : "play"} />
+              {queue.length > 0 ? "Restart" : "Start"}
             </button>
             <button
               type="button"
-              className="tc-button-secondary"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[rgba(0,30,64,0.1)] bg-white/84 px-4 text-sm font-bold text-[color:var(--brand)] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-45"
               disabled={!currentTrack}
               onClick={jumpToCurrentSentence}
             >
-              Jump to current
+              <EnglishPlayerGlyph icon="locate" />
+              Current
             </button>
           </div>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-3 px-1">
+          <p className="tc-overline" style={{ color: "var(--accent-student)" }}>
+            Playlist
+          </p>
+          {currentTrack ? (
+            <span className="tc-student-chip" data-tone="accent">
+              {currentIndex + 1}/{queue.length}
+            </span>
+          ) : null}
         </div>
 
         {sentences.map((sentence) => {
@@ -468,47 +659,45 @@ function StudentEnglishSpeakingPlayer({
                 sentenceElementRefs.current[sentence.id] = element;
               }}
               className={[
-                "tc-student-card rounded-[26px] p-5",
+                "tc-student-card rounded-[20px] p-4",
                 isCurrentSentence
                   ? "border-[rgba(0,51,102,0.16)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(242,247,252,0.98)_100%)] ring-1 ring-[rgba(0,51,102,0.12)] shadow-[0_18px_40px_rgba(0,30,64,0.1)]"
                   : "",
               ].join(" ")}
             >
-              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="tc-overline">
-                      Sentence {String(sentence.orderIndex).padStart(2, "0")}
+                      {String(sentence.orderIndex).padStart(2, "0")}
                     </p>
                     {isCurrentSentence ? (
                       <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(0,51,102,0.12)] bg-[rgba(0,51,102,0.08)] px-3 py-1 text-[0.72rem] font-semibold text-[color:var(--brand)]">
                         <span className="h-2 w-2 rounded-full bg-[color:var(--accent-student)] animate-pulse" />
-                        {isLoadingTrack ? "Loading" : isPlaying ? "Now playing" : "Ready in player"}
+                        {isLoadingTrack ? "Loading" : isPlaying ? "Live" : "Paused"}
                       </span>
                     ) : null}
                   </div>
                   <TextContent
                     as="p"
-                    className="mt-2 text-lg font-semibold text-[color:var(--brand)]"
+                    className="mt-2 text-base font-semibold leading-6 text-[color:var(--brand)] sm:text-lg"
                     value={sentence.englishText}
                   />
                 </div>
 
                 <button
                   type="button"
-                  className="tc-button-secondary"
+                  aria-label={isCurrentSentence ? "Replay sentence" : "Play sentence"}
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[rgba(0,30,64,0.1)] bg-white/86 text-[color:var(--brand)] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-45"
                   disabled={!canPlaySentence || (isCurrentSentence && isLoadingTrack)}
                   onClick={() => queueSingleSentence(sentence)}
+                  title={isCurrentSentence ? "Replay sentence" : "Play sentence"}
                 >
-                  {isCurrentSentence && isLoadingTrack
-                    ? "Loading..."
-                    : isCurrentSentence
-                      ? "Replay sentence"
-                      : "Play sentence"}
+                  <EnglishPlayerGlyph icon={isCurrentSentence ? "replay" : "play"} />
                 </button>
               </div>
 
-              <div className="mt-5 grid gap-3 md:grid-cols-3">
+              <div className="mt-4 grid gap-2 md:grid-cols-3">
                 {ENGLISH_SPEAKING_LANGUAGE_ORDER.map((language) => {
                   const isLanguageInMix = selectedLanguages.includes(language);
                   const isCurrentLanguage =
@@ -519,7 +708,7 @@ function StudentEnglishSpeakingPlayer({
                     <div
                       key={language}
                       className={[
-                        "rounded-[20px] border px-4 py-3 transition-all",
+                        "rounded-[16px] border px-3 py-2 transition-all",
                         isCurrentLanguage
                           ? "border-[rgba(0,51,102,0.16)] bg-[rgba(0,51,102,0.08)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.36)]"
                           : isLanguageInMix
@@ -532,7 +721,7 @@ function StudentEnglishSpeakingPlayer({
                           {getEnglishSpeakingLanguageLabel(language)}
                         </p>
                         {isCurrentLanguage ? (
-                          <span className="inline-flex items-center gap-2 rounded-full bg-white/72 px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[color:var(--brand)]">
+                          <span className="inline-flex items-center gap-2 rounded-full bg-white/72 px-2 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-[color:var(--brand)]">
                             <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--accent-student)] animate-pulse" />
                             Live
                           </span>
@@ -540,7 +729,7 @@ function StudentEnglishSpeakingPlayer({
                       </div>
                       <TextContent
                         as="p"
-                        className="mt-2 text-sm leading-6 text-[color:var(--brand)]"
+                        className="mt-2 text-sm leading-5 text-[color:var(--brand)]"
                         value={sentenceValue}
                       />
                     </div>
@@ -552,91 +741,109 @@ function StudentEnglishSpeakingPlayer({
         })}
       </section>
 
-      <div className="pointer-events-none fixed bottom-24 left-3 right-3 z-30 md:left-4 md:right-4 lg:bottom-4 xl:left-[20.5rem] xl:right-5 2xl:left-[21.5rem]">
-        <section className="pointer-events-auto rounded-[28px] border border-[rgba(0,30,64,0.1)] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(246,250,253,0.98)_100%)] shadow-[0_24px_54px_rgba(0,30,64,0.16)] backdrop-blur-xl">
-          <div className="flex flex-col gap-4 p-4 md:p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="tc-overline">Pinned player</p>
-                  {currentTrack ? (
-                    <span className="inline-flex items-center rounded-full border border-[rgba(0,51,102,0.12)] bg-[rgba(0,51,102,0.08)] px-3 py-1 text-[0.72rem] font-semibold text-[color:var(--brand)]">
-                      Track {currentIndex + 1} of {queue.length}
-                    </span>
-                  ) : null}
-                  {isLoadingTrack ? (
-                    <span className="inline-flex items-center rounded-full border border-[rgba(225,134,0,0.14)] bg-[rgba(255,244,231,0.96)] px-3 py-1 text-[0.72rem] font-semibold text-[color:var(--cta-surface)]">
-                      Loading next track
-                    </span>
-                  ) : null}
-                </div>
-                <p className="mt-2 text-lg font-semibold text-[color:var(--brand)] md:text-xl">
+      <div className="pointer-events-none fixed bottom-[4.1rem] left-0 right-0 z-[55] md:bottom-5 md:left-4 md:right-4 lg:bottom-4 xl:left-[18rem] xl:right-0 2xl:left-[19rem]">
+        <section className="pointer-events-auto rounded-t-[24px] border border-[rgba(0,30,64,0.1)] bg-[linear-gradient(180deg,rgba(255,255,255,0.97)_0%,rgba(246,250,253,0.99)_100%)] shadow-[0_24px_54px_rgba(0,30,64,0.16)] backdrop-blur-xl md:rounded-[24px]">
+          {isPlayerMinimized ? (
+            <div className="flex items-center gap-3 px-3 py-2.5 sm:px-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-[color:var(--brand)] text-white shadow-[0_12px_24px_rgba(0,30,64,0.18)]">
+                <EnglishPlayerGlyph icon="headphones" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold text-[color:var(--brand)]">
+                  {currentTrack ? currentTrack.sentenceText : topicTitle}
+                </p>
+                <p className="truncate text-xs font-semibold text-[color:var(--muted)]">
                   {currentTrack
                     ? `${currentTrack.sentenceLabel} · ${getEnglishSpeakingLanguageLabel(currentTrack.language)}`
-                    : topicTitle}
-                </p>
-                <p className="mt-1 text-sm leading-6 text-[color:var(--brand)]">
-                  {currentTrack
-                    ? currentTrack.sentenceText
-                    : `Choose a sentence or start the full topic queue with ${availableSentenceCount} playable sentence${availableSentenceCount === 1 ? "" : "s"}.`}
-                </p>
-                <p className="mt-1 text-xs leading-5 text-[color:var(--muted)]">
-                  {currentTrack
-                    ? currentTrack.referenceText !== currentTrack.sentenceText
-                      ? currentTrack.referenceText
-                      : selectedLanguages
-                          .map((language) => getEnglishSpeakingLanguageLabel(language))
-                          .join(" · ")
-                    : selectedLanguages
-                        .map((language) => getEnglishSpeakingLanguageLabel(language))
-                        .join(" · ")}
+                    : "Ready"}
                 </p>
               </div>
+              <IconButton
+                disabled={isLoadingTrack || availableSentenceCount === 0}
+                icon={isPlaying ? "pause" : "play"}
+                label={!currentTrack ? "Play topic" : isPlaying ? "Pause" : "Play"}
+                onClick={() => void togglePlayback()}
+                tone="primary"
+              />
+              <button
+                type="button"
+                aria-label="Expand player"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[rgba(0,30,64,0.1)] bg-white/84 text-[color:var(--brand)] transition hover:bg-white"
+                onClick={() => setIsPlayerMinimized(false)}
+                title="Expand player"
+              >
+                <EnglishPlayerGlyph icon="expand" />
+              </button>
+            </div>
+          ) : (
+          <div className="grid gap-2 p-3 sm:p-4">
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-[color:var(--brand)] text-white shadow-[0_14px_28px_rgba(0,30,64,0.2)]">
+                  <EnglishPlayerGlyph icon="headphones" />
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold text-[color:var(--brand)] sm:text-base">
+                    {currentTrack
+                      ? currentTrack.sentenceText
+                      : topicTitle}
+                  </p>
+                  <p className="truncate text-xs font-semibold text-[color:var(--muted)]">
+                    {currentTrack
+                      ? `${currentTrack.sentenceLabel} · ${getEnglishSpeakingLanguageLabel(currentTrack.language)}`
+                      : selectedLanguages
+                          .map((language) => getEnglishSpeakingLanguageLabel(language))
+                          .join(" · ")}
+                  </p>
+                </div>
+              </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  className="tc-button-secondary"
+              <div className="flex items-center justify-center gap-2 lg:justify-end">
+                <IconButton
                   disabled={!currentTrack}
+                  icon="previous"
+                  label="Previous track"
                   onClick={playPreviousTrack}
-                >
-                  Previous
-                </button>
-                <button
-                  type="button"
-                  className="tc-button-primary"
+                />
+                <IconButton
                   disabled={isLoadingTrack || availableSentenceCount === 0}
-                  onClick={() => void togglePlayback()}
-                >
-                  {!currentTrack
-                    ? "Play topic"
-                    : isLoadingTrack
-                      ? "Loading..."
+                  icon={isPlaying ? "pause" : "play"}
+                  label={
+                    !currentTrack
+                      ? "Play topic"
                       : isPlaying
                         ? "Pause"
-                        : "Play"}
-                </button>
-                <button
-                  type="button"
-                  className="tc-button-secondary"
+                        : "Play"
+                  }
+                  onClick={() => void togglePlayback()}
+                  tone="primary"
+                />
+                <IconButton
                   disabled={!currentTrack || currentIndex >= queue.length - 1}
+                  icon="next"
+                  label="Next track"
                   onClick={playNextTrack}
-                >
-                  Next
-                </button>
+                />
+                <IconButton
+                  disabled={!currentTrack}
+                  icon="locate"
+                  label="Jump to current sentence"
+                  onClick={jumpToCurrentSentence}
+                />
                 <button
                   type="button"
-                  className="tc-button-secondary"
-                  disabled={!currentTrack}
-                  onClick={jumpToCurrentSentence}
+                  aria-label="Minimize player"
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[rgba(0,30,64,0.1)] bg-white/84 text-[color:var(--brand)] transition hover:bg-white"
+                  onClick={() => setIsPlayerMinimized(true)}
+                  title="Minimize player"
                 >
-                  Jump to current
+                  <EnglishPlayerGlyph icon="collapse" />
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <span className="w-12 text-xs font-semibold text-[color:var(--muted)]">
+            <div className="flex items-center gap-2">
+              <span className="w-10 text-xs font-semibold text-[color:var(--muted)]">
                 {formatAudioTime(currentTime)}
               </span>
               <input
@@ -651,24 +858,27 @@ function StudentEnglishSpeakingPlayer({
                 style={{ accentColor: "var(--accent-student)" }}
                 onChange={handleSeek}
               />
-              <span className="w-12 text-right text-xs font-semibold text-[color:var(--muted)]">
+              <span className="w-10 text-right text-xs font-semibold text-[color:var(--muted)]">
                 {formatAudioTime(duration)}
               </span>
             </div>
 
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <p className="text-xs leading-5 text-[color:var(--muted)]">
-                {nextTrack
-                  ? `Up next: ${nextTrack.sentenceLabel} · ${getEnglishSpeakingLanguageLabel(nextTrack.language)}`
-                  : currentTrack
-                    ? "This is the last track in the current queue."
-                    : "Start the topic queue or use any sentence card to begin listening."}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="truncate text-xs font-semibold text-[color:var(--muted)]">
+                {isLoadingTrack
+                  ? "Loading"
+                  : nextTrack
+                    ? `Next: ${nextTrack.sentenceLabel} · ${getEnglishSpeakingLanguageLabel(nextTrack.language)}`
+                    : currentTrack
+                      ? "Queue end"
+                      : "Ready"}
               </p>
               {playbackError ? (
                 <p className="text-xs leading-5 text-[#8b2026]">{playbackError}</p>
               ) : null}
             </div>
           </div>
+          )}
 
           <audio
             ref={audioRef}
@@ -763,65 +973,33 @@ export function StudentEnglishSpeakingDetailScreen({
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
-        <div className="flex flex-col gap-6">
-          <div>
-            <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
-              English speaking topic
+    <div className="flex flex-col gap-4">
+      <section className="tc-student-panel rounded-[22px] p-4 sm:p-5">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0">
+            <p className="tc-overline" style={{ color: "var(--accent-student)" }}>
+              English speaking
             </p>
             <TextContent
               as="h1"
-              className="tc-display mt-4 text-3xl font-semibold tracking-tight md:text-4xl"
+              className="mt-2 truncate text-2xl font-semibold text-[color:var(--brand)] md:text-3xl"
               value={topic.title}
             />
-            <TextContent
-              as="p"
-              className="tc-muted mt-4 max-w-3xl text-base leading-7"
-              value={
-                topic.description ??
-                "Listen to each sentence in the default Hindi → Marathi → English order, then switch the language mix when you want a tighter drill."
-              }
-            />
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <span className="tc-stat-chip">{topic.sentenceCount} sentences</span>
-              <span className="tc-stat-chip">{topic.accessType}</span>
-              <Link href="/student/english-speaking" className="tc-button-secondary">
-                Back to topics
-              </Link>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className="tc-student-chip">{topic.sentenceCount} sentences</span>
+              <span className="tc-student-chip" data-tone="soft">
+                {topic.accessType}
+              </span>
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="tc-student-metric rounded-[24px] p-5">
-              <p className="tc-overline">Playback order</p>
-              <p className="mt-3 text-lg font-semibold text-white">
-                Hindi, Marathi, then English
-              </p>
-              <p className="mt-2 text-sm leading-6 text-white/74">
-                The queue keeps the sentence order steady across the full topic.
-              </p>
-            </div>
-            <div className="tc-student-metric rounded-[24px] p-5">
-              <p className="tc-overline">Track current</p>
-              <p className="mt-3 text-lg font-semibold text-white">
-                Active sentence stays highlighted
-              </p>
-              <p className="mt-2 text-sm leading-6 text-white/74">
-                The live card and the active language tile both update while the playlist moves.
-              </p>
-            </div>
-            <div className="tc-student-metric rounded-[24px] p-5">
-              <p className="tc-overline">Pinned player</p>
-              <p className="mt-3 text-lg font-semibold text-white">
-                Controls stay visible while you scroll
-              </p>
-              <p className="mt-2 text-sm leading-6 text-white/74">
-                Keep listening, skip ahead, or jump back to the current sentence without losing your place.
-              </p>
-            </div>
-          </div>
+          <Link
+            href="/student/english-speaking"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[rgba(0,30,64,0.1)] bg-white/84 px-4 text-sm font-bold text-[color:var(--brand)] transition hover:bg-white"
+          >
+            <EnglishPlayerGlyph icon="back" />
+            Topics
+          </Link>
         </div>
       </section>
 

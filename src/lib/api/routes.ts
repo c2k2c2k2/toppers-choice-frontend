@@ -233,6 +233,7 @@ export const apiRoutes = {
     },
     englishSpeaking: {
       list: "/admin/english-speaking",
+      material: "/admin/english-speaking/material",
       detail: (topicId: string) =>
         `/admin/english-speaking/${encodeURIComponent(topicId)}`,
       remove: (topicId: string) =>
@@ -256,7 +257,7 @@ export const apiRoutes = {
     },
     entitlements: {
       byUser: (userId: string) =>
-        `/admin/users/${encodeURIComponent(userId)}/entitlements`,
+        `/admin/entitlements/users/${encodeURIComponent(userId)}`,
       grant: "/admin/entitlements/grants",
       revoke: (entitlementId: string) =>
         `/admin/entitlements/${encodeURIComponent(entitlementId)}/revoke`,

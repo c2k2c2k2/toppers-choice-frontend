@@ -10,7 +10,9 @@ import {
   buildPaymentResultHref,
   createCheckout,
   formatPlanPrice,
+  formatPlanDuration,
   getCurrentEntitlements,
+  getEntitlementKindLabel,
   getPaymentErrorMessage,
   getPaymentOrderStatus,
   getPaymentStatusLabel,
@@ -170,8 +172,8 @@ export function StudentPlansScreen() {
   if (plansQuery.isError || entitlementsQuery.isError) {
     return (
       <ErrorState
-        title="Student plans could not load."
-        description="We couldn't finish loading the public plans and current entitlement state together."
+        title="Plans could not load."
+        description="Please try again."
         onRetry={() => {
           void plansQuery.refetch();
           void entitlementsQuery.refetch();
@@ -188,8 +190,8 @@ export function StudentPlansScreen() {
   ) {
     return (
       <LoadingState
-        title="Preparing student plans"
-        description="Loading live public plans, current entitlements, and any in-flight payment order."
+        title="Preparing plans"
+        description="Loading your access and available plans."
       />
     );
   }
@@ -202,6 +204,7 @@ export function StudentPlansScreen() {
   const selectedPlan = getPlanById(plans, selectedPlanId);
   const manualEntitlements = activeEntitlements.filter((entitlement) => !entitlement.plan);
   const pendingOrder = orderStatusQuery.data;
+  const hasRequestedAccess = hasIntentAccess(activeEntitlements, intent);
   const paymentStatusHref =
     activeOrderId && activePlanId
       ? buildPaymentResultHref({
@@ -238,77 +241,54 @@ export function StudentPlansScreen() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <section className="tc-student-hero rounded-[32px] p-6 md:p-7">
-        <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
-          <div>
-            <p className="tc-kicker" style={{ color: "var(--accent-glow)" }}>
-              Student plans
+    <div className="flex flex-col gap-4">
+      <section className="tc-student-panel rounded-[22px] p-4 sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <p className="tc-overline" style={{ color: "var(--accent-student)" }}>
+              Premium access
             </p>
-            <h1 className="tc-display mt-4 text-3xl font-semibold tracking-tight md:text-4xl">
-              Plans, entitlements, and checkout live in the student shell now.
+            <h1 className="mt-2 text-2xl font-semibold leading-tight text-[color:var(--brand)] md:text-3xl">
+              {hasRequestedAccess
+                ? "Your premium access is active"
+                : "Choose a plan to continue"}
             </h1>
-            <p className="tc-muted mt-4 max-w-3xl text-base leading-7">
-              This route keeps pricing backend-driven, uses authenticated
-              entitlement checks, and preserves a safe return path back into the
-              student flow after checkout.
-            </p>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <span className="tc-stat-chip">
-                Looking for {getPremiumIntentLabel(intent)}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className="tc-student-chip" data-tone={hasRequestedAccess ? "accent" : "soft"}>
+                {hasRequestedAccess
+                  ? "Access active"
+                  : `${getPremiumIntentLabel(intent)} needed`}
               </span>
-              <span className="tc-stat-chip">
-                {activeEntitlements.length > 0
-                  ? `${activeEntitlements.length} active entitlement${activeEntitlements.length === 1 ? "" : "s"}`
-                  : "No active entitlements yet"}
-              </span>
-              <span className="tc-stat-chip">Return to {returnTo}</span>
-            </div>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                type="button"
-                className="tc-button-primary"
-                onClick={() => {
-                  void entitlementsQuery.refetch();
-                  void plansQuery.refetch();
-                  if (activeOrderId) {
-                    void orderStatusQuery.refetch();
-                  }
-                }}
-              >
-                Refresh access
-              </button>
-              <Link href={returnTo} className="tc-button-secondary">
-                Back to student app
-              </Link>
+              {activeEntitlements.length > 0 ? (
+                <span className="tc-student-chip" data-tone="soft">
+                  {activeEntitlements.length} active
+                </span>
+              ) : null}
+              {selectedPlan ? (
+                <span className="tc-student-chip" data-tone="soft">
+                  {selectedPlan.name}
+                </span>
+              ) : null}
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="tc-student-metric rounded-[24px] p-5">
-              <p className="tc-overline">Current access</p>
-              <p className="mt-4 text-lg font-semibold text-white">
-                {hasIntentAccess(activeEntitlements, intent)
-                  ? `Already unlocked for ${getPremiumIntentLabel(intent)}`
-                  : `Upgrade needed for ${getPremiumIntentLabel(intent)}`}
-              </p>
-              <p className="mt-2 text-sm text-white/72">
-                Active access respects backend starts, expiry, and revoke timestamps.
-              </p>
-            </div>
-            <div className="tc-student-metric rounded-[24px] p-5">
-              <p className="tc-overline">Selected plan</p>
-              <TextContent
-                as="p"
-                className="mt-4 text-lg font-semibold text-white"
-                value={selectedPlan?.name ?? "Choose a live plan"}
-              />
-              <p className="mt-2 text-sm text-white/72">
-                {selectedPlan ? formatPlanPrice(selectedPlan) : "Plans remain backend-managed."}
-              </p>
-            </div>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+            <button
+              type="button"
+              className="tc-button-primary justify-center"
+              onClick={() => {
+                void entitlementsQuery.refetch();
+                void plansQuery.refetch();
+                if (activeOrderId) {
+                  void orderStatusQuery.refetch();
+                }
+              }}
+            >
+              Refresh
+            </button>
+            <Link href={returnTo} className="tc-button-secondary justify-center">
+              Back
+            </Link>
           </div>
         </div>
       </section>
@@ -320,20 +300,16 @@ export function StudentPlansScreen() {
       ) : null}
 
       {pendingOrder ? (
-        <section className="tc-student-panel rounded-[28px] p-6">
+        <section className="tc-student-panel rounded-[22px] p-4 sm:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-                Payment tracker
+              <p className="tc-overline" style={{ color: "var(--accent-student)" }}>
+                Payment
               </p>
-              <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
+              <h2 className="mt-2 text-xl font-semibold text-[color:var(--brand)]">
                 <TextContent as="span" value={pendingOrder.plan.name} />{" "}
                 is {getPaymentStatusLabel(pendingOrder.status).toLowerCase()}.
               </h2>
-              <p className="tc-muted mt-3 text-sm leading-6">
-                Order {pendingOrder.merchantOrderCode} stays attached to this
-                session until it reaches a terminal state or you dismiss it.
-              </p>
             </div>
 
             <div className="flex flex-wrap gap-3">
@@ -357,22 +333,18 @@ export function StudentPlansScreen() {
       ) : null}
 
       {manualEntitlements.length > 0 ? (
-        <section className="tc-student-panel rounded-[28px] p-6">
-          <p className="tc-kicker" style={{ color: "var(--accent-student)" }}>
-            Access already granted
+        <section className="tc-student-panel rounded-[22px] p-4 sm:p-5">
+          <p className="tc-overline" style={{ color: "var(--accent-student)" }}>
+            Extra access
           </p>
-          <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight">
-            Manual or support-issued entitlements are active on this account.
-          </h2>
-          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
             {manualEntitlements.map((entitlement) => (
-              <div key={entitlement.id} className="tc-student-card rounded-[24px] p-5">
-                <p className="tc-overline">{entitlement.kind}</p>
-                <p className="mt-3 text-lg font-semibold text-[color:var(--brand)]">
-                  {entitlement.sourceType.replace(/_/g, " ")}
+              <div key={entitlement.id} className="tc-student-card rounded-[18px] p-4">
+                <p className="text-sm font-semibold text-[color:var(--brand)]">
+                  {getEntitlementKindLabel(entitlement.kind)}
                 </p>
-                <p className="tc-muted mt-2 text-sm leading-6">
-                  Starts {formatTimestamp(entitlement.startsAt)} · Ends{" "}
+                <p className="tc-muted mt-1 text-sm leading-6">
+                  Valid till{" "}
                   {formatTimestamp(entitlement.endsAt)}
                 </p>
               </div>
@@ -383,48 +355,52 @@ export function StudentPlansScreen() {
 
       {plans.length === 0 ? (
         <EmptyState
-          eyebrow="Student plans"
+          eyebrow="Plans"
           title="No active public plans are published yet."
-          description="The student checkout flow is live, but the backend has not published any `ACTIVE` public plans yet. Entitlement refresh and payment status handling are still ready once plans are seeded."
+          description="Please check again later."
           ctaHref="/pricing"
           ctaLabel="Open public pricing"
         />
       ) : (
-        <section className="grid gap-4 xl:grid-cols-3">
-          {plans.map((plan) => (
-            <StudentPlanCard
-              key={plan.id}
-              intent={intent}
-              isCovered={isPlanCoveredByEntitlements(plan, activeEntitlements)}
-              isPendingOrder={
-                activePlanId === plan.id &&
-                Boolean(activeOrderId) &&
-                !isTerminalPaymentStatus(pendingOrder?.status ?? "CREATED")
-              }
-              isRecommended={planSupportsIntent(plan, intent)}
-              isSelected={selectedPlanId === plan.id}
-              onCheckout={handleCheckout}
-              paymentStatusHref={paymentStatusHref}
-              plan={plan}
-              submittingPlanId={submittingPlanId}
-            />
-          ))}
+        <section className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+            <div>
+              <p className="tc-overline" style={{ color: "var(--accent-student)" }}>
+                Available plans
+              </p>
+              {selectedPlan ? (
+                <p className="tc-muted mt-1 text-sm">
+                  Selected: {selectedPlan.name} · {formatPlanPrice(selectedPlan)} ·{" "}
+                  {formatPlanDuration(selectedPlan.durationDays)}
+                </p>
+              ) : null}
+            </div>
+            <span className="tc-student-chip" data-tone="soft">
+              {plans.length} option{plans.length === 1 ? "" : "s"}
+            </span>
+          </div>
+          <div className="grid gap-3 xl:grid-cols-3">
+            {plans.map((plan) => (
+              <StudentPlanCard
+                key={plan.id}
+                intent={intent}
+                isCovered={isPlanCoveredByEntitlements(plan, activeEntitlements)}
+                isPendingOrder={
+                  activePlanId === plan.id &&
+                  Boolean(activeOrderId) &&
+                  !isTerminalPaymentStatus(pendingOrder?.status ?? "CREATED")
+                }
+                isRecommended={planSupportsIntent(plan, intent)}
+                isSelected={selectedPlanId === plan.id}
+                onCheckout={handleCheckout}
+                paymentStatusHref={paymentStatusHref}
+                plan={plan}
+                submittingPlanId={submittingPlanId}
+              />
+            ))}
+          </div>
         </section>
       )}
-
-      {plansQuery.data.items.length > 0 && !selectedPlan ? (
-        <section className="tc-student-card rounded-[28px] p-6">
-          <p className="tc-overline">Plan selection</p>
-          <h2 className="tc-display mt-3 text-2xl font-semibold tracking-tight text-[color:var(--brand)]">
-            Plan choice can be preselected from public pricing or any locked student route.
-          </h2>
-          <p className="tc-muted mt-3 text-sm leading-6">
-            The student shell keeps the checkout intent and safe return route in
-            the query string so notes, content, practice, and tests can all
-            reuse this one plans surface.
-          </p>
-        </section>
-      ) : null}
     </div>
   );
 }

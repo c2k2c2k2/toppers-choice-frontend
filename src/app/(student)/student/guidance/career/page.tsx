@@ -1,5 +1,5 @@
-import { StudentStructuredContentListScreen } from "@/components/student/student-structured-content-list-screen";
+import { StudentCareerGuidancePdfScreen } from "@/components/student/student-career-guidance-pdf-screen";
 
 export default function StudentCareerGuidancePage() {
-  return <StudentStructuredContentListScreen family="CAREER_GUIDANCE" />;
+  return <StudentCareerGuidancePdfScreen />;
 }

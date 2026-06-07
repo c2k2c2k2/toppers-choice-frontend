@@ -221,14 +221,16 @@ export function PdfCanvasViewer({
   requestedPage,
   shellClassName,
   showToolbar = true,
+  sourceHeaders,
+  sourceUrl,
   watermarkPayload,
 }: Readonly<{
   fitMode?: "contain" | "height" | "width";
   gestureDirection?: "horizontal" | "vertical";
   initialPage?: number;
   initialZoom?: number;
-  noteViewSessionId: string;
-  noteViewToken: string;
+  noteViewSessionId?: string;
+  noteViewToken?: string;
   onError?: (message: string) => void;
   onPageChange?: (page: number, totalPages: number) => void;
   onReady?: (totalPages: number) => void;
@@ -236,6 +238,8 @@ export function PdfCanvasViewer({
   requestedPage?: number;
   shellClassName?: string;
   showToolbar?: boolean;
+  sourceHeaders?: Record<string, string>;
+  sourceUrl?: string;
   watermarkPayload?: NoteWatermarkResponse | null;
 }>) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -319,6 +323,15 @@ export function PdfCanvasViewer({
   }, [initialZoom]);
 
   useEffect(() => {
+    const resolvedSourceUrl =
+      sourceUrl ??
+      (noteViewSessionId ? buildNoteContentUrl(noteViewSessionId) : null);
+
+    if (!resolvedSourceUrl) {
+      emitError("A PDF source was not provided.");
+      return;
+    }
+
     let cancelled = false;
     setIsLoadingDocument(true);
     setDocumentProxy(null);
@@ -326,12 +339,17 @@ export function PdfCanvasViewer({
     setPageNumber(initialPage);
     setPageInput(String(initialPage));
 
+    const resolvedHeaders = sourceHeaders
+      ? sourceHeaders
+      : noteViewToken
+        ? {
+            Authorization: `Bearer ${noteViewToken}`,
+          }
+        : undefined;
     const loadingTask = pdfjsLib.getDocument({
-      httpHeaders: {
-        Authorization: `Bearer ${noteViewToken}`,
-      },
+      httpHeaders: resolvedHeaders,
       rangeChunkSize: 131_072,
-      url: buildNoteContentUrl(noteViewSessionId),
+      url: resolvedSourceUrl,
       withCredentials: false,
     });
 
@@ -355,7 +373,7 @@ export function PdfCanvasViewer({
         }
 
         emitError(
-          error instanceof Error ? error.message : "Failed to load the note PDF.",
+          error instanceof Error ? error.message : "Failed to load the PDF.",
         );
       })
       .finally(() => {
@@ -375,7 +393,7 @@ export function PdfCanvasViewer({
         loadingTask.destroy();
       }
     };
-  }, [initialPage, noteViewSessionId, noteViewToken]);
+  }, [initialPage, noteViewSessionId, noteViewToken, sourceHeaders, sourceUrl]);
 
   useEffect(() => {
     setPageInput(String(pageNumber));

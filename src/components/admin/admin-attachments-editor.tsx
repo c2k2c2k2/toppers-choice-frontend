@@ -1,5 +1,11 @@
 "use client"
 
+import { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
+import { adminQueryKeys } from "@/lib/api/query-keys"
+import { useAuthenticatedMutation, useAuthSession } from "@/lib/auth"
+import { getApiErrorMessage, uploadAdminFile } from "@/lib/admin"
+import { AdminInlineNotice } from "@/components/admin/admin-inline-notice"
 import { AuthenticatedFilePreview } from "@/components/primitives/file-preview"
 import { AdminInput } from "@/components/admin/admin-form-field"
 
@@ -77,6 +83,57 @@ export function AdminAttachmentsEditor({
   onChange: (rows: AdminAttachmentRow[]) => void
   rows: AdminAttachmentRow[]
 }>) {
+  const authSession = useAuthSession()
+  const queryClient = useQueryClient()
+  const [selectedFilesByRowId, setSelectedFilesByRowId] = useState<
+    Record<string, File | null>
+  >({})
+  const canManageFiles = authSession.hasPermission("content.files.manage")
+  const uploadMutation = useAuthenticatedMutation({
+    mutationFn: (
+      input: {
+        file: File
+        rowId: string
+      },
+      accessToken,
+    ) =>
+      uploadAdminFile(
+        {
+          accessLevel: "AUTHENTICATED",
+          file: input.file,
+          purpose: "GENERIC_PDF",
+        },
+        accessToken,
+      ).then((asset) => ({
+        asset,
+        rowId: input.rowId,
+      })),
+    onSuccess: async ({ asset, rowId }) => {
+      onChange(
+        rows.map((row) =>
+          row.id === rowId
+            ? {
+                ...row,
+                fileAssetId: asset.id,
+                label: row.label.trim() || asset.originalFileName,
+              }
+            : row,
+        ),
+      )
+      setSelectedFilesByRowId((current) => ({
+        ...current,
+        [rowId]: null,
+      }))
+      await queryClient.invalidateQueries({
+        queryKey: adminQueryKeys.assets({
+          accessLevel: "AUTHENTICATED",
+          purpose: "GENERIC_PDF",
+          status: "READY",
+        }),
+      })
+    },
+  })
+
   return (
     <div className="grid gap-2">
       <div className="flex flex-col gap-1">
@@ -156,6 +213,45 @@ export function AdminAttachmentsEditor({
               }
             />
 
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+              <input
+                type="file"
+                accept="application/pdf"
+                className="tc-input py-3"
+                disabled={disabled || !canManageFiles}
+                onChange={(event) =>
+                  setSelectedFilesByRowId((current) => ({
+                    ...current,
+                    [row.id]: event.target.files?.[0] ?? null,
+                  }))
+                }
+              />
+              <button
+                type="button"
+                className="tc-button-secondary"
+                disabled={
+                  disabled ||
+                  !canManageFiles ||
+                  !selectedFilesByRowId[row.id] ||
+                  uploadMutation.isPending
+                }
+                onClick={() => {
+                  const file = selectedFilesByRowId[row.id]
+
+                  if (!file) {
+                    return
+                  }
+
+                  uploadMutation.mutate({
+                    file,
+                    rowId: row.id,
+                  })
+                }}
+              >
+                {uploadMutation.isPending ? "Uploading..." : "Upload PDF"}
+              </button>
+            </div>
+
             <div className="flex flex-wrap items-center justify-between gap-3">
               {row.fileAssetId.trim() ? (
                 <div className="flex items-center gap-3">
@@ -199,6 +295,21 @@ export function AdminAttachmentsEditor({
             Add attachment
           </button>
         </div>
+
+        {!canManageFiles ? (
+          <AdminInlineNotice tone="warning">
+            This session cannot upload files. Paste an existing ready PDF asset ID instead.
+          </AdminInlineNotice>
+        ) : null}
+
+        {uploadMutation.error ? (
+          <AdminInlineNotice tone="warning">
+            {getApiErrorMessage(
+              uploadMutation.error,
+              "The PDF upload could not be completed.",
+            )}
+          </AdminInlineNotice>
+        ) : null}
       </div>
     </div>
   )

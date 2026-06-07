@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { queryKeys } from "@/lib/api/query-keys";
 import { useAuthenticatedQuery } from "@/lib/auth";
 import { listStudentEnglishSpeakingTopics } from "@/lib/english-speaking";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ErrorState } from "@/components/primitives/error-state";
+import { AuthenticatedPdfReader } from "@/components/primitives/authenticated-pdf-reader";
 import { LoadingState } from "@/components/primitives/loading-state";
 import { TextContent } from "@/components/primitives/text-content";
 
@@ -36,6 +37,8 @@ function buildPageWindow(currentPage: number, pageCount: number) {
 
 export function StudentEnglishSpeakingListScreen() {
   const [page, setPage] = useState(1);
+  const [isPdfOpen, setIsPdfOpen] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
   const listTopRef = useRef<HTMLDivElement | null>(null);
   const topicsQuery = useAuthenticatedQuery({
     queryFn: listStudentEnglishSpeakingTopics,
@@ -43,6 +46,7 @@ export function StudentEnglishSpeakingListScreen() {
     staleTime: 30_000,
   });
   const topics = topicsQuery.data?.items ?? [];
+  const notesPdf = topicsQuery.data?.material.notesPdf ?? null;
   const totalTopics = topics.length;
   const pageCount = Math.max(1, Math.ceil(totalTopics / TOPICS_PER_PAGE));
   const currentPage = Math.min(page, pageCount);
@@ -52,8 +56,18 @@ export function StudentEnglishSpeakingListScreen() {
     () => buildPageWindow(currentPage, pageCount),
     [currentPage, pageCount],
   );
-  const fromTopic = pageStart + 1;
+  const fromTopic = totalTopics === 0 ? 0 : pageStart + 1;
   const toTopic = Math.min(pageStart + visibleTopics.length, totalTopics);
+
+  useEffect(() => {
+    const updateViewportState = () => {
+      setIsMobileViewport(window.innerWidth < 768);
+    };
+
+    updateViewportState();
+    window.addEventListener("resize", updateViewportState);
+    return () => window.removeEventListener("resize", updateViewportState);
+  }, []);
 
   if (topicsQuery.isError) {
     return (
@@ -74,7 +88,7 @@ export function StudentEnglishSpeakingListScreen() {
     );
   }
 
-  if (topics.length === 0) {
+  if (topics.length === 0 && !notesPdf) {
     return (
       <EmptyState
         eyebrow="English speaking"
@@ -109,6 +123,22 @@ export function StudentEnglishSpeakingListScreen() {
             {topicsQuery.data.total} topic{topicsQuery.data.total === 1 ? "" : "s"}
           </span>
         </div>
+        {notesPdf ? (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-[rgba(0,30,64,0.08)] bg-white/70 px-3 py-3">
+            <div>
+              <p className="text-sm font-semibold text-[color:var(--brand)]">
+                Complete Note Available
+              </p>
+            </div>
+            <button
+              type="button"
+              className="tc-button-primary"
+              onClick={() => setIsPdfOpen(true)}
+            >
+              Read Note
+            </button>
+          </div>
+        ) : null}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-[rgba(0,30,64,0.08)] bg-white/70 px-3 py-2">
           <p className="tc-muted text-sm font-semibold">
             Showing {fromTopic}-{toTopic} of {totalTopics}
@@ -167,6 +197,15 @@ export function StudentEnglishSpeakingListScreen() {
       </section>
 
       <section className="grid gap-3 xl:grid-cols-2">
+        {visibleTopics.length === 0 ? (
+          <div className="xl:col-span-2">
+            <EmptyState
+              eyebrow="English speaking"
+              title="No speaking topics are available yet."
+              description="Use the PDF notes for now and check back later for audio topics."
+            />
+          </div>
+        ) : null}
         {visibleTopics.map((topic) => (
           <Link
             key={topic.id}
@@ -229,6 +268,40 @@ export function StudentEnglishSpeakingListScreen() {
             </div>
           </div>
         </section>
+      ) : null}
+
+      {notesPdf && isPdfOpen && isMobileViewport ? (
+        <AuthenticatedPdfReader
+          asset={notesPdf}
+          onClose={() => setIsPdfOpen(false)}
+          title="English speaking PDF notes"
+        />
+      ) : null}
+
+      {notesPdf && isPdfOpen && !isMobileViewport ? (
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-[rgba(0,22,46,0.68)] p-0 backdrop-blur-sm md:p-4">
+          <div className="h-[100dvh] w-full md:h-auto md:w-[min(72rem,94vw)]">
+            <div className="mb-3 hidden items-center justify-between gap-3 rounded-full bg-white/94 px-4 py-2 shadow-sm md:flex">
+              <p className="truncate text-sm font-semibold text-[color:var(--brand)]">
+                {notesPdf.originalFileName}
+              </p>
+              <button
+                type="button"
+                className="tc-button-secondary"
+                onClick={() => setIsPdfOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+            <AuthenticatedPdfReader
+              asset={notesPdf}
+              className="h-[calc(100dvh-1.5rem)] md:h-[78vh]"
+              mobileZen={false}
+              onClose={() => setIsPdfOpen(false)}
+              title="English speaking PDF notes"
+            />
+          </div>
+        </div>
       ) : null}
     </div>
   );

@@ -2,11 +2,13 @@ import { apiRequest } from "@/lib/api/client";
 import { withQuery } from "@/lib/api/config";
 import { apiRoutes } from "@/lib/api/routes";
 import type {
+  AdminEnglishSpeakingMaterial,
   AdminEnglishSpeakingTopicDetail,
   AdminEnglishSpeakingTopicListResponse,
   CreateEnglishSpeakingTopicInput,
   FinalizeEnglishSpeakingAudioInput,
   GenerateEnglishSpeakingAudioInput,
+  UpdateEnglishSpeakingMaterialInput,
   UpdateEnglishSpeakingTopicInput,
 } from "@/lib/english-speaking";
 
@@ -40,6 +42,29 @@ export async function getAdminEnglishSpeakingTopic(
     apiRoutes.admin.englishSpeaking.detail(topicId),
     {
       accessToken,
+    },
+  );
+}
+
+export async function getAdminEnglishSpeakingMaterial(accessToken: string) {
+  return apiRequest<AdminEnglishSpeakingMaterial>(
+    apiRoutes.admin.englishSpeaking.material,
+    {
+      accessToken,
+    },
+  );
+}
+
+export async function updateAdminEnglishSpeakingMaterial(
+  input: UpdateEnglishSpeakingMaterialInput,
+  accessToken: string,
+) {
+  return apiRequest<AdminEnglishSpeakingMaterial>(
+    apiRoutes.admin.englishSpeaking.material,
+    {
+      accessToken,
+      body: input,
+      method: "PATCH",
     },
   );
 }
