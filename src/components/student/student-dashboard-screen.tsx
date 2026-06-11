@@ -128,9 +128,9 @@ function SubjectTopicCapsules({
   const visibleTopics = topics.slice(0, 3);
   const remainingCount = Math.max(0, topics.length - visibleTopics.length);
 
-  if (topics.length === 0) {
-    return <p className="tc-muted mt-1 text-xs">0 topics</p>;
-  }
+  // if (topics.length === 0) {
+  //   return <p className="tc-muted mt-1 text-xs">0 topics</p>;
+  // }
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -166,9 +166,9 @@ export function StudentDashboardScreen() {
   const dashboardData = dashboardQuery.data;
   const snapshot = dashboardData
     ? buildStudentCatalogSnapshot(dashboardData.catalog, {
-        examTrackCode: activeExamTrackCode,
-        mediumCode: activeMediumCode,
-      })
+      examTrackCode: activeExamTrackCode,
+      mediumCode: activeMediumCode,
+    })
     : null;
 
   useEffect(() => {
@@ -214,8 +214,8 @@ export function StudentDashboardScreen() {
   const lastSubject =
     lastCatalogSubjectSlug
       ? dashboardData.catalog.subjects.find(
-          (subject) => subject.slug === lastCatalogSubjectSlug,
-        ) ?? null
+        (subject) => subject.slug === lastCatalogSubjectSlug,
+      ) ?? null
       : null;
   const latestAnnouncement = dashboardData.cms.announcements[0] ?? null;
   const latestAnnouncementHref = getPlainText(latestAnnouncement?.linkHref);
